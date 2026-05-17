@@ -1,171 +1,248 @@
-# Hệ Thống Số Hóa & Quản Lý Ngân Hàng Câu Hỏi (Exam Bank System)
+# Hệ Thống Số Hóa & Quản Lý Ngân Hàng Câu Hỏi
 
-Một ứng dụng web Full-stack chuyên nghiệp giúp tự động hóa quy trình số hóa và soạn thảo đề thi. Hệ thống hỗ trợ tính năng dán ảnh để nhận diện chữ và công thức toán học (OCR sang LaTeX), quản lý câu hỏi thông minh theo mô hình Đơn/Nhóm và hỗ trợ đa dạng loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận).
-
----
-
-## Công Nghệ Sử Dụng (Tech Stack)
-
-*   **Core Framework:** Next.js 15+ (App Router) – Xử lý Full-stack (Frontend tương tác động và API Routes Backend xử lý AI bảo mật).
-*   **Giao diện (UI):** TailwindCSS + Shadcn/ui (hoặc Ant Design) nhằm tối ưu tốc độ dựng form và các bộ lọc quản trị phức tạp.
-*   **Database & Auth:** Firebase (Firestore lưu trữ dữ liệu câu hỏi cấu trúc động, Firebase Auth quản lý tài khoản người dùng).
-*   **Lưu trữ hình ảnh:** Cloudinary API (Dịch vụ đám mây giúp upload ảnh minh họa, tự động nén và tối ưu kích thước qua CDN URL).
-*   **Trí tuệ nhân tạo (AI/OCR):** Gemini 1.5 Flash API (Sử dụng Vision Model để đọc hiểu ngữ cảnh, tách đề bài và chuyển công thức toán sang mã LaTeX).
-*   **Xử lý Toán học & Ký tự đặc biệt:**
-    *   `MathLive`: Trình soạn thảo công thức WYSIWYG trực quan (nhập liệu như Equation trong Word, tự xuất ra mã LaTeX ngầm).
-    *   `KaTeX`: Thư viện render mã LaTeX thành phương trình toán học hiển thị trực quan trên giao diện.
+> **Exam Bank System** — Ứng dụng web Full-stack chuyên nghiệp giúp tự động hóa quy trình số hóa và soạn thảo đề thi, tích hợp AI nhận diện ảnh (OCR) và hỗ trợ đa dạng loại câu hỏi.
 
 ---
 
-## Kiến Trúc Thư Mục Dự Án
+## Công Nghệ Sử Dụng
+
+| Lớp | Công nghệ |
+|---|---|
+| **Framework** | Next.js 15+ (App Router) — Full-stack với API Routes |
+| **UI / Styling** | TailwindCSS + shadcn/ui (Radix UI primitives) |
+| **Database** | Firebase Firestore |
+| **Auth** | Firebase Authentication |
+| **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
+| **Lưu trữ ảnh** | Cloudinary / Firebase Storage _(planned)_ |
+
+---
+
+## Cấu Trúc Thư Mục
 
 ```text
-my-exam-bank/
+exam-bank-system/
 ├── app/
 │   ├── api/
 │   │   └── ocr/
-│   │       └── route.js       <-- Backend API tiếp nhận ảnh dán và gọi Gemini API
-│   ├── dashboard/
-│   │   └── page.js            <-- Ngân hàng câu hỏi (Giao diện bộ lọc & Danh sách đề thi)
+│   │       └── route.js          ← API Route: nhận ảnh Base64, gọi Gemini AI, trả JSON
 │   ├── create-question/
-│   │   └── page.js            <-- Màn hình biên soạn (Nơi dán ảnh, nhập liệu và chọn cấu trúc)
-│   ├── layout.js
-│   └── page.js                <-- Trang chủ / Cổng đăng nhập (Authentication)
+│   │   └── page.js               ← Trang soạn thảo đề thi (main feature)
+│   ├── globals.css               ← CSS Variables cho Dark/Light theme
+│   ├── layout.tsx                ← Root layout
+│   └── page.tsx                  ← Trang chủ
+│
 ├── components/
-│   ├── QuestionForm.jsx       <-- Form cấu trúc động (Tự thay đổi theo dạng Đơn/Nhóm và Loại câu hỏi)
-│   ├── MathEditor.jsx         <-- Bộ gõ công thức trực quan tích hợp MathLive
-│   ├── QuestionPreview.jsx    <-- Bộ render nội dung câu hỏi và lời giải (Dùng KaTeX)
-│   └── ImageUploader.jsx      <-- Kéo thả/Chọn hình ảnh minh họa bài tập lên Cloudinary
+│   ├── layout/                   ← Các thành phần khung giao diện
+│   │   ├── AppLayout.jsx         ← Wrapper: Header + Sidebar + main content
+│   │   ├── Header.jsx            ← Thanh tiêu đề sticky (logo, menu toggle, theme)
+│   │   ├── Sidebar.jsx           ← Thanh điều hướng trái (thu/mở, responsive)
+│   │   └── Footer.jsx            ← Chân trang
+│   │
+│   ├── question/                 ← Các form nhập liệu câu hỏi
+│   │   ├── QuestionForm.jsx      ← Form tổng hợp (nội dung + ảnh + đáp án + kết quả)
+│   │   ├── MultipleChoiceForm.jsx← Form trắc nghiệm (A/B/C/D + màu accent + upload ảnh/đáp án)
+│   │   ├── TrueFalseForm.jsx     ← Form đúng/sai (danh sách mệnh đề + upload ảnh/mệnh đề)
+│   │   └── EssayForm.jsx         ← Form tự luận
+│   │
+│   ├── shared/                   ← Components dùng chung
+│   │   ├── ThemeToggle.jsx       ← Nút chuyển Dark/Light mode
+│   │   └── theme-provider.jsx    ← Context provider cho next-themes
+│   │
+│   └── ui/                       ← shadcn/ui components (tùy chỉnh)
+│       ├── select.tsx            ← Custom Select: check icon trái, backdrop-blur, rounded-xl
+│       ├── input.tsx             ← Input chuẩn h-10 (đồng bộ chiều cao với Select)
+│       └── ...                   ← button, card, textarea, radio-group, ...
+│
 ├── lib/
-│   └── firebase.js            <-- Cấu hình kết nối Firebase Client SDK
-└── .env.local                 <-- Biến môi trường ẩn (Chứa các API Keys bảo mật)
+│   └── firebase.js               ← Cấu hình Firebase Client SDK
+│
+├── .env.local                    ← API Keys (không commit)
+├── .gitignore
+├── components.json               ← Cấu hình shadcn/ui
+├── next.config.ts
+├── package.json
+└── README.md
 ```
 
 ---
 
-## ── CẤU TRÚC DỮ LIỆU CÂU HỎI (FIRESTORE JSON MODEL) ──
-Hệ thống quản lý dữ liệu linh hoạt dựa trên cờ `isGroup` để phân tách rõ ràng câu hỏi đơn lẻ và câu hỏi chùm (chung ngữ cảnh/đoạn văn).
-### Kiểu 1: Câu hỏi đơn (Trắc nghiệm / Đúng sai / Tự luận ngắn-dài)
+## Tính Năng Đã Hoàn Thành
+
+### Layout & Navigation
+- [x] **Header** sticky với logo, nút toggle sidebar và ThemeToggle
+- [x] **Sidebar** responsive: thu gọn (icon-only) trên desktop, overlay trên mobile
+- [x] **Footer** với thông tin thương hiệu và liên kết liên hệ
+- [x] **Dark / Light mode** toàn bộ ứng dụng qua `next-themes`
+
+### Trang Soạn Thảo Đề Thi (`/create-question`)
+- [x] **Cấu hình đề thi**: Tiêu đề, Năm học, Cấp học/Lớp, Môn học (phụ thuộc cấp), Tỉnh thành, Thời gian, Số câu hỏi
+- [x] **Quản lý danh sách câu hỏi**: Thêm, xóa, thu gọn/mở rộng từng câu
+- [x] **Nút chèn câu** duy nhất ở cuối — luôn thêm vào cuối danh sách, hiển thị số câu tiếp theo chính xác
+- [x] **Nút lưu đề thi** ở dưới cùng (đóng gói payload JSON hoàn chỉnh)
+
+### Form Câu Hỏi
+- [x] **Trắc nghiệm** (MultipleChoiceForm):
+  - 4 đáp án A/B/C/D với màu accent riêng biệt khi được chọn (Blue/Violet/Amber/Emerald)
+  - Upload ảnh minh họa riêng cho **từng đáp án**
+  - Preview ảnh inline + nút xóa/thay ảnh
+- [x] **Đúng / Sai** (TrueFalseForm):
+  - Danh sách mệnh đề động (thêm/xóa)
+  - Nút toggle ✓/✗ với màu xanh/đỏ tương ứng
+  - Upload ảnh minh họa riêng cho **từng mệnh đề**
+  - Màu nền hàng thay đổi theo trạng thái Đúng/Sai
+- [x] **Tự luận** (EssayForm): Ô nhập hướng dẫn chấm/lời giải gợi ý
+- [x] **Ảnh minh họa đề bài**: Upload ảnh cho nội dung câu hỏi (dán từ clipboard hoặc chọn file)
+- [x] **OCR bằng AI**: Dán ảnh vào ô nội dung → tự động gửi Gemini Vision → auto-fill đề bài & đáp án
+- [x] **Kết quả / Đáp số đúng**: Ô nhập cuối form + ảnh sơ đồ minh họa đáp án
+
+### UI/UX
+- [x] **Custom Select/Dropdown**: Check icon bên trái, backdrop-blur, `rounded-xl`, `shadow-xl`
+- [x] **Chiều cao field đồng nhất**: Input `h-10` = SelectTrigger `h-10` — căn thẳng hàng pixel-perfect
+- [x] **Padding nội dung**: Text trong ô đáp án/mệnh đề có khoảng thụt vào `px-2` thoải mái
+- [x] **Responsive**: Mobile-first, Sidebar overlay trên màn hình nhỏ
+
+---
+
+## Cài Đặt & Chạy Dự Án
+
+### Yêu cầu
+- Node.js 18+
+- npm hoặc yarn
+
+### Cài đặt
+
+```bash
+# Clone repo
+git clone https://github.com/CMTran2005/Exam-Bank-System.git
+cd Exam-Bank-System
+
+# Cài dependencies
+npm install
+```
+
+### Cấu hình biến môi trường
+
+Tạo file `.env.local` tại gốc dự án:
+
+```env
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Firebase
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
+
+### Chạy môi trường phát triển
+
+```bash
+npm run dev
+```
+
+Mở [http://localhost:3000](http://localhost:3000) trên trình duyệt.
+
+---
+
+## Mô Hình Dữ Liệu (Firestore JSON)
+
+### Câu hỏi Trắc nghiệm
+
 ```json
 {
-  "id": "q_single_001",
-  "isGroup": false,
-  "type": "multiple_choice", // Hoặc "true_false", "essay"
+  "id": "q_001",
+  "type": "multiple_choice",
+  "content": "Cho hàm số có đồ thị như hình vẽ. Tìm số nghiệm của $f(x) = 0$.",
+  "image": "data:image/png;base64,...",
+  "options": ["1", "2", "3", "4"],
+  "options_images": ["", "", "data:image/png;base64,...", ""],
+  "correct_answer": "C",
+  "answer_image": null,
   "metadata": {
     "subject": "Toán học",
-    "grade": 12,
+    "grade": "12",
     "year": "2025-2026",
-    "exam": "Giữa Kỳ 1"
-  },
-  "content": "Cho hàm số có đồ thị như hình vẽ. Tìm số nghiệm của phương trình $f(x) = 0$.",
-  "imageUrl": "[https://res.cloudinary.com/demo/image/upload/w_500,c_scale/hinh_do_thi_001.webp](https://res.cloudinary.com/demo/image/upload/w_500,c_scale/hinh_do_thi_001.webp)",
-  "options": ["A. 1", "B. 2", "C. 3", "D. 4"], // Trường này để trống "" hoặc null nếu là câu tự luận
-  "correct_answer": "C", // Nếu là tự luận, đây sẽ là đáp số ngắn
-  "suggested_solution": "Dựa vào đồ thị ta thấy đường thẳng y = 0 cắt đồ thị tại 3 điểm phân biệt..." // Dành cho Tự luận/Lời giải chi tiết
+    "province": "Hà Nội"
+  }
 }
 ```
 
-### Kiểu 2: Câu hỏi Nhóm (Chùm câu hỏi chung Đoạn văn / Ngữ cảnh / Hình vẽ)
+### Câu hỏi Đúng / Sai
+
 ```json
 {
-  "id": "q_group_002",
-  "isGroup": true,
-  "metadata": {
-    "subject": "Tiếng Anh",
-    "grade": 12,
-    "year": "2025-2026",
-    "exam": "THPT Quốc Gia"
-  },
-  "passage": "Read the following passage and mark the letter A, B, C, or D... [Đoạn văn đọc hiểu hoặc hình vẽ hình học dùng chung]",
-  "imageUrl": null, // Có thể chứa hình vẽ lớn dùng chung cho các câu hỏi con
-  "subQuestions": [
-    {
-      "subId": "sub_1",
-      "type": "multiple_choice",
-      "content": "What is the main topic of the passage?",
-      "options": ["A. Tech", "B. Environment", "C. Health", "D. History"],
-      "correct_answer": "B"
-    },
-    {
-      "subId": "sub_2",
-      "type": "true_false",
-      "content": "Xác định các mệnh đề sau đây là Đúng hay Sai dựa trên đoạn văn:",
-      "statements": [
-        {"text": "Ngành công nghiệp xanh đang phát triển.", "correct": true},
-        {"text": "Nhiệt độ trái đất đang giảm dần.", "correct": false}
-      ]
-    },
-    {
-      "subId": "sub_3",
-      "type": "essay",
-      "content": "Tóm tắt thông điệp chính của tác giả bằng một câu văn (không quá 20 từ).",
-      "suggested_solution": "The author emphasizes the urgent need for global environmental cooperation to combat climate change."
-    }
-  ]
+  "id": "q_002",
+  "type": "true_false",
+  "content": "Cho bảng số liệu sau. Xác định tính đúng/sai của các mệnh đề:",
+  "image": null,
+  "statements": [
+    { "text": "Trung bình cộng của dãy số là 7.5", "correct": true, "image": "" },
+    { "text": "Phương sai của dãy số là 4", "correct": false, "image": "" }
+  ],
+  "correct_answer": "Đúng, Sai",
+  "answer_image": null
 }
 ```
+
+### Câu hỏi Tự luận
+
+```json
+{
+  "id": "q_003",
+  "type": "essay",
+  "content": "Chứng minh rằng tổng các góc trong một tam giác bằng 180°.",
+  "image": null,
+  "suggested_solution": "Vẽ đường thẳng d song song với BC đi qua A...",
+  "correct_answer": "",
+  "answer_image": null
+}
+```
+
 ---
 
-## ── DANH SÁCH VIỆC CẦN LÀM (TO-DO LIST) ──
-### Giai đoạn 1: Thiết lập nền móng ban đầu:
-- Khởi tạo dự án Next.js (`npx create-next-app@latest`).
+## Lộ Trình Phát Triển (Roadmap)
 
-- Cài đặt và cấu hình thư viện UI (TailwindCSS kết hợp Shadcn/ui hoặc Ant Design).
+### ✅ Giai đoạn 1 — Nền móng (Hoàn thành)
+- Khởi tạo dự án Next.js với TailwindCSS + shadcn/ui
+- Cấu hình Firebase, thiết lập `.env.local`
+- Xây dựng layout cơ bản (Header, Sidebar, Footer)
+- Tích hợp Dark/Light mode
 
-- Cấu hình Firebase Console: Kích hoạt Firestore Database và bộ xác thực Firebase Authentication.
+### ✅ Giai đoạn 2 — Giao diện Soạn thảo (Hoàn thành)
+- Trang `/create-question` với cấu hình đề thi
+- Form động cho 3 loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận)
+- Tích hợp OCR: Dán ảnh → Gemini Vision → Auto-fill
+- Upload ảnh minh họa per-option và per-statement
 
-- Tạo file kết nối `lib/firebase.js` trong mã nguồn.
+### 🔄 Giai đoạn 3 — Tích hợp Backend (Đang phát triển)
+- [ ] Lưu đề thi hoàn chỉnh lên Firestore
+- [ ] Upload ảnh Base64 lên Cloud Storage (Firebase / Cloudinary)
+- [ ] Firebase Authentication (đăng nhập/đăng ký)
 
-- Đăng ký tài khoản Cloudinary, tạo cấu hình Upload Preset ở chế độ `Unsigned` để sẵn sàng nhận file từ Frontend.
+### 📋 Giai đoạn 4 — Ngân hàng câu hỏi
+- [ ] Trang `/dashboard` hiển thị danh sách đề thi đã lưu
+- [ ] Bộ lọc: Môn học, Khối lớp, Năm học, Tỉnh thành, Loại câu hỏi
+- [ ] Component `QuestionPreview.jsx` render LaTeX bằng KaTeX
 
-- Thiết lập file `.env.local` lưu trữ an toàn các mã Token và API Keys.
+### 📋 Giai đoạn 5 — Tối ưu & Kiểm thử
+- [ ] Skeleton loading cho danh sách ngân hàng
+- [ ] Toast notification thông báo trạng thái
+- [ ] Tích hợp MathLive cho nhập công thức trực quan
+- [ ] Kiểm thử E2E đầy đủ các luồng
 
-### Giai đoạn 2: Xây dựng Giao diện Form Soạn thảo Động (Logic Frontend)
-- Thiết kế trang `/create-question` với thanh thông tin phân loại cố định (Môn học, Khối lớp, Năm học, Kỳ thi).
+---
 
-- Phát triển component `QuestionForm.jsx` xử lý giao diện linh hoạt chia làm 2 nhánh lớn:
+## Đóng Góp
 
-  - Nhánh Câu hỏi Đơn: Tùy biến form theo loại:
+Pull requests và issues luôn được chào đón. Vui lòng mở Issue để thảo luận trước khi thực hiện thay đổi lớn.
 
-    - Trắc nghiệm: Hiện ô nhập đề bài, 4 ô đáp án (A, B, C, D) và bộ chọn radio cho đáp án đúng.
+---
 
-    - Đúng/Sai: Hiện đề bài, danh sách các mệnh đề động kèm checkbox Đúng hoặc Sai.
+## Liên Hệ
 
-    - Tự luận: Hiện đề bài và một ô Textarea lớn "Lời giải gợi ý / Hướng dẫn chấm".
-
-  - Nhánh Câu hỏi Nhóm: Hiện ô nhập nội dung gốc (Đoạn văn/Bối cảnh), bên dưới có nút "Thêm câu hỏi con". Khi bấm sẽ sinh thêm một Form đơn độc lập (cho phép chọn cấu trúc Trắc nghiệm, Đúng/Sai hoặc Tự luận con).
-
-- Tích hợp thư viện `MathLive` vào toàn bộ các ô nhập nội dung/đáp án/lời giải để người dùng có thể click gõ công thức toán học như Word.
-
-- Hoàn thiện component `ImageUploader.jsx` hỗ trợ tải ảnh minh họa bài tập lên Cloudinary, nhận URL CDN và lưu vào State của câu hỏi.
-
-### Giai đoạn 3: Tích hợp Tính năng Dán ảnh & Xử lý với Gemini AI (OCR & LaTeX)
-- Xây dựng bộ lắng nghe sự kiện `onPaste` tại các ô nhập liệu chính. Nếu Clipboard chứa dữ liệu hình ảnh, tự động mã hóa sang định dạng Base64 và kích hoạt màn hình chờ (Loading).
-
-- Xây dựng cấu trúc API Route Backend tại `/app/api/ocr/route.js`:
-
-  - Tiếp nhận file ảnh được truyền từ trình duyệt.
-
-  - Gọi SDK `@google/generative-ai` để chuyển tiếp dữ liệu sang mô hình Gemini 1.5 Flash.
-
-  - Thiết lập cấu trúc System Prompt ép định dạng đầu ra:
-
-      "Bạn là chuyên gia số hóa đề thi. Hãy phân tích hình ảnh câu hỏi được cung cấp (bất kể là trắc nghiệm, đúng sai hay tự luận, đơn hay nhóm). Chuyển toàn bộ ký tự thành chữ thuần túy. Trích xuất chính xác các công thức toán/lý/hóa sang mã LaTeX nằm trong cặp dấu $. Nếu ảnh chứa cả đề bài lẫn lời giải mẫu, hãy tách chúng ra theo cấu trúc JSON gồm các trường: 'content' (đề bài) và 'suggested_solution' (lời giải). Chỉ trả về nội dung text/JSON kết quả, không giải thích gì thêm."
-
-- Xử lý phản hồi từ API ở Frontend, tự động phân tách dữ liệu và điền (Auto-fill) vào các ô tương ứng trên Form động để người dùng kiểm tra lại.
-
-### Giai đoạn 4: Quản lý Ngân hàng và Hiển thị Đề thi
-- Viết hàm đồng bộ dữ liệu để đóng gói Object câu hỏi (Đơn/Nhóm) kèm link ảnh minh họa gửi lên Firestore Database.
-
-- Phát triển trang `/dashboard` hiển thị tổng quan ngân hàng câu hỏi.
-
-- Thiết kế thanh Sidebar chứa bộ lọc thông minh (Lọc theo Môn học, Khối lớp, Kỳ thi, Năm học và Định dạng câu hỏi Đơn/Nhóm).
-
-- Xây dựng component `QuestionPreview.jsx`: Sử dụng KaTeX để render mượt mà các đoạn mã toán học dạng `$ ... $` ra màn hình. Thiết kế thêm nút "Xem lời giải chi tiết" ẩn/hiện linh hoạt đối với các câu hỏi Tự luận hoặc câu hỏi có lời giải dài.
-
-### Giai đoạn 5: Hoàn thiện & Tối ưu Hệ thống
-- Kiểm thử kỹ lưỡng các kịch bản: Số hóa đề đọc hiểu Tiếng Anh (Câu hỏi nhóm), Số hóa đề hình học/đồ thị có hình vẽ minh họa (Cloudinary), Số hóa đề tự luận Toán dài.
-
-- Viết hàm Regex xử lý chuỗi ở API Route để làm sạch các ký tự bao bọc mã markdown (như ` ```json ` hoặc ` ```text `) do AI trả về trước khi xử lý ở Frontend.
-
-- Thêm hiệu ứng Skeleton loading khi tải danh sách ngân hàng đề và các hộp thoại Toast thông báo trạng thái trực quan để tối ưu trải nghiệm người dùng (UX).
+**Tác giả:** CMTran2005  
+**Email:** cmtran2005@gmail.com  
+**GitHub:** [CMTran2005/Exam-Bank-System](https://github.com/CMTran2005/Exam-Bank-System)
