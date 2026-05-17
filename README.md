@@ -1,10 +1,20 @@
-# Hệ Thống Số Hóa & Quản Lý Ngân Hàng Câu Hỏi
+<div align="center">
 
-> **Exam Bank System** — Ứng dụng web Full-stack chuyên nghiệp giúp tự động hóa quy trình số hóa và soạn thảo đề thi, tích hợp AI nhận diện ảnh (OCR) và hỗ trợ đa dạng loại câu hỏi.
+# 📚 Exam Bank System — Hệ Thống Ngân Hàng Câu Hỏi
+
+**Choose your language / Chọn ngôn ngữ:**
+
+[![🇻🇳 Tiếng Việt](#-phiên-bản-tiếng-việt)](##-phiên-bản-tiếng-việt) &nbsp;|&nbsp; [![🇬🇧 English](#-english-version)](#-english-version)
+
+</div>
 
 ---
 
-## Công Nghệ Sử Dụng
+## 🇻🇳 Phiên Bản Tiếng Việt
+
+> Ứng dụng web Full-stack chuyên nghiệp giúp tự động hóa quy trình số hóa và soạn thảo đề thi, tích hợp AI nhận diện ảnh (OCR) và hỗ trợ đa dạng loại câu hỏi.
+
+### Công Nghệ Sử Dụng
 
 | Lớp | Công nghệ |
 |---|---|
@@ -15,9 +25,7 @@
 | **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
 | **Lưu trữ ảnh** | Cloudinary / Firebase Storage _(planned)_ |
 
----
-
-## Cấu Trúc Thư Mục
+### Cấu Trúc Thư Mục
 
 ```text
 exam-bank-system/
@@ -40,8 +48,8 @@ exam-bank-system/
 │   │
 │   ├── question/                 ← Các form nhập liệu câu hỏi
 │   │   ├── QuestionForm.jsx      ← Form tổng hợp (nội dung + ảnh + đáp án + kết quả)
-│   │   ├── MultipleChoiceForm.jsx← Form trắc nghiệm (A/B/C/D + màu accent + upload ảnh/đáp án)
-│   │   ├── TrueFalseForm.jsx     ← Form đúng/sai (danh sách mệnh đề + upload ảnh/mệnh đề)
+│   │   ├── MultipleChoiceForm.jsx← Form trắc nghiệm (A/B/C/D + màu accent + upload ảnh)
+│   │   ├── TrueFalseForm.jsx     ← Form đúng/sai (mệnh đề động + upload ảnh)
 │   │   └── EssayForm.jsx         ← Form tự luận
 │   │
 │   ├── shared/                   ← Components dùng chung
@@ -49,87 +57,62 @@ exam-bank-system/
 │   │   └── theme-provider.jsx    ← Context provider cho next-themes
 │   │
 │   └── ui/                       ← shadcn/ui components (tùy chỉnh)
-│       ├── select.tsx            ← Custom Select: check icon trái, backdrop-blur, rounded-xl
-│       ├── input.tsx             ← Input chuẩn h-10 (đồng bộ chiều cao với Select)
-│       └── ...                   ← button, card, textarea, radio-group, ...
+│       ├── select.tsx            ← Custom Select: check icon trái, backdrop-blur
+│       ├── input.tsx             ← Input chuẩn h-10 (đồng bộ với Select)
+│       └── ...
 │
 ├── lib/
 │   └── firebase.js               ← Cấu hình Firebase Client SDK
 │
 ├── .env.local                    ← API Keys (không commit)
-├── .gitignore
-├── components.json               ← Cấu hình shadcn/ui
-├── next.config.ts
-├── package.json
 └── README.md
 ```
 
----
+### Tính Năng Đã Hoàn Thành
 
-## Tính Năng Đã Hoàn Thành
+**Layout & Điều hướng**
+- [x] Header sticky với logo, toggle sidebar và chuyển đổi theme
+- [x] Sidebar responsive: thu gọn (icon-only) trên desktop, overlay trên mobile
+- [x] Footer với thông tin thương hiệu và liên kết liên hệ
+- [x] Dark / Light mode toàn ứng dụng
 
-### Layout & Navigation
-- [x] **Header** sticky với logo, nút toggle sidebar và ThemeToggle
-- [x] **Sidebar** responsive: thu gọn (icon-only) trên desktop, overlay trên mobile
-- [x] **Footer** với thông tin thương hiệu và liên kết liên hệ
-- [x] **Dark / Light mode** toàn bộ ứng dụng qua `next-themes`
+**Trang Soạn Thảo Đề Thi**
+- [x] Cấu hình đề thi: Tiêu đề, Năm học, Cấp học, Môn học, Tỉnh thành, Thời gian
+- [x] Quản lý danh sách câu hỏi: thêm, xóa, thu gọn/mở rộng
+- [x] Nút chèn câu hỏi duy nhất ở cuối danh sách
 
-### Trang Soạn Thảo Đề Thi (`/create-question`)
-- [x] **Cấu hình đề thi**: Tiêu đề, Năm học, Cấp học/Lớp, Môn học (phụ thuộc cấp), Tỉnh thành, Thời gian, Số câu hỏi
-- [x] **Quản lý danh sách câu hỏi**: Thêm, xóa, thu gọn/mở rộng từng câu
-- [x] **Nút chèn câu** duy nhất ở cuối — luôn thêm vào cuối danh sách, hiển thị số câu tiếp theo chính xác
-- [x] **Nút lưu đề thi** ở dưới cùng (đóng gói payload JSON hoàn chỉnh)
+**Form Câu Hỏi**
+- [x] **Trắc nghiệm**: 4 đáp án A/B/C/D với màu accent riêng + upload ảnh từng đáp án
+- [x] **Đúng / Sai**: Mệnh đề động + toggle ✓/✗ + màu nền theo trạng thái + upload ảnh
+- [x] **Tự luận**: Ô nhập hướng dẫn chấm / lời giải gợi ý
+- [x] OCR bằng AI: Dán ảnh → Gemini Vision → Auto-fill nội dung
+- [x] Upload ảnh minh họa cho đề bài và đáp án
 
-### Form Câu Hỏi
-- [x] **Trắc nghiệm** (MultipleChoiceForm):
-  - 4 đáp án A/B/C/D với màu accent riêng biệt khi được chọn (Blue/Violet/Amber/Emerald)
-  - Upload ảnh minh họa riêng cho **từng đáp án**
-  - Preview ảnh inline + nút xóa/thay ảnh
-- [x] **Đúng / Sai** (TrueFalseForm):
-  - Danh sách mệnh đề động (thêm/xóa)
-  - Nút toggle ✓/✗ với màu xanh/đỏ tương ứng
-  - Upload ảnh minh họa riêng cho **từng mệnh đề**
-  - Màu nền hàng thay đổi theo trạng thái Đúng/Sai
-- [x] **Tự luận** (EssayForm): Ô nhập hướng dẫn chấm/lời giải gợi ý
-- [x] **Ảnh minh họa đề bài**: Upload ảnh cho nội dung câu hỏi (dán từ clipboard hoặc chọn file)
-- [x] **OCR bằng AI**: Dán ảnh vào ô nội dung → tự động gửi Gemini Vision → auto-fill đề bài & đáp án
-- [x] **Kết quả / Đáp số đúng**: Ô nhập cuối form + ảnh sơ đồ minh họa đáp án
+**UI/UX**
+- [x] Custom Select/Dropdown: check icon bên trái, backdrop-blur, rounded-xl
+- [x] Chiều cao field đồng nhất: `Input h-10 = SelectTrigger h-10`
+- [x] Padding nội dung thoáng trong các ô đáp án/mệnh đề
 
-### UI/UX
-- [x] **Custom Select/Dropdown**: Check icon bên trái, backdrop-blur, `rounded-xl`, `shadow-xl`
-- [x] **Chiều cao field đồng nhất**: Input `h-10` = SelectTrigger `h-10` — căn thẳng hàng pixel-perfect
-- [x] **Padding nội dung**: Text trong ô đáp án/mệnh đề có khoảng thụt vào `px-2` thoải mái
-- [x] **Responsive**: Mobile-first, Sidebar overlay trên màn hình nhỏ
-
----
-
-## Cài Đặt & Chạy Dự Án
-
-### Yêu cầu
-- Node.js 18+
-- npm hoặc yarn
-
-### Cài đặt
+### Cài Đặt & Chạy
 
 ```bash
-# Clone repo
+# Clone repository
 git clone https://github.com/CMTran2005/Exam-Bank-System.git
 cd Exam-Bank-System
 
 # Cài dependencies
 npm install
+
+# Chạy dev server
+npm run dev
 ```
 
-### Cấu hình biến môi trường
-
-Tạo file `.env.local` tại gốc dự án:
+Tạo file `.env.local`:
 
 ```env
-# Google Gemini AI
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_gemini_api_key
 
-# Firebase
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+NEXT_PUBLIC_FIREBASE_API_KEY=your_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
@@ -137,19 +120,10 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### Chạy môi trường phát triển
+### Mô Hình Dữ Liệu (Firestore)
 
-```bash
-npm run dev
-```
-
-Mở [http://localhost:3000](http://localhost:3000) trên trình duyệt.
-
----
-
-## Mô Hình Dữ Liệu (Firestore JSON)
-
-### Câu hỏi Trắc nghiệm
+<details>
+<summary><b>Trắc nghiệm</b></summary>
 
 ```json
 {
@@ -160,89 +134,230 @@ Mở [http://localhost:3000](http://localhost:3000) trên trình duyệt.
   "options": ["1", "2", "3", "4"],
   "options_images": ["", "", "data:image/png;base64,...", ""],
   "correct_answer": "C",
-  "answer_image": null,
-  "metadata": {
-    "subject": "Toán học",
-    "grade": "12",
-    "year": "2025-2026",
-    "province": "Hà Nội"
-  }
+  "answer_image": null
 }
 ```
+</details>
 
-### Câu hỏi Đúng / Sai
+<details>
+<summary><b>Đúng / Sai</b></summary>
 
 ```json
 {
   "id": "q_002",
   "type": "true_false",
-  "content": "Cho bảng số liệu sau. Xác định tính đúng/sai của các mệnh đề:",
-  "image": null,
+  "content": "Xác định tính đúng/sai của các mệnh đề:",
   "statements": [
-    { "text": "Trung bình cộng của dãy số là 7.5", "correct": true, "image": "" },
-    { "text": "Phương sai của dãy số là 4", "correct": false, "image": "" }
+    { "text": "Trung bình cộng là 7.5", "correct": true, "image": "" },
+    { "text": "Phương sai là 4", "correct": false, "image": "" }
   ],
-  "correct_answer": "Đúng, Sai",
-  "answer_image": null
+  "correct_answer": "Đúng, Sai"
 }
 ```
+</details>
 
-### Câu hỏi Tự luận
+<details>
+<summary><b>Tự luận</b></summary>
 
 ```json
 {
   "id": "q_003",
   "type": "essay",
-  "content": "Chứng minh rằng tổng các góc trong một tam giác bằng 180°.",
-  "image": null,
+  "content": "Chứng minh tổng các góc trong một tam giác bằng 180°.",
   "suggested_solution": "Vẽ đường thẳng d song song với BC đi qua A...",
-  "correct_answer": "",
+  "correct_answer": ""
+}
+```
+</details>
+
+### Lộ Trình Phát Triển
+
+| Giai đoạn | Nội dung | Trạng thái |
+|---|---|---|
+| **1 — Nền móng** | Next.js + TailwindCSS + shadcn/ui + Firebase + Dark/Light mode | ✅ Hoàn thành |
+| **2 — Soạn thảo** | Form động 3 loại câu + OCR Gemini + Upload ảnh per-option | ✅ Hoàn thành |
+| **3 — Backend** | Lưu Firestore + Cloud Storage + Firebase Auth | 🔄 Đang phát triển |
+| **4 — Ngân hàng** | Dashboard + bộ lọc + QuestionPreview + KaTeX | 📋 Kế hoạch |
+| **5 — Tối ưu** | Skeleton loading + Toast + MathLive + Kiểm thử E2E | 📋 Kế hoạch |
+
+---
+
+## 🇬🇧 English Version
+
+> A professional Full-stack web application for automating exam digitization and question management, with AI-powered image recognition (OCR) supporting multiple question types.
+
+### Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Framework** | Next.js 15+ (App Router) — Full-stack with API Routes |
+| **UI / Styling** | TailwindCSS + shadcn/ui (Radix UI primitives) |
+| **Database** | Firebase Firestore |
+| **Auth** | Firebase Authentication |
+| **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
+| **Image Storage** | Cloudinary / Firebase Storage _(planned)_ |
+
+### Project Structure
+
+```text
+exam-bank-system/
+├── app/
+│   ├── api/
+│   │   └── ocr/
+│   │       └── route.js          ← API Route: receives Base64 image, calls Gemini, returns JSON
+│   ├── create-question/
+│   │   └── page.js               ← Exam editor page (main feature)
+│   ├── globals.css               ← CSS Variables for Dark/Light theme
+│   ├── layout.tsx                ← Root layout
+│   └── page.tsx                  ← Home page
+│
+├── components/
+│   ├── layout/                   ← App shell components
+│   │   ├── AppLayout.jsx         ← Wrapper: Header + Sidebar + main content
+│   │   ├── Header.jsx            ← Sticky header (logo, menu toggle, theme switcher)
+│   │   ├── Sidebar.jsx           ← Left navigation (collapsible, responsive)
+│   │   └── Footer.jsx            ← Footer
+│   │
+│   ├── question/                 ← Question input forms
+│   │   ├── QuestionForm.jsx      ← Master form (content + image + answers + result)
+│   │   ├── MultipleChoiceForm.jsx← Multiple choice form (A/B/C/D + color accent + per-option image)
+│   │   ├── TrueFalseForm.jsx     ← True/False form (dynamic statements + per-statement image)
+│   │   └── EssayForm.jsx         ← Essay form
+│   │
+│   ├── shared/                   ← Shared components
+│   │   ├── ThemeToggle.jsx       ← Dark/Light mode toggle button
+│   │   └── theme-provider.jsx    ← next-themes context provider
+│   │
+│   └── ui/                       ← Customized shadcn/ui components
+│       ├── select.tsx            ← Custom Select: left-aligned check icon, backdrop-blur
+│       ├── input.tsx             ← Standard Input with h-10 (synced with Select height)
+│       └── ...
+│
+├── lib/
+│   └── firebase.js               ← Firebase Client SDK configuration
+│
+├── .env.local                    ← API Keys (not committed)
+└── README.md
+```
+
+### Completed Features
+
+**Layout & Navigation**
+- [x] Sticky header with logo, sidebar toggle, and theme switcher
+- [x] Responsive sidebar: icon-only on desktop, overlay on mobile
+- [x] Footer with branding and contact links
+- [x] App-wide Dark / Light mode
+
+**Exam Editor Page**
+- [x] Exam configuration: Title, Academic Year, Grade, Subject, Province, Duration
+- [x] Question list management: add, delete, collapse/expand
+- [x] Single insert button at the bottom of the list
+
+**Question Forms**
+- [x] **Multiple Choice**: A/B/C/D with unique color accents + per-option image upload
+- [x] **True/False**: Dynamic statements + ✓/✗ toggle + colored rows + per-statement image
+- [x] **Essay**: Marking guide / suggested solution field
+- [x] AI OCR: Paste image → Gemini Vision → Auto-fill content
+- [x] Image upload for question content and answer illustrations
+
+**UI/UX**
+- [x] Custom Select/Dropdown: left-aligned check icon, backdrop-blur, rounded-xl
+- [x] Uniform field height: `Input h-10 = SelectTrigger h-10`
+- [x] Comfortable padding inside answer option and statement rows
+
+### Installation & Setup
+
+```bash
+# Clone repository
+git clone https://github.com/CMTran2005/Exam-Bank-System.git
+cd Exam-Bank-System
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+Create `.env.local`:
+
+```env
+GEMINI_API_KEY=your_gemini_api_key
+
+NEXT_PUBLIC_FIREBASE_API_KEY=your_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
+
+### Data Models (Firestore)
+
+<details>
+<summary><b>Multiple Choice</b></summary>
+
+```json
+{
+  "id": "q_001",
+  "type": "multiple_choice",
+  "content": "Given the graph of a function, find the number of solutions of $f(x) = 0$.",
+  "image": "data:image/png;base64,...",
+  "options": ["1", "2", "3", "4"],
+  "options_images": ["", "", "data:image/png;base64,...", ""],
+  "correct_answer": "C",
   "answer_image": null
 }
 ```
+</details>
+
+<details>
+<summary><b>True / False</b></summary>
+
+```json
+{
+  "id": "q_002",
+  "type": "true_false",
+  "content": "Determine whether each statement is True or False:",
+  "statements": [
+    { "text": "The arithmetic mean is 7.5", "correct": true, "image": "" },
+    { "text": "The variance is 4", "correct": false, "image": "" }
+  ],
+  "correct_answer": "True, False"
+}
+```
+</details>
+
+<details>
+<summary><b>Essay</b></summary>
+
+```json
+{
+  "id": "q_003",
+  "type": "essay",
+  "content": "Prove that the sum of angles in a triangle equals 180°.",
+  "suggested_solution": "Draw a line d through A parallel to BC...",
+  "correct_answer": ""
+}
+```
+</details>
+
+### Roadmap
+
+| Phase | Description | Status |
+|---|---|---|
+| **1 — Foundation** | Next.js + TailwindCSS + shadcn/ui + Firebase + Dark/Light mode | ✅ Done |
+| **2 — Editor** | Dynamic forms for 3 question types + Gemini OCR + per-option image upload | ✅ Done |
+| **3 — Backend** | Save to Firestore + Cloud Storage + Firebase Auth | 🔄 In Progress |
+| **4 — Question Bank** | Dashboard + filters + QuestionPreview + KaTeX render | 📋 Planned |
+| **5 — Polish** | Skeleton loading + Toast notifications + MathLive + E2E testing | 📋 Planned |
 
 ---
 
-## Lộ Trình Phát Triển (Roadmap)
+<div align="center">
 
-### ✅ Giai đoạn 1 — Nền móng (Hoàn thành)
-- Khởi tạo dự án Next.js với TailwindCSS + shadcn/ui
-- Cấu hình Firebase, thiết lập `.env.local`
-- Xây dựng layout cơ bản (Header, Sidebar, Footer)
-- Tích hợp Dark/Light mode
+**Made with ❤️ by [CMTran2005](https://github.com/CMTran2005)**
 
-### ✅ Giai đoạn 2 — Giao diện Soạn thảo (Hoàn thành)
-- Trang `/create-question` với cấu hình đề thi
-- Form động cho 3 loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận)
-- Tích hợp OCR: Dán ảnh → Gemini Vision → Auto-fill
-- Upload ảnh minh họa per-option và per-statement
+[📧 cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) &nbsp;|&nbsp; [🐙 GitHub](https://github.com/CMTran2005/Exam-Bank-System)
 
-### 🔄 Giai đoạn 3 — Tích hợp Backend (Đang phát triển)
-- [ ] Lưu đề thi hoàn chỉnh lên Firestore
-- [ ] Upload ảnh Base64 lên Cloud Storage (Firebase / Cloudinary)
-- [ ] Firebase Authentication (đăng nhập/đăng ký)
-
-### 📋 Giai đoạn 4 — Ngân hàng câu hỏi
-- [ ] Trang `/dashboard` hiển thị danh sách đề thi đã lưu
-- [ ] Bộ lọc: Môn học, Khối lớp, Năm học, Tỉnh thành, Loại câu hỏi
-- [ ] Component `QuestionPreview.jsx` render LaTeX bằng KaTeX
-
-### 📋 Giai đoạn 5 — Tối ưu & Kiểm thử
-- [ ] Skeleton loading cho danh sách ngân hàng
-- [ ] Toast notification thông báo trạng thái
-- [ ] Tích hợp MathLive cho nhập công thức trực quan
-- [ ] Kiểm thử E2E đầy đủ các luồng
-
----
-
-## Đóng Góp
-
-Pull requests và issues luôn được chào đón. Vui lòng mở Issue để thảo luận trước khi thực hiện thay đổi lớn.
-
----
-
-## Liên Hệ
-
-**Tác giả:** CMTran2005  
-**Email:** cmtran2005@gmail.com  
-**GitHub:** [CMTran2005/Exam-Bank-System](https://github.com/CMTran2005/Exam-Bank-System)
+</div>
