@@ -1,16 +1,17 @@
 <div align="center">
 
-# 📚 Exam Bank System — Hệ Thống Ngân Hàng Câu Hỏi
+# Exam Bank System — Hệ Thống Ngân Hàng Câu Hỏi
 
-**Choose your language / Chọn ngôn ngữ:**
-
-[![🇻🇳 Tiếng Việt](#-phiên-bản-tiếng-việt)](##-phiên-bản-tiếng-việt) &nbsp;|&nbsp; [![🇬🇧 English](#-english-version)](#-english-version)
+**Language / Ngôn Ngữ:** 
+[Tiếng Việt](#vietnamese) | [English](#english)
 
 </div>
 
 ---
 
-## 🇻🇳 Phiên Bản Tiếng Việt
+<a id="vietnamese"></a>
+
+## Tiếng Việt
 
 > Ứng dụng web Full-stack chuyên nghiệp giúp tự động hóa quy trình số hóa và soạn thảo đề thi, tích hợp AI nhận diện ảnh (OCR) và hỗ trợ đa dạng loại câu hỏi.
 
@@ -23,7 +24,7 @@
 | **Database** | Firebase Firestore |
 | **Auth** | Firebase Authentication |
 | **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
-| **Lưu trữ ảnh** | Cloudinary / Firebase Storage _(planned)_ |
+| **Lưu trữ ảnh** | Cloudinary |
 
 ### Cấu Trúc Thư Mục
 
@@ -174,15 +175,17 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 | Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
-| **1 — Nền móng** | Next.js + TailwindCSS + shadcn/ui + Firebase + Dark/Light mode | ✅ Hoàn thành |
-| **2 — Soạn thảo** | Form động 3 loại câu + OCR Gemini + Upload ảnh per-option | ✅ Hoàn thành |
-| **3 — Backend** | Lưu Firestore + Cloud Storage + Firebase Auth | 🔄 Đang phát triển |
-| **4 — Ngân hàng** | Dashboard + bộ lọc + QuestionPreview + KaTeX | 📋 Kế hoạch |
-| **5 — Tối ưu** | Skeleton loading + Toast + MathLive + Kiểm thử E2E | 📋 Kế hoạch |
+| **1 — Nền móng** | Next.js + TailwindCSS + shadcn/ui + Firebase + Dark/Light mode | Hoàn thành |
+| **2 — Soạn thảo** | Form động 3 loại câu + OCR Gemini + Upload ảnh per-option | Hoàn thành |
+| **3 — Backend** | Lưu Firestore + Cloud Storage + Firebase Auth | Đang phát triển |
+| **4 — Ngân hàng** | Dashboard + bộ lọc + QuestionPreview + KaTeX | Kế hoạch |
+| **5 — Tối ưu** | Skeleton loading + Toast + MathLive + Kiểm thử E2E | Kế hoạch |
 
 ---
 
-## 🇬🇧 English Version
+<a id="english"></a>
+
+## English
 
 > A professional Full-stack web application for automating exam digitization and question management, with AI-powered image recognition (OCR) supporting multiple question types.
 
@@ -195,7 +198,7 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 | **Database** | Firebase Firestore |
 | **Auth** | Firebase Authentication |
 | **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
-| **Image Storage** | Cloudinary / Firebase Storage _(planned)_ |
+| **Image Storage** | Cloudinary |
 
 ### Project Structure
 
@@ -346,18 +349,18 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 | Phase | Description | Status |
 |---|---|---|
-| **1 — Foundation** | Next.js + TailwindCSS + shadcn/ui + Firebase + Dark/Light mode | ✅ Done |
-| **2 — Editor** | Dynamic forms for 3 question types + Gemini OCR + per-option image upload | ✅ Done |
-| **3 — Backend** | Save to Firestore + Cloud Storage + Firebase Auth | 🔄 In Progress |
-| **4 — Question Bank** | Dashboard + filters + QuestionPreview + KaTeX render | 📋 Planned |
-| **5 — Polish** | Skeleton loading + Toast notifications + MathLive + E2E testing | 📋 Planned |
+| **1 — Foundation** | Next.js + TailwindCSS + shadcn/ui + Firebase + Dark/Light mode | Done |
+| **2 — Editor** | Dynamic forms for 3 question types + Gemini OCR + per-option image upload | Done |
+| **3 — Backend** | Save to Firestore + Cloud Storage + Firebase Auth | In Progress |
+| **4 — Question Bank** | Dashboard + filters + QuestionPreview + KaTeX render | Planned |
+| **5 — Polish** | Skeleton loading + Toast notifications + MathLive + E2E testing | Planned |
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by [CMTran2005](https://github.com/CMTran2005)**
+**Made by [CMTran2005](https://github.com/CMTran2005)**
 
-[📧 cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) &nbsp;|&nbsp; [🐙 GitHub](https://github.com/CMTran2005/Exam-Bank-System)
+[cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) &nbsp;|&nbsp; [GitHub](https://github.com/CMTran2005/Exam-Bank-System)
 
 </div>

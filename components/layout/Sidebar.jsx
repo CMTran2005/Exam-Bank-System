@@ -10,6 +10,7 @@ import {
     BarChart2,
     Settings,
     ChevronRight,
+    FileText,
 } from "lucide-react";
 
 const navGroups = [
@@ -18,6 +19,7 @@ const navGroups = [
         items: [
             { href: "/", icon: Home, label: "Trang Chủ" },
             { href: "/create-question", icon: FilePlus2, label: "Tạo Đề Thi" },
+            { href: "/my-exams", icon: FileText, label: "Đề Thi Của Tôi" },
             { href: "/questions", icon: Library, label: "Ngân Hàng Câu Hỏi" },
         ],
     },
@@ -47,19 +49,17 @@ export default function Sidebar({ isOpen, isMobile = false }) {
                     : isOpen ? "w-60" : "w-16"
             )}
         >
-            <div className={cn(
-                "h-full flex flex-col",
-                isMobile ? "w-64" : isOpen ? "w-60" : "w-16"
-            )}>
+            <div className="h-full flex flex-col w-full overflow-x-hidden">
 
-                <nav className="flex flex-col gap-5 px-2 py-4 flex-1 overflow-y-auto">
+                <nav className="flex flex-col gap-5 px-2 py-4 flex-1 overflow-y-auto overflow-x-hidden">
                     {navGroups.map((group) => (
                         <div key={group.label}>
-                            {(isOpen || isMobile) && (
-                                <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40 select-none">
-                                    {group.label}
-                                </p>
-                            )}
+                            <p className={cn(
+                                "px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40 select-none transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden",
+                                (isOpen || isMobile) ? "opacity-100 h-4 mb-1.5" : "opacity-0 h-0 mb-0"
+                            )}>
+                                {group.label}
+                            </p>
 
                             <div className="flex flex-col gap-0.5">
                                 {group.items.map((item) => {
@@ -100,16 +100,17 @@ export default function Sidebar({ isOpen, isMobile = false }) {
                     ))}
                 </nav>
 
-                {(isOpen || isMobile) && (
-                    <div className="px-3 pb-4 shrink-0">
-                        <div className="rounded-lg bg-sidebar-accent/50 p-3 text-center">
-                            <p className="text-[10px] text-sidebar-foreground/50 leading-relaxed">
-                                Ngân Hàng Câu Hỏi<br />
-                                <span className="font-semibold">v1.0.0</span>
-                            </p>
-                        </div>
+                <div className={cn(
+                    "px-3 pb-4 shrink-0 transition-all duration-300 ease-in-out overflow-hidden",
+                    (isOpen || isMobile) ? "opacity-100 h-[64px]" : "opacity-0 h-0"
+                )}>
+                    <div className="rounded-lg bg-sidebar-accent/50 p-3 text-center whitespace-nowrap">
+                        <p className="text-[10px] text-sidebar-foreground/50 leading-relaxed">
+                            Ngân Hàng Câu Hỏi<br />
+                            <span className="font-semibold">v1.0.0</span>
+                        </p>
                     </div>
-                )}
+                </div>
 
             </div>
         </aside>

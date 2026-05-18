@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import QuestionForm from "@/components/question/QuestionForm";
+import QuestionTypePicker from "@/components/question/QuestionTypePicker";
+import { createDefaultSubQuestion } from "@/components/question/GroupQuestionForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -33,23 +36,50 @@ const GRADE_SUBJECTS_MAP = {
 
 const GRADES = Object.keys(GRADE_SUBJECTS_MAP);
 
-const createDefaultQuestion = () => ({
-    id: Date.now() + Math.random(),
-    type: "multiple_choice",
-    content: "",
-    options: ["", "", "", ""],
-    options_images: ["", "", "", ""],
-    correct_answer: "A",
-    statements: [{ text: "", correct: true }],
-    suggested_solution: "",
-    points: "1.0",
-    images: [],
-    final_answer: "",
-    answer_images: [],
-    isCollapsed: false,
-});
+const TYPE_CONFIG = {
+    multiple_choice: { label: "Trắc nghiệm Đơn", bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300", border: "border-blue-300 dark:border-blue-700" },
+    group_multiple_choice: { label: "Trắc nghiệm Nhóm", bg: "bg-violet-100 dark:bg-violet-900/40", text: "text-violet-700 dark:text-violet-300", border: "border-violet-300 dark:border-violet-700" },
+    true_false: { label: "Đúng / Sai Đơn", bg: "bg-emerald-100 dark:bg-emerald-900/40", text: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-300 dark:border-emerald-700" },
+    group_true_false: { label: "Đúng / Sai Nhóm", bg: "bg-teal-100 dark:bg-teal-900/40", text: "text-teal-700 dark:text-teal-300", border: "border-teal-300 dark:border-teal-700" },
+    essay: { label: "Tự luận Đơn", bg: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-700 dark:text-amber-300", border: "border-amber-300 dark:border-amber-700" },
+    group_essay: { label: "Tự luận Nhóm", bg: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-700 dark:text-orange-300", border: "border-orange-300 dark:border-orange-700" },
+};
+
+const createDefaultQuestion = (type = "multiple_choice") => {
+    const isGroup = type.startsWith("group_");
+    const baseType = isGroup ? type.replace("group_", "") : type;
+
+    const base = {
+        id: Date.now() + Math.random(),
+        type,
+        content: "",
+        images: [],
+        isCollapsed: false,
+    };
+
+    if (isGroup) {
+        return {
+            ...base,
+            subQuestions: [createDefaultSubQuestion(baseType)],
+        };
+    }
+
+    return {
+        ...base,
+        options: ["", "", "", ""],
+        options_images: ["", "", "", ""],
+        correct_answer: "A",
+        statements: [{ text: "", correct: true }],
+        suggested_solution: "",
+        points: "1.0",
+        final_answer: "",
+        answer_images: [],
+    };
+};
 
 export default function CreateExamPage() {
+    const router = useRouter();
+    const [editId, setEditId] = useState(null);
 
     const [examInfo, setExamInfo] = useState({
         title: "",
@@ -60,23 +90,42 @@ export default function CreateExamPage() {
         duration: "",
     });
 
-    const [questionsList, setQuestionsList] = useState([createDefaultQuestion()]);
+    const [questionsList, setQuestionsList] = useState([]);
+    const [showPicker, setShowPicker] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get("editId");
+            if (id) {
+                setEditId(id);
+                const savedExams = JSON.parse(localStorage.getItem("eb_exams") || "[]");
+                const examToEdit = savedExams.find((e) => String(e.id) === String(id));
+                if (examToEdit) {
+                    setExamInfo({
+                        title: examToEdit.title || "",
+                        year: examToEdit.year || "",
+                        grade: examToEdit.grade || "",
+                        subject: examToEdit.subject || "",
+                        province: examToEdit.province || "",
+                        duration: examToEdit.duration !== undefined ? String(examToEdit.duration) : "",
+                    });
+                    setQuestionsList(examToEdit.questions || []);
+                }
+            }
+        }
+    }, []);
 
     const handleGradeChange = (selectedGrade) => {
         setExamInfo({ ...examInfo, grade: selectedGrade, subject: "" });
     };
 
-    const insertQuestionAfter = (index) => {
-        const newList = [...questionsList];
-        newList.splice(index + 1, 0, createDefaultQuestion());
-        setQuestionsList(newList);
+    const addQuestion = (type) => {
+        setQuestionsList((prev) => [...prev, createDefaultQuestion(type)]);
+        setShowPicker(false);
     };
 
     const removeQuestion = (id) => {
-        if (questionsList.length === 1) {
-            alert("Đề thi phải có ít nhất một câu hỏi!");
-            return;
-        }
         setQuestionsList(questionsList.filter((q) => q.id !== id));
     };
 
@@ -93,14 +142,44 @@ export default function CreateExamPage() {
     };
 
     const handleSaveExam = () => {
+        if (!examInfo.title.trim()) {
+            alert("Vui lòng nhập Tiêu đề đề thi.");
+            return;
+        }
+        if (questionsList.length === 0) {
+            alert("Vui lòng thêm ít nhất một câu hỏi.");
+            return;
+        }
+
+        const savedExams = JSON.parse(localStorage.getItem("eb_exams") || "[]");
+
         const finalExamPayload = {
-            ...examInfo,
-            duration: Number(examInfo.duration),
+            id: editId || String(Date.now()),
+            title: examInfo.title,
+            year: examInfo.year,
+            grade: examInfo.grade,
+            subject: examInfo.subject,
+            province: examInfo.province,
+            duration: Number(examInfo.duration) || 90,
             total_questions: questionsList.length,
             questions: questionsList.map(({ isCollapsed, ...rest }) => rest),
+            updatedAt: new Date().toISOString(),
         };
-        console.log("🔥 ĐỀ THI HOÀN CHỈNH SẴN SÀNG LƯU FIRESTORE:", finalExamPayload);
-        alert(`Đã đóng gói thành công đề thi gồm ${questionsList.length} câu hỏi!`);
+
+        if (editId) {
+            const index = savedExams.findIndex((e) => String(e.id) === String(editId));
+            if (index !== -1) {
+                savedExams[index] = finalExamPayload;
+            } else {
+                savedExams.push(finalExamPayload);
+            }
+        } else {
+            savedExams.push(finalExamPayload);
+        }
+
+        localStorage.setItem("eb_exams", JSON.stringify(savedExams));
+        alert(editId ? "Cập nhật đề thi thành công!" : "Lưu đề thi mới thành công!");
+        router.push("/my-exams");
     };
 
     return (
@@ -210,10 +289,13 @@ export default function CreateExamPage() {
                     <div key={question.id}>
 
                         <div className="flex justify-between items-center bg-muted px-4 py-2 rounded-t-lg border border-border shadow-sm">
-                            <div className="flex items-center gap-3 min-w-0">
-                                <span className="font-bold text-foreground text-sm shrink-0">
-                                    CÂU {index + 1}
-                                </span>
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <Input
+                                    value={question.number_label !== undefined ? question.number_label : `CÂU ${index + 1}`}
+                                    onChange={(e) => updateQuestionData(question.id, { number_label: e.target.value })}
+                                    className="w-36 h-7 text-xs font-bold text-foreground bg-transparent border-dashed border-muted-foreground/30 focus-visible:ring-1 text-left px-1.5 shadow-none focus-visible:border-primary shrink-0"
+                                    placeholder="Ký hiệu / Số câu..."
+                                />
                                 {question.isCollapsed && question.content && (
                                     <span className="text-xs text-muted-foreground truncate italic hidden sm:block">
                                         — {question.content}
@@ -221,28 +303,38 @@ export default function CreateExamPage() {
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-1 shrink-0">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => toggleCollapse(question.id)}
-                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                    title={question.isCollapsed ? "Mở rộng" : "Thu gọn"}
-                                >
-                                    {question.isCollapsed
-                                        ? <ChevronDown className="w-4 h-4" />
-                                        : <ChevronUp className="w-4 h-4" />
-                                    }
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => removeQuestion(question.id)}
-                                    className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                    title="Xóa câu hỏi này"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
+                            <div className="flex items-center gap-3 shrink-0 ml-4">
+                                {(() => {
+                                    const typeConf = TYPE_CONFIG[question.type] || TYPE_CONFIG["multiple_choice"];
+                                    return (
+                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold border shrink-0 ${typeConf.bg} ${typeConf.text} ${typeConf.border}`}>
+                                            {typeConf.label}
+                                        </span>
+                                    );
+                                })()}
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => toggleCollapse(question.id)}
+                                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                        title={question.isCollapsed ? "Mở rộng" : "Thu gọn"}
+                                    >
+                                        {question.isCollapsed
+                                            ? <ChevronDown className="w-4 h-4" />
+                                            : <ChevronUp className="w-4 h-4" />
+                                        }
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeQuestion(question.id)}
+                                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                                        title="Xóa câu hỏi này"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
 
@@ -256,18 +348,27 @@ export default function CreateExamPage() {
                     </div>
                 ))}
 
-                <div className="flex justify-center pt-1">
-                    <Button
-                        onClick={() => insertQuestionAfter(questionsList.length - 1)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-medium text-xs border border-dashed border-blue-300 dark:border-blue-800 rounded-full px-6 py-2"
-                    >
-                        <Plus className="w-3.5 h-3.5 mr-1.5" />
-                        Chèn câu {questionsList.length + 1}
-                    </Button>
+                {/* Add question area */}
+                <div className="space-y-3 pt-1">
+                    {showPicker ? (
+                        <QuestionTypePicker
+                            onSelect={addQuestion}
+                            onCancel={() => setShowPicker(false)}
+                        />
+                    ) : (
+                        <div className="flex justify-center">
+                            <Button
+                                onClick={() => setShowPicker(true)}
+                                variant="ghost"
+                                size="sm"
+                                className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 font-medium text-xs border border-dashed border-blue-300 dark:border-blue-800 rounded-full px-6 py-2"
+                            >
+                                <Plus className="w-3.5 h-3.5 mr-1.5" />
+                                Thêm câu hỏi
+                            </Button>
+                        </div>
+                    )}
                 </div>
-
             </div>
 
             <div className="pt-4 pb-8 flex flex-col sm:flex-row items-center justify-center gap-3 border-t border-border">

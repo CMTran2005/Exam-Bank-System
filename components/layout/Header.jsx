@@ -1,11 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, Menu } from "lucide-react";
+import { BookOpen, Menu, User, LogOut, Settings2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Header({ onMenuToggle }) {
+    const { currentUser, logout } = useAuth();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+
+    const handleLogout = () => {
+        logout();
+        setDropdownOpen(false);
+    };
+
+    const getInitials = (name) => {
+        if (!name) return "U";
+        return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    };
+
     return (
         <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
             <div className="flex h-16 items-center gap-3 px-4">
@@ -32,11 +47,74 @@ export default function Header({ onMenuToggle }) {
 
                 <div className="flex-1" />
 
-                <div className="flex items-center gap-2">
-                    <span className="hidden md:block text-xs text-muted-foreground">
-                        Chào mừng bạn đến với hệ thống
-                    </span>
-                    <div className="h-5 w-px bg-border hidden md:block" />
+                <div className="flex items-center gap-3">
+                    {currentUser ? (
+                        <div className="relative">
+                            <button
+                                onClick={() => setDropdownOpen((prev) => !prev)}
+                                className="flex items-center gap-2 p-1.5 rounded-full hover:bg-accent transition-colors focus:outline-none"
+                            >
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-violet-600 text-xs font-bold text-primary-foreground shadow-sm">
+                                    {getInitials(currentUser.name)}
+                                </div>
+                                <span className="hidden md:block text-sm font-semibold text-foreground max-w-[120px] truncate">
+                                    {currentUser.name}
+                                </span>
+                                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden md:block" />
+                            </button>
+
+                            {dropdownOpen && (
+                                <>
+                                    <div
+                                        className="fixed inset-0 z-40"
+                                        onClick={() => setDropdownOpen(false)}
+                                    />
+                                    <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-lg ring-1 ring-black/5 z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150">
+                                        <div className="px-3 py-2 border-b border-border/60">
+                                            <p className="text-xs font-semibold text-muted-foreground">Tài khoản</p>
+                                            <p className="text-sm font-bold text-foreground truncate">{currentUser.name}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
+                                            <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300">
+                                                {currentUser.role === "admin" ? "Quản trị viên" : "Giáo viên"}
+                                            </span>
+                                        </div>
+                                        <div className="mt-1 space-y-0.5">
+                                            <Link
+                                                href="/settings"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                                            >
+                                                <Settings2 className="h-4 w-4" />
+                                                <span>Cài đặt hệ thống</span>
+                                            </Link>
+                                            <button
+                                                onClick={handleLogout}
+                                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                                            >
+                                                <LogOut className="h-4 w-4" />
+                                                <span>Đăng xuất</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <Link href="/login">
+                                <Button variant="ghost" size="sm" className="text-xs font-semibold text-foreground">
+                                    Đăng nhập
+                                </Button>
+                            </Link>
+                            <Link href="/register">
+                                <Button size="sm" className="text-xs font-bold shadow-sm bg-primary text-primary-foreground hover:bg-primary/95">
+                                    Đăng ký
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
+
+                    <div className="h-5 w-px bg-border hidden sm:block" />
                     <ThemeToggle />
                 </div>
             </div>
