@@ -1,9 +1,21 @@
+/**
+ * @file TrueFalseForm.jsx
+ * @description Biểu mẫu nhập liệu dành riêng cho Câu hỏi dạng "Đúng / Sai đơn".
+ * Hỗ trợ giáo viên nhập nội dung cho danh sách các mệnh đề, đánh dấu mệnh đề đó là Đúng hay Sai.
+ */
+
 "use client";
 
-import { Input } from "@/components/ui/input";
+import RichInput from "./RichInput";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, CheckCircle2, XCircle, ImagePlus, X } from "lucide-react";
+import LatexRenderer from "@/components/shared/LatexRenderer";
 
+/**
+ * Component chính của biểu mẫu Câu hỏi Đúng / Sai Đơn.
+ * @param {object} questionData - Trạng thái dữ liệu của câu hỏi
+ * @param {function} setQuestionData - Hàm cập nhật dữ liệu câu hỏi
+ */
 export default function TrueFalseForm({ questionData, setQuestionData }) {
 
     const handleStatementChange = (index, field, value) => {
@@ -52,33 +64,34 @@ export default function TrueFalseForm({ questionData, setQuestionData }) {
                 </Button>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
                 {questionData.statements.map((stmt, idx) => {
                     const hasImage = !!stmt.image;
                     return (
                         <div
                             key={idx}
-                            className={`rounded-lg border transition-all duration-150 ${stmt.correct
-                                ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20"
-                                : "border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/15"
+                            className={`rounded-lg border transition-all duration-150 overflow-hidden ${stmt.correct
+                                ? "border-emerald-200 dark:border-emerald-800 bg-emerald-50/20 dark:bg-emerald-950/10"
+                                : "border-red-200 dark:border-red-900 bg-red-50/15 dark:bg-red-950/5"
                                 }`}
                         >
-                            <div className="flex items-center gap-2 px-3 py-2.5">
+                            <div className="flex items-center gap-2.5 px-3 py-3">
                                 <span className="font-bold text-sm text-muted-foreground w-5 shrink-0 text-right">
                                     {idx + 1}.
                                 </span>
 
-                                <Input
+                                <RichInput
+                                    id={`stmt-input-${questionData.id}-${idx}`}
                                     placeholder={`Mệnh đề ${idx + 1}...`}
                                     value={stmt.text}
-                                    onChange={(e) => handleStatementChange(idx, "text", e.target.value)}
-                                    className="flex-1 bg-transparent border-0 shadow-none focus-visible:ring-0 px-2 h-9 font-medium placeholder:text-muted-foreground/60"
+                                    onChange={(val) => handleStatementChange(idx, "text", val)}
+                                    className="flex-1 bg-background"
                                 />
 
                                 {!hasImage && (
                                     <label
                                         title={`Thêm ảnh cho mệnh đề ${idx + 1}`}
-                                        className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-ring cursor-pointer transition-colors"
+                                        className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-ring cursor-pointer transition-colors bg-background dark:bg-slate-900/30"
                                     >
                                         <ImagePlus className="w-3.5 h-3.5" />
                                         <input
@@ -110,15 +123,26 @@ export default function TrueFalseForm({ questionData, setQuestionData }) {
                                         type="button"
                                         title="Xóa mệnh đề này"
                                         onClick={() => removeStatement(idx)}
-                                        className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                                        className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors bg-background dark:bg-slate-900/30"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 )}
                             </div>
 
+                            {stmt.text && stmt.text.includes("$") && (
+                                <div className="px-3.5 py-2.5 bg-slate-50/60 dark:bg-slate-950/40 border-t border-dashed border-border/60 text-xs text-muted-foreground flex items-center gap-2 select-none">
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200/50 dark:border-emerald-900/40 shrink-0">
+                                        Xem trước LaTeX
+                                    </span>
+                                    <div className="flex-1 overflow-x-auto py-0.5 leading-relaxed text-foreground font-medium">
+                                        <LatexRenderer text={stmt.text} />
+                                    </div>
+                                </div>
+                            )}
+
                             {hasImage && (
-                                <div className="px-3 pb-2 flex items-start gap-2">
+                                <div className="px-3.5 pb-3 pt-1 flex items-start gap-2.5">
                                     <div className="relative h-24 w-24 rounded-lg overflow-hidden border border-border bg-muted shrink-0 shadow-sm">
                                         <img
                                             src={stmt.image}
@@ -133,7 +157,7 @@ export default function TrueFalseForm({ questionData, setQuestionData }) {
                                             <X className="w-3 h-3" />
                                         </button>
                                     </div>
-                                    <label className="h-8 px-2 flex items-center gap-1 rounded-md border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-ring cursor-pointer transition-colors">
+                                    <label className="h-8 px-2 flex items-center gap-1 rounded-md border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-ring cursor-pointer transition-colors bg-background dark:bg-slate-900/30">
                                         <ImagePlus className="w-3 h-3" />
                                         Thay ảnh
                                         <input

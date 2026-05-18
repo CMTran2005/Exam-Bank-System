@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     FilePlus2,
@@ -15,13 +16,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-const stats = [
-    { label: "Tổng số câu hỏi", value: "1,248", change: "+12% tháng này", color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Đề thi đã xuất bản", value: "48", change: "+6 tuần này", color: "text-violet-500", bg: "bg-violet-500/10" },
-    { label: "Quét đề bằng AI (OCR)", value: "3,892", change: "Độ chính xác 98.4%", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-    { label: "Tài khoản giáo viên", value: "12", change: "Hoạt động tích cực", color: "text-amber-500", bg: "bg-amber-500/10" },
-];
+// Hàm tiện ích giới hạn thời gian chờ của một tác vụ Promise (tránh bị treo do mạng/DB chưa cấu hình)
+const runWithTimeout = (promise: Promise<any>, ms = 1000): Promise<any> => {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Hết thời gian chờ phản hồi Firebase")), ms)
+        )
+    ]);
+};
 
 const quickActions = [
     {
@@ -58,19 +64,107 @@ const quickActions = [
     }
 ];
 
-const recentActivities = [
-    { title: "Đã thêm câu hỏi Trắc nghiệm Toán 12", type: "Toán học", date: "10 phút trước", user: "Thầy Nguyễn Hữu Hoàng" },
-    { title: "Đã trích xuất thành công 5 câu tự luận Lý bằng AI", type: "Vật lý", date: "45 phút trước", user: "Cô Lê Thị Thanh" },
-    { title: "Xuất bản đề thi kiểm tra giữa kỳ 1 Hóa 11", type: "Hóa học", date: "2 giờ trước", user: "Thầy Trần Minh Đức" },
-    { title: "Đã hiệu chỉnh nhãn câu hỏi đề cương Sử 10", type: "Lịch sử", date: "1 ngày trước", user: "Cô Nguyễn An Bình" }
-];
-
 export default function Home() {
-    const { currentUser } = useAuth();
+    const { currentUser } = useAuth() as { currentUser: { uid: string; name: string } | null };
+    const [stats, setStats] = useState([
+        { label: "Tổng số câu hỏi", value: "0", change: "Hệ thống thời gian thực", color: "text-blue-500", bg: "bg-blue-500/10" },
+        { label: "Đề thi đã lưu trữ", value: "0", change: "Hệ thống thời gian thực", color: "text-violet-500", bg: "bg-violet-500/10" },
+        { label: "Môn học hoạt động", value: "0", change: "Hệ thống thời gian thực", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+        { label: "Tài khoản giáo viên", value: "0", change: "Hệ thống thời gian thực", color: "text-amber-500", bg: "bg-amber-500/10" },
+    ]);
+    const [activities, setActivities] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            if (typeof window !== "undefined") {
+                let examsList: any[] = [];
+                let teachersCount = 1;
+
+                // Thử load tất cả đề thi từ Firestore để làm thống kê chung hệ thống
+                try {
+                    const q = collection(db, "exams");
+                    const querySnapshot = await runWithTimeout(getDocs(q), 1500);
+                    querySnapshot.forEach((doc: any) => {
+                        examsList.push(doc.data());
+                    });
+                } catch (e: any) {
+                    console.warn("Bỏ qua lỗi Firestore khi tải đề thi trang chủ:", e.message);
+                }
+
+                // Thử load số lượng giáo viên thực tế từ Firestore
+                try {
+                    const usersSnapshot = await runWithTimeout(getDocs(collection(db, "users")), 1500);
+                    teachersCount = usersSnapshot.size || 1;
+                } catch (e: any) {
+                    console.warn("Bỏ qua lỗi Firestore khi tải số lượng giáo viên:", e.message);
+                }
+
+                // Fallback sang LocalStorage nếu không lấy được từ Firestore
+                if (examsList.length === 0) {
+                    const saved = localStorage.getItem("eb_exams");
+                    if (saved) {
+                        try {
+                            examsList = JSON.parse(saved);
+                        } catch (e) {
+                            examsList = [];
+                        }
+                    }
+                }
+
+                const liveExamsCount = examsList.length;
+                const liveQCount = examsList.reduce((sum, e) => {
+                    const count = e.total_questions || e.questions?.length || 0;
+                    return sum + Number(count);
+                }, 0);
+
+                // Tính số môn học độc bản
+                const uniqueSubjects = new Set(examsList.map(e => e.subject).filter(Boolean));
+                const subjectsCount = uniqueSubjects.size || 0;
+
+                setStats([
+                    { label: "Tổng số câu hỏi", value: String(liveQCount), change: "Từ tất cả giáo viên", color: "text-blue-500", bg: "bg-blue-500/10" },
+                    { label: "Đề thi đã lưu trữ", value: String(liveExamsCount), change: "Xuất bản toàn hệ thống", color: "text-violet-500", bg: "bg-violet-500/10" },
+                    { label: "Môn học hoạt động", value: String(subjectsCount), change: "Các môn học hiện có", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                    { label: "Tài khoản giáo viên", value: String(teachersCount), change: "Đang sử dụng hệ thống", color: "text-amber-500", bg: "bg-amber-500/10" },
+                ]);
+
+                // Sinh hoạt động thực tế dựa trên danh sách toàn bộ đề thi (không lọc theo cá nhân)
+                if (examsList.length > 0) {
+                    const sorted = [...examsList]
+                        .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
+                        .slice(0, 4);
+
+                    const formattedActs = sorted.map((exam) => {
+                        const qCount = exam.total_questions || exam.questions?.length || 0;
+                        let dateStr = "Gần đây";
+                        if (exam.updatedAt) {
+                            try {
+                                dateStr = new Date(exam.updatedAt).toLocaleDateString("vi-VN");
+                            } catch (err) {
+                                dateStr = "Gần đây";
+                            }
+                        }
+                        return {
+                            title: `Đã xuất bản đề thi ${exam.title || "Chưa đặt tên"} (${qCount} câu hỏi)`,
+                            type: exam.subject || "Chuyên ngành",
+                            date: dateStr,
+                            user: exam.author || "Giáo viên hệ thống"
+                        };
+                    });
+                    setActivities(formattedActs);
+                } else {
+                    setActivities([
+                        { title: "Hệ thống sẵn sàng đón nhận câu hỏi mới", type: "Hệ thống", date: "Hôm nay", user: "Admin" }
+                    ]);
+                }
+            }
+        };
+
+        fetchDashboardData();
+    }, [currentUser]);
 
     return (
         <div className="p-4 sm:p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
-            {/* Welcoming Banner Card */}
             <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-900 via-violet-950 to-indigo-950 text-white p-6 sm:p-8 md:p-10 shadow-2xl border border-white/10">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
                 <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-violet-600/10 rounded-full blur-[100px] pointer-events-none" />
@@ -104,7 +198,6 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Stats Dashboard Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {stats.map((stat) => (
                     <div key={stat.label} className="bg-card hover:bg-card/85 transition-colors border border-border shadow-sm rounded-2xl p-5 flex flex-col justify-between space-y-3">
@@ -125,7 +218,6 @@ export default function Home() {
                 ))}
             </div>
 
-            {/* Quick Actions Grid */}
             <div className="space-y-4">
                 <h2 className="text-xl font-black text-foreground tracking-tight flex items-center gap-2">
                     <span className="w-2.5 h-5 bg-primary rounded-full" />
@@ -152,41 +244,45 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* bottom content section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Recent activity log */}
                 <div className="lg:col-span-2 space-y-4">
                     <h2 className="text-xl font-black text-foreground tracking-tight flex items-center gap-2">
                         <span className="w-2.5 h-5 bg-violet-600 rounded-full" />
                         Hoạt Động Gần Đây
                     </h2>
                     <div className="bg-card border border-border shadow-sm rounded-2xl p-5 divide-y divide-border/60">
-                        {recentActivities.map((act, index) => (
-                            <div key={index} className={`flex items-start justify-between gap-4 py-3.5 ${index === 0 ? "pt-0" : ""} ${index === recentActivities.length - 1 ? "pb-0" : ""}`}>
-                                <div className="flex gap-3 min-w-0">
-                                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0 mt-0.5">
-                                        <Clock className="w-4 h-4" />
+                        {activities.length > 0 ? (
+                            activities.map((act, index) => (
+                                <div key={index} className={`flex items-start justify-between gap-4 py-3.5 ${index === 0 ? "pt-0" : ""} ${index === activities.length - 1 ? "pb-0" : ""}`}>
+                                    <div className="flex gap-3 min-w-0">
+                                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground shrink-0 mt-0.5">
+                                            <Clock className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-bold text-foreground truncate">{act.title}</p>
+                                            <p className="text-xs text-muted-foreground mt-0.5 flex items-center">
+                                                <UserCheck className="w-3.5 h-3.5 mr-1 text-primary shrink-0" />
+                                                {act.user}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-bold text-foreground truncate">{act.title}</p>
-                                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center">
-                                            <UserCheck className="w-3.5 h-3.5 mr-1 text-primary shrink-0" />
-                                            {act.user}
-                                        </p>
+                                    <div className="text-right shrink-0">
+                                        <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-accent text-accent-foreground">
+                                            {act.type}
+                                        </span>
+                                        <p className="text-[10px] text-muted-foreground mt-1">{act.date}</p>
                                     </div>
                                 </div>
-                                <div className="text-right shrink-0">
-                                    <span className="inline-block px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-accent text-accent-foreground">
-                                        {act.type}
-                                    </span>
-                                    <p className="text-[10px] text-muted-foreground mt-1">{act.date}</p>
-                                </div>
+                            ))
+                        ) : (
+                            <div className="py-8 text-center space-y-1.5">
+                                <p className="text-xs font-semibold text-muted-foreground">Chưa có hoạt động biên soạn đề thi nào gần đây.</p>
+                                <p className="text-[10px] text-muted-foreground">Hãy bắt đầu tạo đề thi mới hoặc nhập câu hỏi để hiển thị hoạt động!</p>
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
 
-                {/* AI capabilities showcase */}
                 <div className="space-y-4">
                     <h2 className="text-xl font-black text-foreground tracking-tight flex items-center gap-2">
                         <span className="w-2.5 h-5 bg-emerald-600 rounded-full" />

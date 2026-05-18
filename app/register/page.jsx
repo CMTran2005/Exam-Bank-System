@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function RegisterPage() {
-    const { register } = useAuth();
+    const { register, loginWithGoogle } = useAuth();
     const router = useRouter();
 
     const [name, setName] = useState("");
@@ -39,6 +39,18 @@ export default function RegisterPage() {
         }
     };
 
+    const handleGoogleRegister = async () => {
+        setError("");
+        setLoading(true);
+        try {
+            await loginWithGoogle();
+            router.push("/");
+        } catch (err) {
+            setError(err.message || "Đăng ký bằng Google thất bại, vui lòng thử lại!");
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-[80vh] flex items-center justify-center px-4 py-12 relative overflow-hidden bg-background">
             {/* Background Decorative Gradients */}
@@ -55,7 +67,7 @@ export default function RegisterPage() {
                 </div>
 
                 {error && (
-                    <div className="mb-5 p-3 rounded-lg border border-red-200 dark:border-red-950/40 bg-red-50 dark:bg-red-950/20 text-xs font-semibold text-red-600 dark:text-red-400">
+                    <div className="mb-5 p-3 rounded-lg border border-red-200 dark:border-red-950/40 bg-red-50 dark:bg-red-950/20 text-xs font-semibold text-red-600 dark:text-red-400 animate-fade-in">
                         {error}
                     </div>
                 )}
@@ -139,6 +151,41 @@ export default function RegisterPage() {
                         )}
                     </Button>
                 </form>
+
+                <div className="relative my-6 flex items-center justify-center">
+                    <span className="absolute inset-x-0 h-px bg-border/60" />
+                    <span className="relative bg-card/60 px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Hoặc đăng ký bằng
+                    </span>
+                </div>
+
+                <Button
+                    type="button"
+                    onClick={handleGoogleRegister}
+                    disabled={loading}
+                    variant="outline"
+                    className="w-full h-10 border-border hover:bg-accent font-bold rounded-xl transition-all duration-200 flex items-center justify-center shadow-sm"
+                >
+                    <svg className="w-4 h-4 mr-2 shrink-0" viewBox="0 0 24 24">
+                        <path
+                            fill="#EA4335"
+                            d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.23 2.67 1.24 6.6L5.266 9.765z"
+                        />
+                        <path
+                            fill="#34A853"
+                            d="M16.04 15.342c-1.044.697-2.38 1.112-4.04 1.112a7.042 7.042 0 0 1-6.733-4.855L1.24 14.765C3.23 18.724 7.27 21.393 12 21.393c3.127 0 6.012-1.066 8.163-2.909l-4.123-3.142z"
+                        />
+                        <path
+                            fill="#4285F4"
+                            d="M23.49 12.273c0-.818-.08-1.609-.218-2.373H12v4.582h6.44c-.29 1.528-1.145 2.822-2.4 3.664l4.122 3.14c2.4-2.218 3.328-5.485 3.328-9.013z"
+                        />
+                        <path
+                            fill="#FBBC05"
+                            d="M5.267 9.765L1.24 6.6A11.968 11.968 0 0 0 0 12c0 1.927.458 3.742 1.24 5.365l4.027-3.165A7.042 7.042 0 0 1 4.909 12c0-.793.13-1.558.358-2.235z"
+                        />
+                    </svg>
+                    Đăng ký bằng Google
+                </Button>
 
                 <div className="mt-6 pt-4 border-t border-border/60 text-center">
                     <p className="text-xs text-muted-foreground">

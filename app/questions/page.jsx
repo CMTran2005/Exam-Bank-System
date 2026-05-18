@@ -1,7 +1,14 @@
+/**
+ * @file page.jsx
+ * @description Trang "Ngân Hàng Câu Hỏi" - Hỗ trợ tra cứu, sắp xếp, lọc theo môn học, lớp học, độ khó
+ * và hiển thị chi tiết câu hỏi (đáp án, lời giải mẫu, đáp số đúng cuối cùng).
+ */
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
     Search,
     Filter,
@@ -12,134 +19,115 @@ import {
     HelpCircle,
     Info,
     MapPin,
-    Bookmark
+    Bookmark,
+    Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import LatexRenderer from "@/components/shared/LatexRenderer";
+import { useAuth } from "@/context/AuthContext";
 
-const PROVINCES = [
-    "Toàn quốc", "Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng",
-    "Cần Thơ", "Nghệ An", "Thừa Thiên Huế", "Quảng Nam", "Bình Dương",
-];
+import { GRADE_SUBJECTS_MAP } from "@/lib/constants";
+import useProvinces from "@/hooks/useProvinces";
 
-const GRADES = ["Lớp 10", "Lớp 11", "Lớp 12", "Đại học"];
-const SUBJECTS = ["Toán học", "Vật lý", "Hóa học", "Tiếng Anh", "Sinh học", "Ngữ văn", "Tin học"];
+const GRADES_OPTIONS = Object.keys(GRADE_SUBJECTS_MAP).map(g => ({
+    value: g,
+    label: g === "Đại học" ? "Đại học" : `Lớp ${g}`
+}));
+const SUBJECTS = Array.from(new Set(Object.values(GRADE_SUBJECTS_MAP).flat())).sort((a, b) => a.localeCompare(b, "vi"));
 
-// Prepopulated beautiful mock questions with examTitle, province, and LaTeX formulas
-const INITIAL_QUESTIONS = [
-    {
-        id: "q1",
-        type: "multiple_choice",
-        typeName: "Trắc nghiệm Đơn",
-        typeClass: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700",
-        number_label: "Câu 1. Đạo hàm",
-        content: "Cho hàm số $f(x) = x^3 - 3x^2 + 2$. Giá trị cực đại $y_{\\text{CĐ}}$ của hàm số đã cho bằng bao nhiêu?",
-        points: "1.0",
-        grade: "Lớp 12",
-        subject: "Toán học",
-        examTitle: "Đề thi thử THPT Quốc Gia môn Toán 2025",
-        province: "Hà Nội",
-        options: [
-            "A. y = 2",
-            "B. y = 0",
-            "C. y = 4",
-            "D. y = -2"
-        ],
-        correct_answer: "A",
-        suggested_solution: "Giải chi tiết:\nTa có $f'(x) = 3x^2 - 6x = 0 \\Leftrightarrow x = 0$ hoặc $x = 2$.\nBảng biến thiên cho thấy hàm số đạt cực đại tại $x = 0$, giá trị cực đại tương ứng $y_{\\text{CĐ}} = f(0) = 2$. Chọn A.",
-        isCollapsed: true
-    },
-    {
-        id: "q2",
-        type: "group_multiple_choice",
-        typeName: "Trắc nghiệm Nhóm",
-        typeClass: "bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 border-violet-300 dark:border-violet-700",
-        number_label: "Phần I. Đọc hiểu Tiếng Anh",
-        content: "Read the following passage and answer the questions below:\n\nArtificial Intelligence (AI) is transforming every sector, from education to healthcare. The integration of neural networks has allowed computers to perform cognitive functions similar to human brains.",
-        points: "2.0",
-        grade: "Lớp 11",
-        subject: "Tiếng Anh",
-        examTitle: "Khảo sát chất lượng Tiếng Anh Học Kỳ I",
-        province: "TP. Hồ Chí Minh",
-        isCollapsed: true,
-        subQuestions: [
-            {
-                id: "sq2_1",
-                number_label: "Câu con 1",
-                content: "According to the passage, AI is NOT transforming which sector?",
-                points: "1.0",
-                options: [
-                    "A. Education",
-                    "B. Healthcare",
-                    "C. Space travel",
-                    "D. Not mentioned in the passage"
-                ],
-                correct_answer: "C",
-                suggested_solution: "Passage mentions 'from education to healthcare', space travel is not mentioned as currently transforming. Select C."
-            },
-            {
-                id: "sq2_2",
-                number_label: "Câu con 2",
-                content: "What technology allows computers to perform cognitive human-like functions?",
-                points: "1.0",
-                options: [
-                    "A. Relational Databases",
-                    "B. Neural Networks",
-                    "C. Simple Algorithms",
-                    "D. Blockchain"
-                ],
-                correct_answer: "B",
-                suggested_solution: "Passage state: 'The integration of neural networks has allowed computers...' Select B."
-            }
-        ]
-    },
-    {
-        id: "q3",
-        type: "true_false",
-        typeName: "Đúng / Sai Đơn",
-        typeClass: "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700",
-        number_label: "Câu 3. Cơ học",
-        content: "Xét một vật rơi tự do không vận tốc đầu trong trọng trường gần mặt đất.",
-        points: "1.5",
-        grade: "Lớp 10",
-        subject: "Vật lý",
-        examTitle: "Đề cương kiểm tra giữa học kỳ 1 Vật Lý 10",
-        province: "Đà Nẵng",
-        isCollapsed: true,
-        statements: [
-            { text: "a) Quãng đường rơi tự do tỉ lệ thuận với thời gian rơi $t$.", result: "S" },
-            { text: "b) Vận tốc rơi tỉ lệ thuận với thời gian rơi $t$.", result: "Đ" },
-            { text: "c) Gia tốc rơi tăng dần theo thời gian.", result: "S" }
-        ],
-        suggested_solution: "a) Sai vì quãng đường rơi tự do $S = \\frac{1}{2}gt^2$ (tỉ lệ thuận với bình phương thời gian rơi $t^2$).\nb) Đúng vì vận tốc rơi tự do $v = gt$.\nc) Sai vì trong rơi tự do (bỏ qua sức cản không khí) gia tốc trọng trường $g$ là hằng số không đổi."
-    },
-    {
-        id: "q4",
-        type: "essay",
-        typeName: "Tự luận Đơn",
-        typeClass: "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700",
-        number_label: "Câu 4. Điện hóa",
-        content: "Viết phương trình hóa học và giải thích hiện tượng khi nhúng thanh kẽm ($\\text{Zn}$) vào dung dịch $\\text{CuSO}_4$ loãng.",
-        points: "1.0",
-        grade: "Lớp 12",
-        subject: "Hóa học",
-        examTitle: "Kiểm tra định kỳ Hóa học 12",
-        province: "Toàn quốc",
-        isCollapsed: true,
-        suggested_solution: "Phương trình hóa học phản ứng:\n$$\\text{Zn} + \\text{CuSO}_4 \\rightarrow \\text{ZnSO}_4 + \\text{Cu}$$\n\nHiện tượng xảy ra:\nThanh kẽm bị ăn mòn dần, xuất hiện lớp chất rắn màu đỏ (đồng kim loại $\\text{Cu}$) bám vào bề mặt thanh kẽm, đồng thời màu xanh lam đặc trưng của dung dịch kẽm $\\text{CuSO}_4$ nhạt màu dần."
+/**
+ * Lấy cấu hình nhãn (Label) và mã lớp CSS tương ứng với từng mức độ phân loại câu hỏi (độ khó)
+ * @param {string} difficulty - Mức độ độ khó (nhan_biet, thong_hieu, van_dung, van_dung_cao)
+ * @returns {{label: string, className: string}} Cấu hình huy hiệu
+ */
+const getDifficultyBadge = (difficulty) => {
+    switch (difficulty) {
+        case "nhan_biet":
+            return { label: "Nhận biết", className: "bg-sky-50 text-sky-700 border-sky-200/60 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/40" };
+        case "thong_hieu":
+            return { label: "Thông hiểu", className: "bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40" };
+        case "van_dung":
+            return { label: "Vận dụng", className: "bg-amber-50 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40" };
+        case "van_dung_cao":
+            return { label: "Vận dụng cao", className: "bg-rose-50 text-rose-700 border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/40" };
+        default:
+            return { label: "Nhận biết", className: "bg-sky-50 text-sky-700 border-sky-200/60 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/40" };
     }
-];
+};
 
+const INITIAL_QUESTIONS = [];
+
+/**
+ * Component chính của Trang Ngân Hàng Câu Hỏi.
+ * Quản lý danh sách các câu hỏi, thực hiện bộ lọc nâng cao, thu gọn/mở rộng thẻ câu hỏi và xóa câu hỏi.
+ */
 export default function QuestionsPage() {
-    const [questions, setQuestions] = useState(INITIAL_QUESTIONS);
+    const { currentUser, loading } = useAuth();
+    const router = useRouter();
+    const { provinces } = useProvinces();
+    const [questions, setQuestions] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [examTitleSearch, setExamTitleSearch] = useState("");
     const [selectedGrade, setSelectedGrade] = useState("all");
     const [selectedSubject, setSelectedSubject] = useState("all");
     const [selectedType, setSelectedType] = useState("all");
     const [selectedProvince, setSelectedProvince] = useState("all");
+    const [selectedDifficulty, setSelectedDifficulty] = useState("all");
+
+    useEffect(() => {
+        if (!loading && !currentUser) {
+            router.push("/login");
+        }
+    }, [currentUser, loading, router]);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const savedExams = localStorage.getItem("eb_exams");
+            if (savedExams) {
+                try {
+                    const parsed = JSON.parse(savedExams);
+                    const allQuestions = [];
+                    parsed.forEach((exam) => {
+                        if (Array.isArray(exam.questions)) {
+                            exam.questions.forEach((q) => {
+                                allQuestions.push({
+                                    ...q,
+                                    examTitle: exam.title,
+                                    province: exam.province,
+                                    grade: exam.grade,
+                                    subject: exam.subject,
+                                    isCollapsed: true,
+                                    typeName: q.type === "multiple_choice" ? "Trắc nghiệm Đơn"
+                                        : q.type === "group_multiple_choice" ? "Trắc nghiệm Nhóm"
+                                            : q.type === "true_false" ? "Đúng / Sai Đơn"
+                                                : q.type === "group_true_false" ? "Đúng / Sai Nhóm"
+                                                    : q.type === "essay" ? "Tự luận Đơn" : "Tự luận Nhóm",
+                                    typeClass: q.type?.includes("multiple_choice")
+                                        ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700"
+                                        : q.type?.includes("true_false")
+                                            ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700"
+                                            : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700"
+                                });
+                            });
+                        }
+                    });
+                    setQuestions(allQuestions);
+                } catch (e) {
+                    console.error("Lỗi load questions:", e);
+                }
+            }
+        }
+    }, []);
+
+    if (loading || !currentUser) {
+        return (
+            <div className="flex h-[80vh] items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     const toggleCollapse = (id) => {
         setQuestions(
@@ -148,8 +136,28 @@ export default function QuestionsPage() {
     };
 
     const handleDelete = (id) => {
-        if (confirm("Bạn có chắc chắn muốn xóa câu hỏi này khỏi ngân hàng?")) {
+        if (confirm("Bạn có chắc chắn muốn xóa câu hỏi này khỏi ngân hàng câu hỏi và đề thi tương ứng?")) {
             setQuestions(questions.filter((q) => q.id !== id));
+            const savedExams = localStorage.getItem("eb_exams");
+            if (savedExams) {
+                try {
+                    const examsList = JSON.parse(savedExams);
+                    const updatedExams = examsList.map((exam) => {
+                        if (Array.isArray(exam.questions)) {
+                            const newQuestions = exam.questions.filter((q) => q.id !== id);
+                            return {
+                                ...exam,
+                                questions: newQuestions,
+                                total_questions: newQuestions.length
+                            };
+                        }
+                        return exam;
+                    });
+                    localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
+                } catch (e) {
+                    console.error("Lỗi xóa câu hỏi trong localStorage:", e);
+                }
+            }
         }
     };
 
@@ -164,13 +172,15 @@ export default function QuestionsPage() {
             ? (q.examTitle || "").toLowerCase().includes(examTitleSearch.toLowerCase())
             : true;
         const matchesProvince = selectedProvince && selectedProvince !== "all" ? q.province === selectedProvince : true;
+        const matchesDifficulty = selectedDifficulty && selectedDifficulty !== "all"
+            ? (q.difficulty === selectedDifficulty || (Array.isArray(q.subQuestions) && q.subQuestions.some(sub => sub.difficulty === selectedDifficulty)))
+            : true;
 
-        return matchesSearch && matchesGrade && matchesSubject && matchesType && matchesExamTitle && matchesProvince;
+        return matchesSearch && matchesGrade && matchesSubject && matchesType && matchesExamTitle && matchesProvince && matchesDifficulty;
     });
 
     return (
         <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-6xl mx-auto">
-            {/* Header section */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
@@ -187,14 +197,12 @@ export default function QuestionsPage() {
                 </Link>
             </div>
 
-            {/* Premium Filter Panel */}
             <div className="bg-card border border-border shadow-sm rounded-2xl p-4 sm:p-5 space-y-4">
                 <div className="flex items-center gap-2 text-sm font-bold text-foreground">
                     <Filter className="w-4 h-4 text-primary" />
                     <span>Bộ lọc nâng cao</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {/* Content search */}
                     <div className="relative">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -205,7 +213,6 @@ export default function QuestionsPage() {
                         />
                     </div>
 
-                    {/* Exam Title search */}
                     <div className="relative">
                         <Bookmark className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -216,7 +223,6 @@ export default function QuestionsPage() {
                         />
                     </div>
 
-                    {/* Province Filter */}
                     <Select value={selectedProvince} onValueChange={setSelectedProvince}>
                         <SelectTrigger className="h-10 border-border bg-background">
                             <span className="flex items-center gap-2">
@@ -226,26 +232,24 @@ export default function QuestionsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Tất cả tỉnh thành</SelectItem>
-                            {PROVINCES.map((p) => (
+                            {provinces.map((p) => (
                                 <SelectItem key={p} value={p}>{p}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
 
-                    {/* Grade Filter */}
                     <Select value={selectedGrade} onValueChange={setSelectedGrade}>
                         <SelectTrigger className="h-10 border-border bg-background">
                             <SelectValue placeholder="Tất cả lớp học" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">Tất cả lớp học</SelectItem>
-                            {GRADES.map((g) => (
-                                <SelectItem key={g} value={g}>{g}</SelectItem>
+                            {GRADES_OPTIONS.map((g) => (
+                                <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
 
-                    {/* Subject Filter */}
                     <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                         <SelectTrigger className="h-10 border-border bg-background">
                             <SelectValue placeholder="Tất cả môn học" />
@@ -258,7 +262,6 @@ export default function QuestionsPage() {
                         </SelectContent>
                     </Select>
 
-                    {/* Type Filter */}
                     <Select value={selectedType} onValueChange={setSelectedType}>
                         <SelectTrigger className="h-10 border-border bg-background">
                             <SelectValue placeholder="Tất cả dạng câu hỏi" />
@@ -271,25 +274,44 @@ export default function QuestionsPage() {
                             <SelectItem value="essay">Tự luận Đơn</SelectItem>
                         </SelectContent>
                     </Select>
+
+                    <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
+                        <SelectTrigger className="h-10 border-border bg-background">
+                            <SelectValue placeholder="Tất cả mức độ" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả mức độ</SelectItem>
+                            <SelectItem value="nhan_biet">Nhận biết</SelectItem>
+                            <SelectItem value="thong_hieu">Thông hiểu</SelectItem>
+                            <SelectItem value="van_dung">Vận dụng</SelectItem>
+                            <SelectItem value="van_dung_cao">Vận dụng cao</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 
-            {/* Questions list */}
             <div className="space-y-4">
                 {filteredQuestions.length > 0 ? (
                     filteredQuestions.map((q) => {
                         const isGroup = q.type.startsWith("group_");
                         return (
                             <div key={q.id} className="border border-border/80 bg-card rounded-2xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
-                                {/* Question card header */}
                                 <div className="flex justify-between items-center bg-muted/60 px-4 py-3 border-b border-border/60">
                                     <div className="flex items-center gap-3 min-w-0 flex-1">
                                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${q.typeClass}`}>
                                             {q.typeName}
                                         </span>
+                                        {q.difficulty && (
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${getDifficultyBadge(q.difficulty).className}`}>
+                                                {getDifficultyBadge(q.difficulty).label}
+                                            </span>
+                                        )}
                                         <span className="font-bold text-sm text-foreground truncate">{q.number_label}</span>
-                                        <span className="text-[10px] text-muted-foreground shrink-0 bg-background px-2 py-0.5 rounded-full border border-border">
-                                            {q.subject} • {q.grade}
+                                        <span className="text-[10px] text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 px-2.5 py-0.5 rounded-full border border-teal-200/50 dark:border-teal-850/30 shrink-0 font-bold shadow-sm">
+                                            {q.subject}
+                                        </span>
+                                        <span className="text-[10px] text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 px-2.5 py-0.5 rounded-full border border-violet-200/50 dark:border-violet-850/30 shrink-0 font-medium shadow-sm">
+                                            {q.grade === "Đại học" ? "Đại học" : `Lớp ${q.grade}`}
                                         </span>
                                         {q.province && (
                                             <span className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full border border-blue-200/50 shrink-0 font-medium">
@@ -320,10 +342,8 @@ export default function QuestionsPage() {
                                     </div>
                                 </div>
 
-                                {/* Question body */}
                                 {!q.isCollapsed && (
                                     <div className="p-4 sm:p-5 space-y-4">
-                                        {/* Exam Title context */}
                                         {q.examTitle && (
                                             <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1 bg-muted/30 p-2 rounded-lg w-fit border border-border/50">
                                                 <Bookmark className="w-3 h-3 text-primary" />
@@ -331,78 +351,134 @@ export default function QuestionsPage() {
                                             </div>
                                         )}
 
-                                        {/* Question text formatted with KaTeX renderer */}
                                         <div className="text-sm font-medium text-foreground leading-relaxed">
                                             <LatexRenderer text={q.content} />
                                         </div>
 
-                                        {/* Option lists or statement checks */}
-                                        {q.options && (
+                                        {q.type?.includes("multiple_choice") && q.options && (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                                                {q.options.map((opt) => (
-                                                    <div
-                                                        key={opt}
-                                                        className={`p-3 rounded-xl border text-xs font-medium ${
-                                                            opt.startsWith(q.correct_answer)
+                                                {q.options.map((opt, optIndex) => {
+                                                    const isCorrect = String.fromCharCode(65 + optIndex) === q.correct_answer;
+                                                    return (
+                                                        <div
+                                                            key={optIndex}
+                                                            className={`p-3 rounded-xl border text-xs font-medium ${isCorrect
                                                                 ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 text-emerald-800 dark:text-emerald-300 font-bold"
                                                                 : "border-border bg-background"
-                                                        }`}
-                                                    >
-                                                        <LatexRenderer text={opt} />
-                                                    </div>
-                                                ))}
+                                                                }`}
+                                                        >
+                                                            <span className="font-bold mr-1.5">{String.fromCharCode(65 + optIndex)}.</span>
+                                                            <LatexRenderer text={opt} />
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         )}
 
-                                        {q.statements && (
+                                        {q.type?.includes("true_false") && q.statements && (
                                             <div className="space-y-2 mt-2">
                                                 {q.statements.map((st, i) => (
                                                     <div key={i} className="flex justify-between items-center p-2.5 rounded-xl border border-border bg-background text-xs">
                                                         <span className="font-medium">
                                                             <LatexRenderer text={st.text} />
                                                         </span>
-                                                        <span className={`px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[9px] ${
-                                                            st.result === "Đ"
-                                                                ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
-                                                                : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300"
-                                                        }`}>
-                                                            {st.result === "Đ" ? "Đúng" : "Sai"}
+                                                        <span className={`px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[9px] ${st.result === "Đ" || st.correct === true
+                                                            ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+                                                            : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300"
+                                                            }`}>
+                                                            {st.result === "Đ" || st.correct === true ? "Đúng" : "Sai"}
                                                         </span>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
 
-                                        {/* Sub questions if group */}
                                         {isGroup && q.subQuestions && (
                                             <div className="space-y-4 border-l-2 border-primary/20 pl-4 mt-4">
                                                 <p className="text-xs font-bold text-primary uppercase tracking-wider select-none">Các câu con của nhóm:</p>
                                                 {q.subQuestions.map((subQ) => (
                                                     <div key={subQ.id} className="bg-muted/40 p-3.5 rounded-xl border border-border space-y-3">
                                                         <div className="flex justify-between items-center">
-                                                            <span className="text-xs font-bold text-foreground">{subQ.number_label}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs font-bold text-foreground">{subQ.number_label}</span>
+                                                                {subQ.difficulty && (
+                                                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold border uppercase tracking-wider ${getDifficultyBadge(subQ.difficulty).className}`}>
+                                                                        {getDifficultyBadge(subQ.difficulty).label}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <span className="text-[10px] font-bold text-muted-foreground">{subQ.points} điểm</span>
                                                         </div>
                                                         <div className="text-xs font-medium text-foreground">
                                                             <LatexRenderer text={subQ.content} />
                                                         </div>
-                                                        {subQ.options && (
+                                                        {subQ.type?.includes("multiple_choice") && subQ.options && (
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                                                                {subQ.options.map((opt) => (
-                                                                    <div key={opt} className={`p-2 rounded-lg border text-[11px] ${
-                                                                        opt.startsWith(subQ.correct_answer)
+                                                                {subQ.options.map((opt, optIndex) => {
+                                                                    const isCorrect = String.fromCharCode(65 + optIndex) === subQ.correct_answer;
+                                                                    return (
+                                                                        <div key={optIndex} className={`p-2 rounded-lg border text-[11px] ${isCorrect
                                                                             ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-300 text-emerald-800 dark:text-emerald-300 font-bold"
                                                                             : "border-border bg-background"
-                                                                    }`}>
-                                                                        <LatexRenderer text={opt} />
+                                                                            }`}>
+                                                                            <span className="font-bold mr-1">{String.fromCharCode(65 + optIndex)}.</span>
+                                                                            <LatexRenderer text={opt} />
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+
+                                                        {subQ.type?.includes("true_false") && subQ.statements && (
+                                                            <div className="space-y-1.5 mt-1.5">
+                                                                {subQ.statements.map((st, i) => (
+                                                                    <div key={i} className="flex justify-between items-center p-2 rounded-lg border border-border bg-background text-[11px]">
+                                                                        <span className="font-medium">
+                                                                            <LatexRenderer text={st.text} />
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded font-bold uppercase tracking-wider text-[8px] ${st.result === "Đ" || st.correct === true
+                                                                            ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+                                                                            : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300"
+                                                                            }`}>
+                                                                            {st.result === "Đ" || st.correct === true ? "Đúng" : "Sai"}
+                                                                        </span>
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                         )}
-                                                        {subQ.suggested_solution && (
-                                                            <div className="bg-emerald-50/50 dark:bg-emerald-950/10 p-2.5 rounded-lg border border-emerald-500/10 text-[10px] text-muted-foreground">
-                                                                <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-0.5 select-none">Lời giải mẫu:</span>
-                                                                <LatexRenderer text={subQ.suggested_solution} />
+                                                        {(subQ.final_answer || subQ.suggested_solution || (subQ.solution_images && subQ.solution_images.length > 0)) && (
+                                                            <div className="p-3 rounded-xl bg-slate-50/40 dark:bg-slate-900/10 border border-slate-200/40 dark:border-slate-800/30 space-y-2.5 mt-2">
+                                                                {subQ.final_answer && (
+                                                                    <div className="text-[11px]">
+                                                                        <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1 select-none">🎯 Kết quả / Đáp số đúng:</span>
+                                                                        <div className="p-2 rounded-lg border border-blue-200 bg-blue-50/20 dark:border-blue-900/30 dark:bg-blue-950/5 text-foreground font-semibold">
+                                                                            <LatexRenderer text={subQ.final_answer} />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                {subQ.suggested_solution && (
+                                                                    <div className="text-[11px] text-muted-foreground">
+                                                                        <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-1 select-none">💡 Lời giải mẫu chi tiết:</span>
+                                                                        <div className="leading-relaxed">
+                                                                            <LatexRenderer text={subQ.suggested_solution} />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                {subQ.solution_images && subQ.solution_images.length > 0 && (
+                                                                    <div className="space-y-1">
+                                                                        <span className="text-[9px] font-bold text-muted-foreground block select-none">Hình ảnh lời giải:</span>
+                                                                        <div className="flex flex-wrap gap-1.5">
+                                                                            {subQ.solution_images.map((img, idx) => (
+                                                                                <img
+                                                                                    key={idx}
+                                                                                    src={img}
+                                                                                    alt={`Ảnh lời giải con ${idx + 1}`}
+                                                                                    className="h-16 w-auto rounded border border-border/60 object-contain bg-background"
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
@@ -410,11 +486,39 @@ export default function QuestionsPage() {
                                             </div>
                                         )}
 
-                                        {/* Suggested solution */}
-                                        {q.suggested_solution && (
-                                            <div className="bg-emerald-50/50 dark:bg-emerald-950/10 p-3 rounded-xl border border-emerald-500/10 text-xs text-muted-foreground mt-2">
-                                                <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-1 select-none">💡 Lời giải mẫu chi tiết:</span>
-                                                <LatexRenderer text={q.suggested_solution} />
+                                        {(q.final_answer || q.suggested_solution || (q.solution_images && q.solution_images.length > 0)) && (
+                                            <div className="mt-4 p-4 rounded-2xl bg-slate-50/60 dark:bg-slate-900/20 border border-slate-200/50 dark:border-slate-800/40 space-y-3">
+                                                {q.final_answer && (
+                                                    <div className="text-xs">
+                                                        <span className="font-bold text-blue-600 dark:text-blue-400 block mb-1 select-none">Kết quả / Đáp số đúng:</span>
+                                                        <div className="p-2.5 rounded-xl border border-blue-250 bg-blue-50/30 dark:border-blue-900/40 dark:bg-blue-950/10 text-foreground font-semibold">
+                                                            <LatexRenderer text={q.final_answer} />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {q.suggested_solution && (
+                                                    <div className="text-xs text-muted-foreground">
+                                                        <span className="font-bold text-emerald-700 dark:text-emerald-400 block mb-1 select-none">Lời giải mẫu chi tiết:</span>
+                                                        <div className="leading-relaxed">
+                                                            <LatexRenderer text={q.suggested_solution} />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {q.solution_images && q.solution_images.length > 0 && (
+                                                    <div className="space-y-1.5">
+                                                        <span className="text-[10px] font-bold text-muted-foreground block select-none">Hình ảnh lời giải:</span>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {q.solution_images.map((img, idx) => (
+                                                                <img
+                                                                    key={idx}
+                                                                    src={img}
+                                                                    alt={`Ảnh lời giải ${idx + 1}`}
+                                                                    className="h-20 w-auto rounded-lg border border-border/80 object-contain bg-background"
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>

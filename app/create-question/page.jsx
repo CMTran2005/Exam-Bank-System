@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import QuestionForm from "@/components/question/QuestionForm";
 import QuestionTypePicker from "@/components/question/QuestionTypePicker";
@@ -9,31 +9,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Save, Trash2, ChevronDown, ChevronUp, BookOpen } from "lucide-react";
+import { Plus, Save, Trash2, ChevronDown, ChevronUp, BookOpen, Loader2, Sparkles } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-const PROVINCES = [
-    "Toàn quốc", "Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng",
-    "Cần Thơ", "Nghệ An", "Thừa Thiên Huế", "Quảng Nam", "Bình Dương",
-];
-
-const ACADEMIC_YEARS = ["2024-2025", "2025-2026", "2026-2027", "2027-2028"];
-
-const GRADE_SUBJECTS_MAP = {
-    "10": ["Toán học", "Vật lý", "Hóa học", "Sinh học", "Ngữ văn", "Tiếng Anh", "Tin học"],
-    "11": ["Toán học", "Vật lý", "Hóa học", "Sinh học", "Ngữ văn", "Tiếng Anh", "Tin học"],
-    "12": ["Toán học", "Vật lý", "Hóa học", "Sinh học", "Ngữ văn", "Tiếng Anh", "Tin học"],
-    "Đại học": [
-        "Đồ họa máy tính (Computer Graphics)",
-        "Học máy (Machine Learning)",
-        "Trí tuệ nhân tạo (AI)",
-        "Mạng máy tính",
-        "Cấu trúc dữ liệu và Giải thuật",
-        "Lập trình Web (Node.js/ReactJS)",
-        "Hệ điều hành (Unix/FreeBSD)",
-        "Kiến trúc máy tính",
-    ],
+// Hàm tiện ích giới hạn thời gian chờ của một tác vụ Promise (tránh bị treo do mạng/DB chưa cấu hình)
+const runWithTimeout = (promise, ms = 1000) => {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Hết thời gian chờ phản hồi Firebase")), ms)
+        )
+    ]);
 };
 
+import { GRADE_SUBJECTS_MAP, getDynamicAcademicYears } from "@/lib/constants";
+import useProvinces from "@/hooks/useProvinces";
+
+const ACADEMIC_YEARS = getDynamicAcademicYears();
 const GRADES = Object.keys(GRADE_SUBJECTS_MAP);
 
 const TYPE_CONFIG = {
@@ -72,17 +66,22 @@ const createDefaultQuestion = (type = "multiple_choice") => {
         statements: [{ text: "", correct: true }],
         suggested_solution: "",
         points: "1.0",
+        difficulty: "nhan_biet",
         final_answer: "",
         answer_images: [],
     };
 };
 
 export default function CreateExamPage() {
+    const { currentUser, loading } = useAuth();
     const router = useRouter();
     const [editId, setEditId] = useState(null);
+    const { provinces } = useProvinces();
+    const isCodeManuallyEdited = useRef(false);
 
     const [examInfo, setExamInfo] = useState({
         title: "",
+        code: "",
         year: "",
         grade: "",
         subject: "",
@@ -94,30 +93,100 @@ export default function CreateExamPage() {
     const [showPicker, setShowPicker] = useState(false);
 
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get("editId");
-            if (id) {
-                setEditId(id);
-                const savedExams = JSON.parse(localStorage.getItem("eb_exams") || "[]");
-                const examToEdit = savedExams.find((e) => String(e.id) === String(id));
-                if (examToEdit) {
-                    setExamInfo({
-                        title: examToEdit.title || "",
-                        year: examToEdit.year || "",
-                        grade: examToEdit.grade || "",
-                        subject: examToEdit.subject || "",
-                        province: examToEdit.province || "",
-                        duration: examToEdit.duration !== undefined ? String(examToEdit.duration) : "",
-                    });
-                    setQuestionsList(examToEdit.questions || []);
+        if (!loading && !currentUser) {
+            router.push("/login");
+        }
+    }, [currentUser, loading, router]);
+
+    useEffect(() => {
+        const loadExamData = async () => {
+            if (typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search);
+                const id = params.get("editId");
+                if (id) {
+                    setEditId(id);
+                    let examToEdit = null;
+
+                    // Thử load từ Firestore
+                    try {
+                        const examDocRef = doc(db, "exams", id);
+                        const examDoc = await runWithTimeout(getDoc(examDocRef), 1200);
+                        if (examDoc.exists()) {
+                            examToEdit = examDoc.data();
+                        }
+                    } catch (e) {
+                        console.warn("Bỏ qua lỗi Firestore khi tải đề thi:", e.message);
+                    }
+
+                    // Fallback nếu Firestore không có hoặc lỗi
+                    if (!examToEdit) {
+                        const savedExams = JSON.parse(localStorage.getItem("eb_exams") || "[]");
+                        examToEdit = savedExams.find((e) => String(e.id) === String(id));
+                    }
+
+                    if (examToEdit) {
+                        setExamInfo({
+                            title: examToEdit.title || "",
+                            code: examToEdit.id || "",
+                            year: examToEdit.year || "",
+                            grade: examToEdit.grade || "",
+                            subject: examToEdit.subject || "",
+                            province: examToEdit.province || "",
+                            duration: examToEdit.duration !== undefined ? String(examToEdit.duration) : "",
+                        });
+                        isCodeManuallyEdited.current = true;
+                        setQuestionsList(examToEdit.questions || []);
+                    }
                 }
             }
-        }
-    }, []);
+        };
+
+        loadExamData();
+    }, [currentUser]);
+
+    if (loading || !currentUser) {
+        return (
+            <div className="flex h-[80vh] items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    const slugify = (text) => {
+        if (!text) return "";
+        return text
+            .toString()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/[đĐ]/g, "d")
+            .replace(/([^a-z0-9\s-]|_)+/g, "")
+            .trim()
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-");
+    };
 
     const handleGradeChange = (selectedGrade) => {
         setExamInfo({ ...examInfo, grade: selectedGrade, subject: "" });
+    };
+
+    const handleTitleChange = (title) => {
+        setExamInfo((prev) => {
+            const updated = { ...prev, title };
+            if (!isCodeManuallyEdited.current) {
+                const slug = slugify(title);
+                updated.code = slug ? `${slug}-${Math.floor(1000 + Math.random() * 9000)}` : "";
+            }
+            return updated;
+        });
+    };
+
+    const handleCodeChange = (e) => {
+        isCodeManuallyEdited.current = true;
+        const cleanedVal = e.target.value
+            .toLowerCase()
+            .replace(/[^a-z0-9-]/g, "");
+        setExamInfo({ ...examInfo, code: cleanedVal });
     };
 
     const addQuestion = (type) => {
@@ -141,9 +210,13 @@ export default function CreateExamPage() {
         ));
     };
 
-    const handleSaveExam = () => {
+    const handleSaveExam = async () => {
         if (!examInfo.title.trim()) {
             alert("Vui lòng nhập Tiêu đề đề thi.");
+            return;
+        }
+        if (!examInfo.code.trim()) {
+            alert("Vui lòng nhập Mã đề thi.");
             return;
         }
         if (questionsList.length === 0) {
@@ -152,9 +225,12 @@ export default function CreateExamPage() {
         }
 
         const savedExams = JSON.parse(localStorage.getItem("eb_exams") || "[]");
+        const finalId = examInfo.code.trim();
 
         const finalExamPayload = {
-            id: editId || String(Date.now()),
+            id: finalId,
+            uid: currentUser?.uid || "anonymous",
+            author: currentUser?.name || "Giáo viên",
             title: examInfo.title,
             year: examInfo.year,
             grade: examInfo.grade,
@@ -166,18 +242,40 @@ export default function CreateExamPage() {
             updatedAt: new Date().toISOString(),
         };
 
-        if (editId) {
-            const index = savedExams.findIndex((e) => String(e.id) === String(editId));
-            if (index !== -1) {
-                savedExams[index] = finalExamPayload;
-            } else {
-                savedExams.push(finalExamPayload);
-            }
-        } else {
-            savedExams.push(finalExamPayload);
+        // Đồng bộ trực tiếp lên Firebase Firestore (Yêu cầu chính của đề bài)
+        try {
+            const examDocRef = doc(db, "exams", finalId);
+            await runWithTimeout(setDoc(examDocRef, finalExamPayload), 1500);
+        } catch (err) {
+            console.warn("Bỏ qua lỗi Firestore khi lưu đề thi:", err.message);
         }
 
-        localStorage.setItem("eb_exams", JSON.stringify(savedExams));
+        if (editId) {
+            let updatedExams = savedExams;
+            if (String(editId) !== String(finalId)) {
+                updatedExams = savedExams.filter((e) => String(e.id) !== String(editId));
+            }
+
+            const index = updatedExams.findIndex((e) => String(e.id) === String(finalId));
+            if (index !== -1) {
+                updatedExams[index] = finalExamPayload;
+            } else {
+                updatedExams.push(finalExamPayload);
+            }
+            localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
+        } else {
+            const exists = savedExams.some((e) => String(e.id) === String(finalId));
+            if (exists) {
+                if (!confirm("Mã đề thi này đã tồn tại trong hệ thống. Bạn có chắc chắn muốn ghi đè lên đề thi hiện tại không?")) {
+                    return;
+                }
+            }
+
+            const updatedExams = savedExams.filter((e) => String(e.id) !== String(finalId));
+            updatedExams.push(finalExamPayload);
+            localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
+        }
+
         alert(editId ? "Cập nhật đề thi thành công!" : "Lưu đề thi mới thành công!");
         router.push("/my-exams");
     };
@@ -186,11 +284,14 @@ export default function CreateExamPage() {
         <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6 transition-colors duration-300">
 
             <Card className="border-blue-200 bg-blue-50/30 dark:border-blue-900/50 dark:bg-blue-950/20 shadow-sm">
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
                     <CardTitle className="text-lg sm:text-xl font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
                         <BookOpen className="w-5 h-5 shrink-0" />
                         Cấu Hình Thông Tin Đề Thi
                     </CardTitle>
+                    <div className="text-[11px] font-extrabold uppercase bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 px-3 py-1 rounded-full border border-blue-200/60 dark:border-blue-900/40 select-none shrink-0">
+                        Tổng số: {questionsList.length} câu hỏi
+                    </div>
                 </CardHeader>
 
                 <CardContent>
@@ -201,8 +302,41 @@ export default function CreateExamPage() {
                             <Input
                                 placeholder="Ví dụ: Đề thi thử THPT Quốc Gia môn Toán..."
                                 value={examInfo.title}
-                                onChange={(e) => setExamInfo({ ...examInfo, title: e.target.value })}
+                                onChange={(e) => handleTitleChange(e.target.value)}
                             />
+                        </div>
+
+                        <div className="sm:col-span-2 lg:col-span-1">
+                            <label className="text-xs font-bold text-blue-700 dark:text-blue-400 block mb-1.5 flex items-center gap-1">
+                                Mã đề thi (Slug ID)
+                            </label>
+                            <Input
+                                placeholder="vi-du-ma-de-thi"
+                                value={examInfo.code}
+                                onChange={handleCodeChange}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Thời gian (phút)</label>
+                            <Input
+                                type="number"
+                                placeholder="Ví dụ: 90"
+                                value={examInfo.duration}
+                                onChange={(e) => setExamInfo({ ...examInfo, duration: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Tỉnh thành</label>
+                            <Select value={examInfo.province} onValueChange={(val) => setExamInfo({ ...examInfo, province: val })}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Chọn tỉnh thành" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {provinces.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         <div>
@@ -249,35 +383,6 @@ export default function CreateExamPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                        </div>
-
-                        <div>
-                            <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Tỉnh thành</label>
-                            <Select value={examInfo.province} onValueChange={(val) => setExamInfo({ ...examInfo, province: val })}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Chọn tỉnh thành" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {PROVINCES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div>
-                            <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Thời gian (phút)</label>
-                            <Input
-                                type="number"
-                                placeholder="Ví dụ: 90"
-                                value={examInfo.duration}
-                                onChange={(e) => setExamInfo({ ...examInfo, duration: e.target.value })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="text-xs font-semibold text-blue-600 dark:text-blue-400 block mb-1.5">Số câu hỏi</label>
-                            <div className="h-10 flex items-center px-3 bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300 font-bold text-sm rounded-lg border border-blue-200 dark:border-blue-900 select-none">
-                                {questionsList.length} câu hỏi
-                            </div>
                         </div>
 
                     </div>
@@ -348,7 +453,6 @@ export default function CreateExamPage() {
                     </div>
                 ))}
 
-                {/* Add question area */}
                 <div className="space-y-3 pt-1">
                     {showPicker ? (
                         <QuestionTypePicker

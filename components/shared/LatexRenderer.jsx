@@ -12,13 +12,9 @@ export default function LatexRenderer({ text = "", className = "" }) {
 
     if (!text) return null;
 
-    // Before mounting on client, return raw text to prevent SSR mismatch
     if (!mounted) {
         return <span className={className}>{text}</span>;
     }
-
-    // Split text into text segments and LaTeX segments
-    // Matches $$...$$ or $...$
     const regex = /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g;
     const parts = text.split(regex);
 
@@ -60,7 +56,7 @@ export default function LatexRenderer({ text = "", className = "" }) {
                         return <code key={idx} className="inline-block px-1 bg-red-50 text-red-500 rounded">{part}</code>;
                     }
                 } else {
-                    return <span key={idx} className="whitespace-pre-wrap">{part}</span>;
+                    return <span key={idx} className="whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: part }} />;
                 }
             })}
         </span>

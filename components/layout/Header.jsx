@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, Menu, User, LogOut, Settings2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ThemeToggle from "@/components/shared/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Header({ onMenuToggle }) {
     const { currentUser, logout } = useAuth();
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -48,14 +52,18 @@ export default function Header({ onMenuToggle }) {
                 <div className="flex-1" />
 
                 <div className="flex items-center gap-3">
-                    {currentUser ? (
+                    {mounted && currentUser ? (
                         <div className="relative">
                             <button
                                 onClick={() => setDropdownOpen((prev) => !prev)}
                                 className="flex items-center gap-2 p-1.5 rounded-full hover:bg-accent transition-colors focus:outline-none"
                             >
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-violet-600 text-xs font-bold text-primary-foreground shadow-sm">
-                                    {getInitials(currentUser.name)}
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-violet-600 text-xs font-bold text-primary-foreground shadow-sm overflow-hidden shrink-0">
+                                    {currentUser.avatarUrl ? (
+                                        <img src={currentUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                    ) : (
+                                        getInitials(currentUser.name)
+                                    )}
                                 </div>
                                 <span className="hidden md:block text-sm font-semibold text-foreground max-w-[120px] truncate">
                                     {currentUser.name}
@@ -75,7 +83,7 @@ export default function Header({ onMenuToggle }) {
                                             <p className="text-sm font-bold text-foreground truncate">{currentUser.name}</p>
                                             <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
                                             <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300">
-                                                {currentUser.role === "admin" ? "Quản trị viên" : "Giáo viên"}
+                                                {currentUser.role === "admin" ? "Quản trị viên" : (currentUser.degree || "Giáo viên")}
                                             </span>
                                         </div>
                                         <div className="mt-1 space-y-0.5">
@@ -113,9 +121,6 @@ export default function Header({ onMenuToggle }) {
                             </Link>
                         </div>
                     )}
-
-                    <div className="h-5 w-px bg-border hidden sm:block" />
-                    <ThemeToggle />
                 </div>
             </div>
         </header>

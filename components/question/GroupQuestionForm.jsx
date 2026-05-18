@@ -1,14 +1,23 @@
+/**
+ * @file GroupQuestionForm.jsx
+ * @description Biểu mẫu con chuyên biệt dành cho câu hỏi dạng nhóm (Trắc nghiệm nhóm, Đúng/Sai nhóm, Tự luận nhóm).
+ * Quản lý danh sách các câu hỏi con, thêm mới/xóa câu con, và tính toán tổng số điểm tự động.
+ */
+
 "use client";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, ChevronDown, ChevronUp, ImagePlus, X } from "lucide-react";
 
 import MultipleChoiceForm from "./MultipleChoiceForm";
 import TrueFalseForm from "./TrueFalseForm";
 import EssayForm from "./EssayForm";
 import LatexRenderer from "@/components/shared/LatexRenderer";
+import RichTextarea from "./RichTextarea";
+import RichInput from "./RichInput";
+import { DIFFICULTY_CONFIG } from "./QuestionForm";
 
 const BASE_TYPE_LABELS = {
     multiple_choice: "Trắc nghiệm",
@@ -26,12 +35,17 @@ export const createDefaultSubQuestion = (baseType) => ({
     statements: [{ text: "", correct: true }],
     suggested_solution: "",
     points: "1.0",
+    difficulty: "nhan_biet",
     images: [],
     final_answer: "",
     answer_images: [],
     isCollapsed: false,
 });
 
+/**
+ * Component render từng câu hỏi con (Subquestion Item) nằm trong nhóm.
+ * Quản lý các trường thông tin cụ thể của câu con: Phân loại, Điểm số, Đề bài con, Phương án lựa chọn và các ảnh đính kèm tương ứng.
+ */
 function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) {
     const toggleCollapse = () => onChangeData({ ...subQ, isCollapsed: !subQ.isCollapsed });
     const updateField = (field, value) => onChangeData({ ...subQ, [field]: value });
@@ -55,7 +69,6 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
 
     return (
         <div className="border border-border rounded-lg overflow-hidden shadow-sm">
-            {/* Header */}
             <div className="flex justify-between items-center bg-muted/60 px-3 py-1.5 border-b border-border">
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                     <Input
@@ -93,8 +106,24 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
 
             {!subQ.isCollapsed && (
                 <div className="p-4 space-y-4">
-                    {/* Points Row */}
-                    <div className="flex justify-end">
+                    <div className="flex justify-between items-center w-full gap-4">
+                        <div className="flex items-center gap-3">
+                            <label className="text-sm font-semibold text-muted-foreground shrink-0">Phân loại:</label>
+                            <Select
+                                value={subQ.difficulty || "nhan_biet"}
+                                onValueChange={(val) => updateField("difficulty", val)}
+                            >
+                                <SelectTrigger className={`h-9 w-36 font-semibold border ${DIFFICULTY_CONFIG[subQ.difficulty || "nhan_biet"].border} ${DIFFICULTY_CONFIG[subQ.difficulty || "nhan_biet"].text} rounded-lg transition-all duration-200`}>
+                                    <SelectValue placeholder="Phân loại" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="nhan_biet">Nhận biết</SelectItem>
+                                    <SelectItem value="thong_hieu">Thông hiểu</SelectItem>
+                                    <SelectItem value="van_dung">Vận dụng</SelectItem>
+                                    <SelectItem value="van_dung_cao">Vận dụng cao</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="flex items-center gap-3">
                             <label className="text-sm font-semibold text-muted-foreground shrink-0">Điểm số:</label>
                             <Input
@@ -108,15 +137,14 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
                         </div>
                     </div>
 
-                    {/* Content */}
                     <div className="space-y-2">
                         <label className="text-sm font-semibold text-foreground">Nội dung câu hỏi con:</label>
-                        <Textarea
+                        <RichTextarea
+                            id={`subq-content-${subQ.id}`}
                             placeholder="Nhập nội dung câu hỏi con..."
                             value={subQ.content}
-                            onChange={(e) => updateField("content", e.target.value)}
+                            onChange={(val) => updateField("content", val)}
                             rows={2}
-                            className="font-medium"
                         />
                         {subQ.content && subQ.content.includes("$") && (
                             <div className="mt-2 p-3.5 rounded-xl border border-blue-150 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/15 space-y-1.5 animate-in fade-in duration-200">
@@ -130,7 +158,6 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
                         )}
                     </div>
 
-                    {/* Images */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-muted-foreground block">Hình ảnh minh họa:</label>
                         <div className="flex flex-wrap gap-2 items-center">
@@ -154,7 +181,6 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
                         </div>
                     </div>
 
-                    {/* Type-specific form */}
                     <div className="border-t border-dashed border-border pt-4">
                         {subQ.type === "multiple_choice" && (
                             <MultipleChoiceForm questionData={subQ} setQuestionData={onChangeData} />
@@ -167,18 +193,26 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
                         )}
                     </div>
 
-                    {/* Final answer */}
                     <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50 space-y-3">
                         <div>
                             <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
                                 Đáp án cuối cùng:
                             </label>
-                            <Input
+                            <RichInput
+                                id={`subq-final-ans-${subQ.id}`}
                                 placeholder="Nhập đáp số hoặc kết quả ngắn..."
                                 value={subQ.final_answer || ""}
-                                onChange={(e) => updateField("final_answer", e.target.value)}
+                                onChange={(val) => updateField("final_answer", val)}
                                 className="bg-background border-emerald-200 dark:border-emerald-800 font-semibold text-emerald-900 dark:text-emerald-200"
                             />
+                            {subQ.final_answer && subQ.final_answer.includes("$") && (
+                                <div className="mt-2 p-2 px-3 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-background/50 text-xs text-muted-foreground flex items-center gap-1.5 select-none">
+                                    <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200/30">
+                                        Xem trước LaTeX:
+                                    </span>
+                                    <LatexRenderer text={subQ.final_answer} />
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-1.5">
