@@ -1,68 +1,20 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import {
-    ArrowLeft,
-    Users,
-    Search,
-    Mail,
-    Phone,
-    Loader2,
-    CheckCircle2,
-    XCircle,
-    Clock,
-    Calendar,
-    BookOpen
-} from "lucide-react";
+import { ArrowLeft, Users, Search, Mail, Phone, Loader2, CheckCircle2, XCircle, Clock, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { classService } from "@/services/classService";
+import { useClassDetails } from "@/hooks/useClassDetails";
 
 export default function ClassDetailsPage({ params }) {
     const { classId } = use(params);
-    const { currentUser, loading: authLoading } = useAuth();
-    const router = useRouter();
-    
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState("");
-    
-    // No dummy data, wait for students to join via portal
-    const [students, setStudents] = useState([]);
-    const [classDetails, setClassDetails] = useState(null);
-
-    useEffect(() => {
-        if (!authLoading && !currentUser) {
-            router.push("/login");
-            return;
-        }
-        
-        if (currentUser) {
-            const fetchData = async () => {
-                try {
-                    const data = await classService.getClassDetails(classId);
-                    setClassDetails(data);
-                } catch (error) {
-                    console.error(error);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchData();
-        }
-    }, [currentUser, authLoading, router]);
-
-    const toggleAttendance = (studentId) => {
-        setStudents(students.map(s => {
-            if (s.id === studentId) {
-                const nextStatus = s.attendance === "pending" ? "present" : s.attendance === "present" ? "absent" : "pending";
-                return { ...s, attendance: nextStatus };
-            }
-            return s;
-        }));
-    };
+    const {
+        authLoading, loading,
+        classDetails, students, filteredStudents,
+        searchQuery, setSearchQuery,
+        toggleAttendance
+    } = useClassDetails(classId);
 
     if (authLoading || loading) {
         return (
@@ -72,14 +24,8 @@ export default function ClassDetailsPage({ params }) {
         );
     }
 
-    const filteredStudents = students.filter(s => 
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
     return (
         <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-5xl mx-auto">
-            {/* Header */}
             <div className="flex items-center gap-4 border-b border-border/60 pb-6">
                 <Link href="/classes">
                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-muted">
@@ -96,7 +42,6 @@ export default function ClassDetailsPage({ params }) {
                 </div>
             </div>
 
-            {/* Class Info Card */}
             {classDetails && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/40 p-4 rounded-2xl border border-border/50">
                     <div className="flex items-center gap-3">
@@ -124,7 +69,6 @@ export default function ClassDetailsPage({ params }) {
                 </div>
             )}
 
-            {/* Toolbar */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="relative flex-1 w-full sm:max-w-md">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -147,7 +91,6 @@ export default function ClassDetailsPage({ params }) {
                 </div>
             </div>
 
-            {/* Students List */}
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">

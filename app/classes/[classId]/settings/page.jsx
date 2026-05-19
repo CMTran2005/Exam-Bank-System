@@ -1,131 +1,31 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { classService } from "@/services/classService";
-import {
-    ArrowLeft,
-    Settings,
-    Save,
-    Trash2,
-    ShieldAlert,
-    Loader2,
-    Calendar,
-    ChevronDown
-} from "lucide-react";
+import { ArrowLeft, Save, Trash2, ShieldAlert, Loader2, Calendar, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { GRADE_SUBJECTS_MAP } from "@/lib/constants";
 import { CustomDatePicker, CustomTimePicker } from "@/components/ui/date-time-picker";
+import { GRADE_SUBJECTS_MAP } from "@/lib/constants";
+import { useClassSettings } from "@/hooks/useClassSettings";
 
 export default function ClassSettingsPage({ params }) {
-    const GRADES = Object.keys(GRADE_SUBJECTS_MAP);
     const { classId } = use(params);
-    const { currentUser, loading: authLoading } = useAuth();
-    const router = useRouter();
-    
-    const [loading, setLoading] = useState(true);
-    const [className, setClassName] = useState("");
-    const [schoolYear, setSchoolYear] = useState("");
-    const [grade, setGrade] = useState("");
-    const [subject, setSubject] = useState("");
-    const [examDate, setExamDate] = useState("");
-    const [examTime, setExamTime] = useState("");
-    const [examDuration, setExamDuration] = useState(45);
-    
-    const [isSaving, setIsSaving] = useState(false);
-    
-    // Manage all dropdowns with a single state to ensure only one is open
-    const [activeDropdown, setActiveDropdown] = useState(null);
-    
-    const toggleDropdown = (name) => {
-        setActiveDropdown(activeDropdown === name ? null : name);
-    };
-
-    // Generate dynamic years: 10 years before and 10 years after current year
-    const currentYear = new Date().getFullYear();
-    const yearsList = Array.from({ length: 21 }, (_, i) => {
-        const startYear = currentYear - 10 + i;
-        return `${startYear}-${startYear + 1}`;
-    });
-
-    useEffect(() => {
-        if (!authLoading && !currentUser) {
-            router.push("/login");
-            return;
-        }
-        
-        const fetchClassData = async () => {
-            if (currentUser && classId) {
-                try {
-                    const clsData = await classService.getClassDetails(classId);
-                    if (clsData) {
-                        setClassName(clsData.name);
-                        setSchoolYear(clsData.schoolYear);
-                        setGrade(clsData.grade || GRADES[11]);
-                        setSubject(clsData.subject || GRADE_SUBJECTS_MAP[GRADES[11]][0]);
-                        if (clsData.startTime) {
-                            const st = new Date(clsData.startTime);
-                            setExamDate(st.toISOString().split('T')[0]);
-                            setExamTime(st.toTimeString().substring(0, 5));
-                        }
-                        setExamDuration(clsData.duration || 45);
-                    } else {
-                        router.push("/classes");
-                    }
-                } catch (error) {
-                    console.error("Lỗi tải lớp học:", error);
-                } finally {
-                    setLoading(false);
-                }
-            }
-        };
-
-        fetchClassData();
-    }, [currentUser, authLoading, router, classId]);
-
-    const handleSave = async () => {
-        if (!className.trim()) return;
-        setIsSaving(true);
-        try {
-            let computedStartTime = null;
-            let computedEndTime = null;
-            
-            if (examDate && examTime) {
-                computedStartTime = new Date(`${examDate}T${examTime}`).toISOString();
-                const end = new Date(new Date(computedStartTime).getTime() + examDuration * 60000);
-                computedEndTime = end.toISOString();
-            }
-
-            await classService.updateClass(classId, {
-                name: className,
-                schoolYear: schoolYear,
-                grade: grade,
-                subject: subject,
-                startTime: computedStartTime,
-                endTime: computedEndTime,
-                duration: examDuration
-            });
-            alert("Đã lưu cấu hình thành công!");
-        } catch (error) {
-            alert("Có lỗi xảy ra khi lưu!");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleDelete = async () => {
-        if (confirm("Hành động này KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn muốn xóa lớp học này và toàn bộ dữ liệu học sinh bên trong?")) {
-            try {
-                await classService.deleteClass(classId);
-                router.push("/classes");
-            } catch (error) {
-                alert("Lỗi khi xóa lớp học!");
-            }
-        }
-    };
+    const {
+        authLoading, loading,
+        className, setClassName,
+        schoolYear, setSchoolYear,
+        grade, setGrade,
+        subject, setSubject,
+        examDate, setExamDate,
+        examTime, setExamTime,
+        examDuration, setExamDuration,
+        isSaving,
+        activeDropdown, toggleDropdown,
+        isYearDropdownOpen, setIsYearDropdownOpen,
+        yearsList, GRADES,
+        handleSave, handleDelete
+    } = useClassSettings(classId);
 
     if (authLoading || loading) {
         return (
@@ -137,7 +37,6 @@ export default function ClassSettingsPage({ params }) {
 
     return (
         <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-3xl mx-auto">
-            {/* Header */}
             <div className="flex items-center gap-4 border-b border-border/60 pb-6">
                 <Link href="/classes">
                     <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-muted">
@@ -226,7 +125,7 @@ export default function ClassSettingsPage({ params }) {
                                                 onClick={() => {
                                                     setGrade(g);
                                                     setSubject(GRADE_SUBJECTS_MAP[g][0]);
-                                                    setActiveDropdown(null);
+                                                    toggleDropdown('grade');
                                                 }}
                                             >
                                                 {g}
@@ -258,7 +157,7 @@ export default function ClassSettingsPage({ params }) {
                                                 }`}
                                                 onClick={() => {
                                                     setSubject(sub);
-                                                    setActiveDropdown(null);
+                                                    toggleDropdown('subject');
                                                 }}
                                             >
                                                 {sub}
@@ -311,7 +210,7 @@ export default function ClassSettingsPage({ params }) {
                                                 }`}
                                                 onClick={() => {
                                                     setExamDuration(mins);
-                                                    setActiveDropdown(null);
+                                                    toggleDropdown('duration');
                                                 }}
                                             >
                                                 {mins} phút
