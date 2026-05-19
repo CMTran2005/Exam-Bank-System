@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import {
     Home,
@@ -11,6 +12,12 @@ import {
     Settings,
     ChevronRight,
     FileText,
+    Users,
+    Building2,
+    Trash2,
+    GraduationCap,
+    Bot,
+    PenTool
 } from "lucide-react";
 
 const navGroups = [
@@ -24,6 +31,12 @@ const navGroups = [
         ],
     },
     {
+        label: "Trường Học",
+        items: [
+            { href: "/classes", icon: GraduationCap, label: "Lớp Thi" },
+        ],
+    },
+    {
         label: "Phân Tích",
         items: [
             { href: "/statistics", icon: BarChart2, label: "Thống Kê" },
@@ -33,12 +46,44 @@ const navGroups = [
         label: "Hệ Thống",
         items: [
             { href: "/settings", icon: Settings, label: "Cài Đặt" },
+            { href: "/recycle-bin", icon: Trash2, label: "Thùng Rác" },
         ],
     },
 ];
 
 export default function Sidebar({ isOpen, isMobile = false }) {
     const pathname = usePathname();
+    const { currentUser } = useAuth();
+    
+    // RBAC Logic: Filter nav items based on role
+    const userRole = currentUser?.role || "teacher";
+    
+    const filteredNavGroups = navGroups.map(group => {
+        let filteredItems = group.items;
+        
+        // Admin has access to everything
+        if (userRole === "admin") return group;
+        
+        // Student role (demo) - only sees their classes and exams
+        if (userRole === "student") {
+            if (group.label === "Phân Tích") {
+                filteredItems = [];
+            }
+            if (group.label === "Chính") {
+                filteredItems = filteredItems.filter(i => i.href === "/" || i.href === "/my-exams");
+            }
+        }
+        
+        // Teacher role
+        if (userRole === "teacher") {
+            if (group.label === "Hệ Thống") {
+                // Teachers might not see full system settings
+                // But for now we let them see settings and recycle bin
+            }
+        }
+        
+        return { ...group, items: filteredItems };
+    }).filter(group => group.items.length > 0);
 
     return (
         <aside
@@ -52,7 +97,7 @@ export default function Sidebar({ isOpen, isMobile = false }) {
             <div className="h-full flex flex-col w-full overflow-x-hidden">
 
                 <nav className="flex flex-col gap-5 px-2 py-4 flex-1 overflow-y-auto overflow-x-hidden">
-                    {navGroups.map((group) => (
+                    {filteredNavGroups.map((group) => (
                         <div key={group.label}>
                             <p className={cn(
                                 "px-3 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40 select-none transition-all duration-300 ease-in-out whitespace-nowrap overflow-hidden",

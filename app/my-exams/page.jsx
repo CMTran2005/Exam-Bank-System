@@ -12,14 +12,20 @@ import {
     Eye,
     EyeOff,
     Check,
-    Loader2
+    Loader2,
+    Folder,
+    FolderOpen,
+    FolderPlus,
+    MoreVertical,
+    X,
+    ArrowRightLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
-import { doc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, deleteDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// Hàm tiện ích giới hạn thời gian chờ của một tác vụ Promise (tránh bị treo do mạng/DB chưa cấu hình)
 const runWithTimeout = (promise, ms = 1000) => {
     return Promise.race([
         promise,
@@ -47,6 +53,21 @@ export default function MyExamsPage() {
         total_questions: true,
         updatedAt: true
     });
+    const [folders, setFolders] = useState([
+        { id: "all", name: "Tất cả đề thi" }
+    ]);
+    const [activeFolder, setActiveFolder] = useState("all");
+
+    // Modal states
+    const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+    const [newFolderName, setNewFolderName] = useState("");
+    
+    const [isMoveExamModalOpen, setIsMoveExamModalOpen] = useState(false);
+    const [examToMove, setExamToMove] = useState(null);
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+    
+    // Bulk selection state
+    const [selectedExams, setSelectedExams] = useState([]);
 
     useEffect(() => {
         if (!loading && !currentUser) {
@@ -98,6 +119,30 @@ export default function MyExamsPage() {
                         console.error("Lỗi đọc cấu hình hiển thị:", e);
                     }
                 }
+
+                // Tải danh sách folders
+                let folderList = [{ id: "all", name: "Tất cả đề thi" }];
+                try {
+                    const fq = query(collection(db, "folders"), where("uid", "==", currentUser?.uid || "anonymous"));
+                    const folderSnap = await runWithTimeout(getDocs(fq), 1500);
+                    folderSnap.forEach((doc) => {
+                        folderList.push({ id: doc.id, ...doc.data() });
+                    });
+                } catch (e) {
+                    console.warn("Lỗi tải folder từ Firebase, dùng LocalStorage");
+                }
+
+                if (folderList.length === 1) {
+                    const savedFolders = localStorage.getItem("eb_folders");
+                    if (savedFolders) {
+                        try {
+                            folderList = JSON.parse(savedFolders);
+                        } catch(e) {}
+                    }
+                } else {
+                    localStorage.setItem("eb_folders", JSON.stringify(folderList));
+                }
+                setFolders(folderList);
             }
         };
 
@@ -122,19 +167,162 @@ export default function MyExamsPage() {
 
     const handleDeleteExam = async (id, e) => {
         e.preventDefault();
-        if (confirm("Bạn có chắc chắn muốn xóa đề thi này không? Hành động này không thể hoàn tác.")) {
+        if (confirm("Bạn có chắc chắn muốn xóa đề thi này không? Đề thi sẽ được chuyển vào Thùng rác và có thể khôi phục trong 30 ngày.")) {
+            const examToDelete = exams.find(ex => ex.id === id);
+            if (!examToDelete) return;
+
+            // Thêm thông tin xóa
+            const trashedExam = {
+                ...examToDelete,
+                deletedAt: new Date().toISOString()
+            };
+
             const updated = exams.filter((ex) => ex.id !== id);
             setExams(updated);
             localStorage.setItem("eb_exams", JSON.stringify(updated));
 
-            // Xóa khỏi Firestore
+            // Lưu vào thùng rác local
+            const savedTrash = JSON.parse(localStorage.getItem("eb_trash") || "[]");
+            savedTrash.push(trashedExam);
+            localStorage.setItem("eb_trash", JSON.stringify(savedTrash));
+
+            // Di chuyển trong Firestore
             try {
+                // Thêm vào trash_exams
+                const trashDocRef = doc(db, "trash_exams", id);
+                await runWithTimeout(setDoc(trashDocRef, trashedExam), 1200);
+
+                // Xóa khỏi exams
                 const examDocRef = doc(db, "exams", id);
                 await runWithTimeout(deleteDoc(examDocRef), 1200);
             } catch (err) {
                 console.warn("Bỏ qua lỗi Firestore khi xóa đề thi:", err.message);
             }
         }
+    };
+
+    const handleCreateFolder = async (e) => {
+        e.preventDefault();
+        if (!newFolderName.trim()) return;
+        setIsCreatingFolder(true);
+
+        const newFolder = {
+            id: `f_${Date.now()}`,
+            name: newFolderName.trim(),
+            uid: currentUser.uid,
+            createdAt: new Date().toISOString()
+        };
+
+        try {
+            const folderRef = doc(db, "folders", newFolder.id);
+            await runWithTimeout(setDoc(folderRef, newFolder), 1000);
+        } catch (e) {
+            console.warn("Chỉ lưu local vì lỗi Firestore", e);
+        }
+
+        const updatedFolders = [...folders, newFolder];
+        setFolders(updatedFolders);
+        localStorage.setItem("eb_folders", JSON.stringify(updatedFolders));
+        
+        setIsCreateFolderModalOpen(false);
+        setNewFolderName("");
+        setIsCreatingFolder(false);
+        setActiveFolder(newFolder.id);
+    };
+
+    const handleBulkDelete = async () => {
+        if (!selectedExams.length) return;
+        if (confirm(`Bạn có chắc chắn muốn xóa ${selectedExams.length} đề thi đã chọn?`)) {
+            const trashedExams = exams.filter(ex => selectedExams.includes(ex.id)).map(ex => ({
+                ...ex,
+                deletedAt: new Date().toISOString()
+            }));
+
+            const updatedExams = exams.filter(ex => !selectedExams.includes(ex.id));
+            setExams(updatedExams);
+            localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
+
+            const savedTrash = JSON.parse(localStorage.getItem("eb_trash") || "[]");
+            localStorage.setItem("eb_trash", JSON.stringify([...savedTrash, ...trashedExams]));
+
+            for (const exam of trashedExams) {
+                try {
+                    await setDoc(doc(db, "trash_exams", exam.id), exam);
+                    await deleteDoc(doc(db, "exams", exam.id));
+                } catch(e) {}
+            }
+            
+            setSelectedExams([]);
+        }
+    };
+
+    const handleMoveToFolder = async (folderId) => {
+        if (!examToMove) return;
+
+        let updatedExams = [...exams];
+        const isBulk = examToMove === "BULK";
+        const targets = isBulk ? selectedExams : [examToMove.id];
+
+        updatedExams = updatedExams.map(ex => 
+            targets.includes(ex.id) ? { ...ex, folderId: folderId === "all" ? null : folderId } : ex
+        );
+        
+        setExams(updatedExams);
+        localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
+
+        for (const tid of targets) {
+            try {
+                const examRef = doc(db, "exams", tid);
+                await setDoc(examRef, { folderId: folderId === "all" ? null : folderId }, { merge: true });
+            } catch (e) {
+                console.warn("Lỗi lưu thư mục vào DB", e);
+            }
+        }
+
+        setIsMoveExamModalOpen(false);
+        setExamToMove(null);
+        if (isBulk) setSelectedExams([]);
+        alert("Chuyển thư mục thành công!");
+    };
+
+    const handleDeleteFolder = async (folderId) => {
+        if (!confirm("Bạn có chắc chắn muốn xóa thư mục này? Các đề thi bên trong sẽ được chuyển về 'Tất cả đề thi'.")) return;
+
+        const updatedFolders = folders.filter(f => f.id !== folderId);
+        setFolders(updatedFolders);
+        localStorage.setItem("eb_folders", JSON.stringify(updatedFolders));
+
+        if (activeFolder === folderId) {
+            setActiveFolder("all");
+        }
+
+        const updatedExams = exams.map(ex => ex.folderId === folderId ? { ...ex, folderId: null } : ex);
+        setExams(updatedExams);
+        localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
+
+        try {
+            await runWithTimeout(deleteDoc(doc(db, "folders", folderId)), 1500);
+            const examsToUpdate = exams.filter(ex => ex.folderId === folderId);
+            for (const ex of examsToUpdate) {
+                await setDoc(doc(db, "exams", ex.id), { folderId: null }, { merge: true });
+            }
+        } catch (e) {
+            console.warn("Lỗi Firestore khi xóa folder", e);
+        }
+    };
+
+    const displayedExams = exams.filter(ex => activeFolder === "all" || ex.folderId === activeFolder);
+
+    const toggleSelectAll = () => {
+        if (selectedExams.length === displayedExams.length) {
+            setSelectedExams([]);
+        } else {
+            setSelectedExams(displayedExams.map(e => e.id));
+        }
+    };
+
+    const toggleSelectExam = (id) => {
+        setSelectedExams(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
     };
 
     if (!mounted) {
@@ -180,6 +368,47 @@ export default function MyExamsPage() {
                 </div>
             </div>
 
+            {/* Folders Navigation */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {folders.map(folder => (
+                    <button
+                        key={folder.id}
+                        onClick={() => setActiveFolder(folder.id)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap border ${
+                            activeFolder === folder.id
+                                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                : "bg-card text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
+                        }`}
+                    >
+                        {activeFolder === folder.id ? <FolderOpen className="w-4 h-4" /> : <Folder className="w-4 h-4" />}
+                        {folder.name}
+                        {folder.id === "all" && (
+                            <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] ${
+                                activeFolder === folder.id ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                            }`}>
+                                {exams.length}
+                            </span>
+                        )}
+                        {folder.id !== "all" && activeFolder === folder.id && (
+                            <div 
+                                onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id) }} 
+                                className="ml-1 text-primary-foreground/70 hover:text-red-300 transition-colors p-0.5 rounded"
+                                title="Xóa thư mục này"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </div>
+                        )}
+                    </button>
+                ))}
+                <button 
+                    onClick={() => setIsCreateFolderModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-primary transition-all whitespace-nowrap bg-muted/20"
+                >
+                    <FolderPlus className="w-4 h-4" />
+                    Thư mục mới
+                </button>
+            </div>
+
             {showSettings && (
                 <div className="p-4 bg-muted/40 dark:bg-muted/10 border border-border rounded-2xl animate-in slide-in-from-top-3 duration-250 space-y-3">
                     <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -223,12 +452,52 @@ export default function MyExamsPage() {
                 </div>
             )}
 
+            {/* Bulk Actions Bar */}
+            {selectedExams.length > 0 && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+                    <span className="text-sm font-bold text-blue-700 dark:text-blue-400">
+                        Đã chọn {selectedExams.length} đề thi
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                                setExamToMove("BULK");
+                                setIsMoveExamModalOpen(true);
+                            }}
+                            className="h-8 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800"
+                        >
+                            <ArrowRightLeft className="w-3.5 h-3.5 mr-1" />
+                            Chuyển
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={handleBulkDelete}
+                            className="h-8 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50"
+                        >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" />
+                            Xóa
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             {exams.length > 0 ? (
                 <div className="space-y-4">
 
                     <div className="hidden lg:block bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
                         <div className="flex items-center gap-4 px-6 py-4 border-b border-border/85 bg-slate-50/50 dark:bg-slate-900/35 text-[11px] font-bold text-muted-foreground uppercase tracking-wider select-none">
-                            {displaySettings.id && <div className="w-24 shrink-0">Mã Đề</div>}
+                            <div className="w-4 shrink-0 flex items-center">
+                                <input 
+                                    type="checkbox" 
+                                    checked={selectedExams.length > 0 && selectedExams.length === displayedExams.length}
+                                    onChange={toggleSelectAll}
+                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
+                                />
+                            </div>
+                            {displaySettings.id && <div className="w-32 shrink-0">Mã Đề</div>}
                             <div className="flex-1 min-w-[200px]">Tên Đề Thi</div>
                             {displaySettings.subject && <div className="w-28 shrink-0">Môn Học</div>}
                             {displaySettings.grade && <div className="w-20 shrink-0">Khối Lớp</div>}
@@ -241,14 +510,22 @@ export default function MyExamsPage() {
                         </div>
 
                         <div className="divide-y divide-border/60">
-                            {exams.map((ex) => (
+                            {displayedExams.map((ex) => (
                                 <div
                                     key={ex.id}
-                                    className="flex items-center gap-4 px-6 py-4 hover:bg-muted/15 dark:hover:bg-muted/5 transition-colors duration-150"
+                                    className={`flex items-center gap-4 px-6 py-4 transition-colors duration-150 ${selectedExams.includes(ex.id) ? 'bg-blue-50/50 dark:bg-blue-900/10' : 'hover:bg-muted/15 dark:hover:bg-muted/5'}`}
                                 >
+                                    <div className="w-4 shrink-0 flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={selectedExams.includes(ex.id)}
+                                            onChange={() => toggleSelectExam(ex.id)}
+                                            className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
+                                        />
+                                    </div>
                                     {displaySettings.id && (
-                                        <div className="w-24 shrink-0">
-                                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200/40 font-mono block truncate" title={ex.id}>
+                                        <div className="w-32 shrink-0 min-w-0">
+                                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200/40 font-mono block truncate max-w-full" title={ex.id}>
                                                 {ex.id}
                                             </span>
                                         </div>
@@ -331,6 +608,18 @@ export default function MyExamsPage() {
                                             </Button>
                                         </Link>
                                         <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => {
+                                                setExamToMove(ex);
+                                                setIsMoveExamModalOpen(true);
+                                            }}
+                                            className="w-8 h-8 rounded-lg border-border hover:bg-muted text-foreground flex items-center justify-center shrink-0"
+                                            title="Chuyển thư mục"
+                                        >
+                                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={(e) => handleDeleteExam(ex.id, e)}
@@ -346,12 +635,20 @@ export default function MyExamsPage() {
                     </div>
 
                     <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {exams.map((ex) => (
+                        {displayedExams.map((ex) => (
                             <div
                                 key={ex.id}
-                                className="bg-card border border-border rounded-2xl p-4.5 shadow-sm hover:shadow hover:border-primary/30 transition-all duration-200 flex flex-col justify-between space-y-3.5"
+                                className={`bg-card border rounded-2xl p-4.5 shadow-sm transition-all duration-200 flex flex-col justify-between space-y-3.5 relative ${selectedExams.includes(ex.id) ? 'border-primary bg-primary/5' : 'border-border hover:shadow hover:border-primary/30'}`}
                             >
-                                <div className="space-y-2.5">
+                                <div className="absolute top-4 right-4 z-10">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedExams.includes(ex.id)}
+                                        onChange={() => toggleSelectExam(ex.id)}
+                                        className="w-5 h-5 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer"
+                                    />
+                                </div>
+                                <div className="space-y-2.5 pr-8">
                                     <div className="flex flex-wrap items-center gap-1.5">
                                         {displaySettings.id && (
                                             <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200/40 font-mono block max-w-[150px] truncate" title={ex.id}>
@@ -419,6 +716,18 @@ export default function MyExamsPage() {
                                             </Button>
                                         </Link>
                                         <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => {
+                                                setExamToMove(ex);
+                                                setIsMoveExamModalOpen(true);
+                                            }}
+                                            className="w-7 h-7 rounded-lg border-border hover:bg-muted text-foreground flex items-center justify-center shrink-0"
+                                            title="Chuyển thư mục"
+                                        >
+                                            <ArrowRightLeft className="w-3 h-3" />
+                                        </Button>
+                                        <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={(e) => handleDeleteExam(ex.id, e)}
@@ -442,13 +751,87 @@ export default function MyExamsPage() {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                         Nhấn nút dưới để bắt đầu soạn thảo đề thi đầu tiên cùng sự trợ giúp đắc lực của Trí tuệ nhân tạo.
                     </p>
-                    <Link href="/create-question" className="inline-block pt-2">
-                        <Button size="sm" className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold rounded-xl px-5 h-9">
-                            Soạn đề thi ngay
+                    <Link href="/create-question">
+                        <Button className="mt-2 h-11 px-6 rounded-xl font-bold bg-primary hover:bg-primary/95 text-primary-foreground shadow-lg shadow-primary/20">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Soạn thảo đề thi mới
                         </Button>
                     </Link>
                 </div>
             )}
+        {/* Modal Create Folder */}
+        {isCreateFolderModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-card border border-border shadow-2xl rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between p-4 border-b border-border/60">
+                        <h3 className="font-bold text-foreground">Tạo thư mục mới</h3>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full" onClick={() => setIsCreateFolderModalOpen(false)}>
+                            <X className="w-4 h-4" />
+                        </Button>
+                    </div>
+                    <form onSubmit={handleCreateFolder} className="p-4 space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-foreground">Tên thư mục</label>
+                            <Input 
+                                autoFocus
+                                placeholder="Nhập tên thư mục..." 
+                                className="h-11 rounded-xl text-sm"
+                                value={newFolderName}
+                                onChange={(e) => setNewFolderName(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2 border-t border-border/60">
+                            <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => setIsCreateFolderModalOpen(false)}>
+                                Hủy bỏ
+                            </Button>
+                            <Button type="submit" disabled={isCreatingFolder || !newFolderName.trim()} className="h-10 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold min-w-[100px]">
+                                {isCreatingFolder ? <Loader2 className="w-4 h-4 animate-spin" /> : "Tạo mới"}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+
+        {/* Modal Move Exam */}
+        {isMoveExamModalOpen && examToMove && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-card border border-border shadow-2xl rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[80vh]">
+                    <div className="flex items-center justify-between p-4 border-b border-border/60">
+                        <h3 className="font-bold text-foreground">Chuyển thư mục</h3>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full" onClick={() => setIsMoveExamModalOpen(false)}>
+                            <X className="w-4 h-4" />
+                        </Button>
+                    </div>
+                    <div className="p-4 flex-1 overflow-hidden flex flex-col">
+                        <p className="text-sm text-muted-foreground mb-3 shrink-0">
+                            Đang chuyển: <strong className="text-foreground line-clamp-1 mt-1">{examToMove === "BULK" ? `${selectedExams.length} đề thi` : examToMove.title}</strong>
+                        </p>
+                        <div className="space-y-1.5 overflow-y-auto pr-1">
+                            {folders.map(folder => {
+                                const isCurrentFolder = examToMove !== "BULK" && ((examToMove.folderId === folder.id) || (folder.id === 'all' && !examToMove.folderId));
+                                return (
+                                <div 
+                                    key={folder.id}
+                                    onClick={() => handleMoveToFolder(folder.id)}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                                        isCurrentFolder
+                                            ? "bg-blue-50/50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800/50 text-blue-700 dark:text-blue-400 font-bold" 
+                                            : "border-border/50 hover:border-primary/40 hover:bg-muted text-foreground"
+                                    }`}
+                                >
+                                    <Folder className="w-4 h-4" />
+                                    <span className="text-sm truncate">{folder.name}</span>
+                                    {isCurrentFolder && (
+                                        <Check className="w-4 h-4 ml-auto shrink-0" />
+                                    )}
+                                </div>
+                            )})}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 }

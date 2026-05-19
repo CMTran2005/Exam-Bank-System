@@ -404,7 +404,7 @@ export default function RichTextToolbar({ targetId, value, onChange }) {
                         disabled={ocrLoading}
                         onClick={() => fileInputRef.current?.click()}
                         className="h-8 text-[11px] font-bold px-2.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/40 rounded-md flex items-center gap-1 shadow-sm hover:shadow"
-                        title="Quét công thức/chữ từ hình ảnh bằng Trí tuệ Nhân tạo AI OCR"
+                        title="Quét công thức/chữ từ hình ảnh"
                     >
                         {ocrLoading ? (
                             <>
@@ -414,7 +414,7 @@ export default function RichTextToolbar({ targetId, value, onChange }) {
                         ) : (
                             <>
                                 <Sparkles className="h-3.5 w-3.5 text-yellow-500 animate-pulse" />
-                                <span>AI Quét ảnh</span>
+                                <span>Quét ảnh</span>
                             </>
                         )}
                     </Button>

@@ -26,6 +26,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "next-themes";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { CustomDatePicker } from "@/components/ui/date-time-picker";
 
 // Hàm tiện ích giới hạn thời gian chờ của một tác vụ Promise (tránh bị treo do mạng/DB chưa cấu hình)
 const runWithTimeout = (promise, ms = 1000) => {
@@ -56,6 +57,9 @@ export default function SettingsPage() {
 
     // Trạng thái các tab cài đặt
     const [activeTab, setActiveTab] = useState("profile");
+    
+    // Manage all dropdowns with a single state
+    const [activeDropdown, setActiveDropdown] = useState(null);
 
     // --- CẤU HÌNH TRẠNG THÁI (STATES) ---
     // 1. Hồ sơ cá nhân sư phạm
@@ -450,11 +454,11 @@ export default function SettingsPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-muted-foreground">Ngày tháng năm sinh</label>
-                                        <Input
-                                            type="date"
+                                        <CustomDatePicker
                                             value={birthDate}
-                                            onChange={(e) => setBirthDate(e.target.value)}
-                                            className="h-10 border-border bg-background"
+                                            onChange={setBirthDate}
+                                            isOpen={activeDropdown === 'birthDate'}
+                                            onToggle={() => setActiveDropdown(activeDropdown === 'birthDate' ? null : 'birthDate')}
                                         />
                                     </div>
                                     <div className="space-y-1.5">

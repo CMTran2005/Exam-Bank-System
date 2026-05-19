@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Save, Trash2, ChevronDown, ChevronUp, BookOpen, Loader2, Sparkles } from "lucide-react";
+import { Plus, Save, Trash2, ChevronDown, ChevronUp, BookOpen, Loader2, Sparkles, Maximize, Minimize, Check, Copy } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -91,6 +91,100 @@ export default function CreateExamPage() {
 
     const [questionsList, setQuestionsList] = useState([]);
     const [showPicker, setShowPicker] = useState(false);
+    
+    // UI States for Part 4
+    const [zenMode, setZenMode] = useState(false);
+    const [lastSaved, setLastSaved] = useState(null);
+
+    // Auto-save Effect (5s debounce)
+    useEffect(() => {
+        if (!examInfo.title && questionsList.length === 0) return;
+        const timer = setTimeout(() => {
+            const draft = { examInfo, questionsList, timestamp: new Date().toISOString() };
+            localStorage.setItem("eb_exam_draft", JSON.stringify(draft));
+            setLastSaved(new Date());
+        }, 5000);
+        return () => clearTimeout(timer);
+    }, [examInfo, questionsList]);
+
+    const toggleZenMode = () => {
+        const newZen = !zenMode;
+        setZenMode(newZen);
+        window.dispatchEvent(new CustomEvent("toggle-zen-mode", { detail: newZen }));
+    };
+
+    // AI Assistant States
+    const [showAIAssistant, setShowAIAssistant] = useState(false);
+    const [aiPromptText, setAiPromptText] = useState("");
+    const [aiGenType, setAiGenType] = useState("multiple_choice");
+    const [aiGenerating, setAiGenerating] = useState(false);
+
+    const handleAIGenerateQuestion = async () => {
+        if (!aiPromptText.trim()) {
+            alert("Vui lòng nhập chủ đề hoặc yêu cầu trước khi tạo câu hỏi.");
+            return;
+        }
+
+        setAiGenerating(true);
+        try {
+            const response = await fetch("/api/ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "generate_question",
+                    promptText: aiPromptText,
+                    type: aiGenType
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                alert("Lỗi tạo câu hỏi: " + data.error);
+                return;
+            }
+
+            // Tạo đối tượng câu hỏi mới từ dữ liệu AI trả về
+            const newQ = {
+                id: Date.now() + Math.random(),
+                type: aiGenType,
+                content: data.content || "",
+                images: [],
+                difficulty: data.difficulty || "nhan_biet",
+                points: data.points || "1.0",
+                suggested_solution: data.suggested_solution || "",
+                final_answer: data.final_answer || "",
+                answer_images: [],
+                isCollapsed: false
+            };
+
+            if (aiGenType === "multiple_choice") {
+                const labels = ["A", "B", "C", "D"];
+                newQ.options = (data.choices || []).map(c => c.text || "");
+                newQ.options_images = ["", "", "", ""];
+                
+                // Xác định đáp án đúng
+                const correctIdx = (data.choices || []).findIndex(c => c.isCorrect);
+                newQ.correct_answer = correctIdx !== -1 ? labels[correctIdx] : "A";
+            } else if (aiGenType === "true_false") {
+                newQ.subQuestions = (data.subQuestions || []).map(sq => ({
+                    id: Date.now() + Math.random() + Math.random(),
+                    content: sq.content || "",
+                    isCorrect: sq.isCorrect || false,
+                    points: sq.points || "0.25"
+                }));
+            }
+
+            setQuestionsList(prev => [...prev, newQ]);
+            setAiPromptText(""); // Reset prompt
+            setShowAIAssistant(false); // Đóng panel
+            alert("Tạo câu hỏi thành công!");
+        } catch (err) {
+            console.error("Lỗi gọi AI tạo câu hỏi:", err);
+            alert("Lỗi kết nối AI: " + err.message);
+        } finally {
+            setAiGenerating(false);
+        }
+    };
 
     useEffect(() => {
         if (!loading && !currentUser) {
@@ -136,6 +230,24 @@ export default function CreateExamPage() {
                         });
                         isCodeManuallyEdited.current = true;
                         setQuestionsList(examToEdit.questions || []);
+                    }
+                } else {
+                    const draftStr = localStorage.getItem("eb_exam_draft");
+                    if (draftStr) {
+                        try {
+                            const draft = JSON.parse(draftStr);
+                            if (draft.examInfo || draft.questionsList?.length > 0) {
+                                if (confirm(`Bạn có bản nháp đang soạn dở lúc ${new Date(draft.timestamp).toLocaleTimeString('vi-VN')}. Bạn có muốn khôi phục không?`)) {
+                                    setExamInfo(draft.examInfo || examInfo);
+                                    setQuestionsList(draft.questionsList || []);
+                                    isCodeManuallyEdited.current = !!draft.examInfo?.code;
+                                } else {
+                                    localStorage.removeItem("eb_exam_draft");
+                                }
+                            }
+                        } catch (e) {
+                            console.error("Lỗi đọc bản nháp:", e);
+                        }
                     }
                 }
             }
@@ -280,8 +392,65 @@ export default function CreateExamPage() {
         router.push("/my-exams");
     };
 
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Ngăn chặn các phím tắt mặc định nếu cần
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                handleSaveExam();
+            } else if (e.altKey && e.key === 'n') {
+                e.preventDefault();
+                addQuestion("multiple_choice");
+            } else if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                // Duplicate last question
+                setQuestionsList(prev => {
+                    if (prev.length === 0) return prev;
+                    const lastQ = prev[prev.length - 1];
+                    const newQ = JSON.parse(JSON.stringify(lastQ));
+                    newQ.id = Date.now() + Math.random();
+                    if (newQ.number_label) {
+                        newQ.number_label = newQ.number_label + " (Bản sao)";
+                    }
+                    return [...prev, newQ];
+                });
+            } else if (e.ctrlKey && e.key === '/') {
+                e.preventDefault();
+                setShowAIAssistant(prev => !prev);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [examInfo, questionsList, currentUser, editId]);
+
     return (
-        <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6 transition-colors duration-300">
+        <div className={`w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6 transition-all duration-300 ${zenMode ? 'max-w-7xl' : ''}`}>
+
+            {/* Top Toolbar (Auto-save & Zen Mode) */}
+            <div className="flex items-center justify-between bg-card p-3 rounded-2xl border border-border shadow-sm animate-in slide-in-from-top-3">
+                <div className="flex items-center gap-2">
+                    {lastSaved ? (
+                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-full border border-emerald-200/50 dark:border-emerald-900/50">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" /> Đã lưu nháp lúc {lastSaved.toLocaleTimeString('vi-VN')}
+                        </span>
+                    ) : (
+                        <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-full border border-border/50">
+                            <Save className="w-3.5 h-3.5" /> Trạng thái: Chưa có thay đổi
+                        </span>
+                    )}
+                </div>
+                <Button 
+                    variant={zenMode ? "default" : "outline"}
+                    size="sm" 
+                    onClick={toggleZenMode} 
+                    className={`gap-2 text-xs font-bold rounded-xl h-9 ${zenMode ? "bg-primary text-primary-foreground shadow-md" : "hover:bg-muted text-muted-foreground"}`}
+                >
+                    {zenMode ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                    {zenMode ? "Thoát Zen Mode" : "Zen Mode"}
+                </Button>
+            </div>
 
             <Card className="border-blue-200 bg-blue-50/30 dark:border-blue-900/50 dark:bg-blue-950/20 shadow-sm">
                 <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
@@ -389,6 +558,86 @@ export default function CreateExamPage() {
                 </CardContent>
             </Card>
 
+            {/* Trợ lý Soạn Câu Hỏi */}
+            <Card className="border-violet-200 bg-violet-50/10 dark:border-violet-900/40 dark:bg-violet-950/10 shadow-sm overflow-hidden transition-all duration-300">
+                <div 
+                    onClick={() => setShowAIAssistant(!showAIAssistant)}
+                    className="p-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-violet-50/30 dark:hover:bg-violet-950/25 transition-colors select-none"
+                >
+                    <div className="flex items-center gap-2.5">
+                        <Sparkles className="w-5 h-5 text-violet-600 dark:text-violet-400 fill-violet-600/10 animate-pulse" />
+                        <div>
+                            <h3 className="text-sm font-bold text-violet-800 dark:text-violet-300">Trợ lý Soạn Câu Hỏi (Generative Assistant)</h3>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Tự động soạn câu hỏi toán lý hóa chuẩn cấu trúc kiến thức</p>
+                        </div>
+                    </div>
+                    <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:bg-violet-900/50 shrink-0"
+                    >
+                        {showAIAssistant ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </Button>
+                </div>
+
+                {showAIAssistant && (
+                    <CardContent className="p-4 sm:p-5 border-t border-violet-100 dark:border-violet-900/30 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="sm:col-span-2">
+                                <label className="text-xs font-semibold text-violet-700 dark:text-violet-400 block mb-1.5">
+                                    Mô tả yêu cầu / Chủ đề kiến thức:
+                                </label>
+                                <Input
+                                    value={aiPromptText}
+                                    onChange={(e) => setAiPromptText(e.target.value)}
+                                    placeholder="Ví dụ: Tạo 1 câu trắc nghiệm Toán 12 về thể tích khối chóp tam giác đều cạnh đáy bằng a..."
+                                    className="border-violet-200/80 dark:border-violet-800 focus-visible:ring-violet-500"
+                                    disabled={aiGenerating}
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-violet-700 dark:text-violet-400 block mb-1.5">
+                                    Loại câu hỏi cần tạo:
+                                </label>
+                                <Select 
+                                    value={aiGenType} 
+                                    onValueChange={setAiGenType}
+                                    disabled={aiGenerating}
+                                >
+                                    <SelectTrigger className="border-violet-200/80 dark:border-violet-800 focus:ring-violet-500">
+                                        <SelectValue placeholder="Chọn loại câu hỏi" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="multiple_choice">Trắc nghiệm Đơn</SelectItem>
+                                        <SelectItem value="true_false">Đúng / Sai Đơn</SelectItem>
+                                        <SelectItem value="essay">Tự luận Đơn</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                            <Button
+                                onClick={handleAIGenerateQuestion}
+                                disabled={aiGenerating}
+                                className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold px-6 shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] gap-1.5"
+                            >
+                                {aiGenerating ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" /> Đang soạn đề...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="w-4 h-4 fill-white/10" /> Soạn Câu Hỏi
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </CardContent>
+                )}
+            </Card>
+
             <div className="space-y-4">
                 {questionsList.map((question, index) => (
                     <div key={question.id}>
@@ -418,6 +667,27 @@ export default function CreateExamPage() {
                                     );
                                 })()}
                                 <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => {
+                                            const newQ = JSON.parse(JSON.stringify(question));
+                                            newQ.id = Date.now() + Math.random();
+                                            if (newQ.number_label) {
+                                                newQ.number_label = newQ.number_label + " (Bản sao)";
+                                            }
+                                            setQuestionsList(prev => {
+                                                const idx = prev.findIndex(q => q.id === question.id);
+                                                const copy = [...prev];
+                                                copy.splice(idx + 1, 0, newQ);
+                                                return copy;
+                                            });
+                                        }}
+                                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                        title="Nhân bản câu hỏi này"
+                                    >
+                                        <Copy className="w-4 h-4" />
+                                    </Button>
                                     <Button
                                         variant="ghost"
                                         size="icon"

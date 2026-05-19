@@ -9,6 +9,7 @@ import Footer from "@/components/layout/Footer";
 export default function AppLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [zenMode, setZenMode] = useState(false);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -18,7 +19,14 @@ export default function AppLayout({ children }) {
         };
         checkMobile();
         window.addEventListener("resize", checkMobile);
-        return () => window.removeEventListener("resize", checkMobile);
+        
+        const handleZenMode = (e) => setZenMode(e.detail);
+        window.addEventListener("toggle-zen-mode", handleZenMode);
+        
+        return () => {
+            window.removeEventListener("resize", checkMobile);
+            window.removeEventListener("toggle-zen-mode", handleZenMode);
+        };
     }, []);
 
     const handleMenuToggle = () => setSidebarOpen((prev) => !prev);
@@ -26,11 +34,11 @@ export default function AppLayout({ children }) {
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
 
-            <Header onMenuToggle={handleMenuToggle} />
+            {!zenMode && <Header onMenuToggle={handleMenuToggle} />}
 
             <div className="flex flex-1 relative">
 
-                {isMobile && sidebarOpen && (
+                {isMobile && sidebarOpen && !zenMode && (
                     <div
                         className="fixed inset-0 z-20 bg-black/40 top-16"
                         onClick={() => setSidebarOpen(false)}
@@ -38,14 +46,14 @@ export default function AppLayout({ children }) {
                     />
                 )}
 
-                <Sidebar isOpen={sidebarOpen} isMobile={isMobile} />
+                {!zenMode && <Sidebar isOpen={sidebarOpen} isMobile={isMobile} />}
 
                 <main
                     className={cn(
                         "flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-x-hidden",
-                        isMobile
-                            ? "ml-0"
-                            : sidebarOpen ? "ml-60" : "ml-16"
+                        zenMode 
+                            ? "ml-0" 
+                            : (isMobile ? "ml-0" : sidebarOpen ? "ml-60" : "ml-16")
                     )}
                 >
                     <div className="flex-1">

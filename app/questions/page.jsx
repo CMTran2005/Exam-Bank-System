@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,7 +20,8 @@ import {
     Info,
     MapPin,
     Bookmark,
-    Loader2
+    Loader2,
+    Tag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,7 +70,8 @@ export default function QuestionsPage() {
     const { provinces } = useProvinces();
     const [questions, setQuestions] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [examTitleSearch, setExamTitleSearch] = useState("");
+    const [tagSearch, setTagSearch] = useState("all");
+    const [examTitleSearch, setExamTitleSearch] = useState("all");
     const [selectedGrade, setSelectedGrade] = useState("all");
     const [selectedSubject, setSelectedSubject] = useState("all");
     const [selectedType, setSelectedType] = useState("all");
@@ -121,6 +123,26 @@ export default function QuestionsPage() {
         }
     }, []);
 
+    const uniqueTags = useMemo(() => {
+        const tags = new Set();
+        questions.forEach(q => {
+            if (q.tags && Array.isArray(q.tags)) {
+                q.tags.forEach(t => tags.add(t));
+            }
+        });
+        return Array.from(tags).sort((a, b) => a.localeCompare(b, "vi"));
+    }, [questions]);
+
+    const uniqueExamTitles = useMemo(() => {
+        const titles = new Set();
+        questions.forEach(q => {
+            if (q.examTitle) {
+                titles.add(q.examTitle);
+            }
+        });
+        return Array.from(titles).sort((a, b) => a.localeCompare(b, "vi"));
+    }, [questions]);
+
     if (loading || !currentUser) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
@@ -168,15 +190,18 @@ export default function QuestionsPage() {
         const matchesGrade = selectedGrade && selectedGrade !== "all" ? q.grade === selectedGrade : true;
         const matchesSubject = selectedSubject && selectedSubject !== "all" ? q.subject === selectedSubject : true;
         const matchesType = selectedType && selectedType !== "all" ? q.type === selectedType : true;
-        const matchesExamTitle = examTitleSearch
-            ? (q.examTitle || "").toLowerCase().includes(examTitleSearch.toLowerCase())
+        const matchesExamTitle = examTitleSearch && examTitleSearch !== "all"
+            ? q.examTitle === examTitleSearch
             : true;
         const matchesProvince = selectedProvince && selectedProvince !== "all" ? q.province === selectedProvince : true;
         const matchesDifficulty = selectedDifficulty && selectedDifficulty !== "all"
             ? (q.difficulty === selectedDifficulty || (Array.isArray(q.subQuestions) && q.subQuestions.some(sub => sub.difficulty === selectedDifficulty)))
             : true;
+        const matchesTag = tagSearch && tagSearch !== "all"
+            ? (q.tags && q.tags.includes(tagSearch)) 
+            : true;
 
-        return matchesSearch && matchesGrade && matchesSubject && matchesType && matchesExamTitle && matchesProvince && matchesDifficulty;
+        return matchesSearch && matchesGrade && matchesSubject && matchesType && matchesExamTitle && matchesProvince && matchesDifficulty && matchesTag;
     });
 
     return (
@@ -213,15 +238,35 @@ export default function QuestionsPage() {
                         />
                     </div>
 
-                    <div className="relative">
-                        <Bookmark className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Tìm theo tên đề thi..."
-                            value={examTitleSearch}
-                            onChange={(e) => setExamTitleSearch(e.target.value)}
-                            className="pl-9 h-10 border-border bg-background"
-                        />
-                    </div>
+                    <Select value={examTitleSearch} onValueChange={setExamTitleSearch}>
+                        <SelectTrigger className="h-10 border-border bg-background">
+                            <span className="flex items-center gap-2">
+                                <Bookmark className="w-3.5 h-3.5 text-muted-foreground" />
+                                <SelectValue placeholder="Tất cả đề thi" />
+                            </span>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả đề thi</SelectItem>
+                            {uniqueExamTitles.map((title) => (
+                                <SelectItem key={title} value={title}>{title}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={tagSearch} onValueChange={setTagSearch}>
+                        <SelectTrigger className="h-10 border-border bg-background">
+                            <span className="flex items-center gap-2">
+                                <Tag className="w-3.5 h-3.5 text-muted-foreground" />
+                                <SelectValue placeholder="Tất cả thẻ phân loại" />
+                            </span>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Tất cả thẻ (Tags)</SelectItem>
+                            {uniqueTags.map((tag) => (
+                                <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
                     <Select value={selectedProvince} onValueChange={setSelectedProvince}>
                         <SelectTrigger className="h-10 border-border bg-background">

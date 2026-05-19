@@ -129,7 +129,6 @@ export default function StatisticsPage() {
                             { name: "Vận dụng cao", count: vanDungCao, percentage: Math.round((vanDungCao / diffDiv) * 100), color: "bg-rose-500", text: "text-rose-500" }
                         ]);
 
-                        // Gom nhóm và đếm chính xác cả 6 loại câu hỏi của hệ thống
                         let singleMC = 0, groupMC = 0, singleTF = 0, groupTF = 0, singleEssay = 0, groupEssay = 0;
                         allQ.forEach(q => {
                             if (q.type === "multiple_choice") singleMC++;
@@ -139,7 +138,6 @@ export default function StatisticsPage() {
                             else if (q.type === "essay") singleEssay++;
                             else if (q.type === "group_essay") groupEssay++;
                             else {
-                                // Fallback phân loại dựa trên chuỗi định danh loại câu hỏi
                                 if (q.type?.startsWith("group_")) {
                                     if (q.type.includes("choice")) groupMC++;
                                     else if (q.type.includes("true")) groupTF++;
@@ -180,7 +178,6 @@ export default function StatisticsPage() {
                         });
                         setSubjectStats(subBreakdown);
 
-                        // Gom nhóm số lượng câu hỏi luỹ kế thực tế theo tháng để vẽ biểu đồ tăng trưởng (100% THẬT)
                         const monthlyCounts = {};
                         const allMonths = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"];
                         allMonths.forEach(m => monthlyCounts[m] = 0);
@@ -201,18 +198,14 @@ export default function StatisticsPage() {
                             }
                         });
 
-                        // Thay vì lấy lũy kế, hiển thị trực tiếp số câu hỏi tạo mới trong từng tháng
-                        // Điều này giúp biểu đồ cột render biến động theo tháng có số câu tạo mới cao nhất
                         const growthData = allMonths.map(m => {
                             return { month: m, count: monthlyCounts[m] };
                         });
 
-                        // Lấy dữ liệu tăng trưởng từ T1 đến tháng hiện tại
                         const currentMonthIdx = new Date().getMonth();
                         const activeGrowthData = growthData.slice(0, currentMonthIdx + 1);
                         setMonthlyGrowth(activeGrowthData);
 
-                        // Tính tỷ lệ tăng trưởng trong tháng hiện tại (so với tất cả các tháng trước đó)
                         const currentMonthCount = monthlyCounts[`T${currentMonthIdx + 1}`] || 0;
                         let priorSum = 0;
                         for (let i = 0; i < currentMonthIdx; i++) {
@@ -226,7 +219,7 @@ export default function StatisticsPage() {
                             calculatedGrowth = 100;
                         }
                         setGrowthPercent(calculatedGrowth);
-                        // Đọc cấu hình tỷ lệ chính xác OCR thực tế từ Cài đặt hệ thống
+
                         let ocrVal = 98.4;
                         const settingsStr = localStorage.getItem("eb_system_settings");
                         if (settingsStr) {
@@ -241,7 +234,6 @@ export default function StatisticsPage() {
                         }
                         setOcrRate(ocrVal);
 
-                        // Tính toán thời gian phản hồi trung bình động thực tế dựa trên khối lượng dữ liệu câu hỏi hiện có
                         const calculatedLatency = Math.round((1.6 + (totalQCount % 5) * 0.15) * 10) / 10;
                         setAvgLatency(calculatedLatency);
                         return;
@@ -311,7 +303,6 @@ export default function StatisticsPage() {
         );
     }
 
-    // Tính toán góc quay và độ dài viền của từng phân đoạn biểu đồ tròn nhận thức (Donut Chart)
     let cumulativePercent = 0;
     const donutSegments = difficultyStats.map((item) => {
         const percent = item.percentage || 0;
@@ -438,7 +429,6 @@ export default function StatisticsPage() {
                                 {donutSegments.map((seg) => {
                                     if (seg.percent === 0) return null;
 
-                                    // Sửa triệt để lỗi hiển thị 100%: khi đạt 100%, render một vòng tròn kín trơn tru không dùng dasharray
                                     if (seg.percent === 100) {
                                         return (
                                             <circle
@@ -543,7 +533,7 @@ export default function StatisticsPage() {
                         <div className="relative z-10 flex items-end justify-between px-2 sm:px-6 h-44 pb-1">
                             {monthlyGrowth.map((g) => {
                                 const maxCount = Math.max(...monthlyGrowth.map(item => item.count)) || 1;
-                                const pctHeight = (g.count / maxCount) * 92; // Tối ưu chiều cao lên 92% để cột cao nhất trông chạm đỉnh cực kỳ đẹp mắt
+                                const pctHeight = (g.count / maxCount) * 92;
                                 return (
                                     <div key={g.month} className="flex flex-col items-center space-y-1.5 flex-1 group mx-1">
                                         <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-1.5 py-0.5 rounded transition-all duration-300 transform group-hover:scale-110 mb-0.5">

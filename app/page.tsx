@@ -19,7 +19,6 @@ import { useAuth } from "@/context/AuthContext";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// Hàm tiện ích giới hạn thời gian chờ của một tác vụ Promise (tránh bị treo do mạng/DB chưa cấu hình)
 const runWithTimeout = (promise: Promise<any>, ms = 1000): Promise<any> => {
     return Promise.race([
         promise,
@@ -80,7 +79,6 @@ export default function Home() {
                 let examsList: any[] = [];
                 let teachersCount = 1;
 
-                // Thử load tất cả đề thi từ Firestore để làm thống kê chung hệ thống
                 try {
                     const q = collection(db, "exams");
                     const querySnapshot = await runWithTimeout(getDocs(q), 1500);
@@ -91,7 +89,6 @@ export default function Home() {
                     console.warn("Bỏ qua lỗi Firestore khi tải đề thi trang chủ:", e.message);
                 }
 
-                // Thử load số lượng giáo viên thực tế từ Firestore
                 try {
                     const usersSnapshot = await runWithTimeout(getDocs(collection(db, "users")), 1500);
                     teachersCount = usersSnapshot.size || 1;
@@ -99,7 +96,6 @@ export default function Home() {
                     console.warn("Bỏ qua lỗi Firestore khi tải số lượng giáo viên:", e.message);
                 }
 
-                // Fallback sang LocalStorage nếu không lấy được từ Firestore
                 if (examsList.length === 0) {
                     const saved = localStorage.getItem("eb_exams");
                     if (saved) {
@@ -117,7 +113,6 @@ export default function Home() {
                     return sum + Number(count);
                 }, 0);
 
-                // Tính số môn học độc bản
                 const uniqueSubjects = new Set(examsList.map(e => e.subject).filter(Boolean));
                 const subjectsCount = uniqueSubjects.size || 0;
 
@@ -128,7 +123,6 @@ export default function Home() {
                     { label: "Tài khoản giáo viên", value: String(teachersCount), change: "Đang sử dụng hệ thống", color: "text-amber-500", bg: "bg-amber-500/10" },
                 ]);
 
-                // Sinh hoạt động thực tế dựa trên danh sách toàn bộ đề thi (không lọc theo cá nhân)
                 if (examsList.length > 0) {
                     const sorted = [...examsList]
                         .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())

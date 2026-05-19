@@ -12,7 +12,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RichTextarea from "./RichTextarea";
 import RichInput from "./RichInput";
-import { Loader2, ImagePlus, X } from "lucide-react";
+import { Loader2, ImagePlus, X, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import MultipleChoiceForm from "./MultipleChoiceForm";
 import TrueFalseForm from "./TrueFalseForm";
@@ -40,6 +41,72 @@ const isGroupType = (type) => type?.startsWith("group_");
 
 export default function QuestionForm({ question, onChangeData }) {
     const [loading, setLoading] = useState(false);
+    const [tagInput, setTagInput] = useState("");
+    const [aiTaggingLoading, setAiTaggingLoading] = useState(false);
+
+    const handleAITagging = async () => {
+        if (!question.content || !question.content.trim()) {
+            alert("Vui lòng nhập nội dung đề bài trước khi yêu cầu gợi ý thẻ.");
+            return;
+        }
+
+        setAiTaggingLoading(true);
+        try {
+            const response = await fetch("/api/ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    action: "generate_tags",
+                    content: question.content,
+                    type: question.type
+                })
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                alert("Lỗi máy chủ: " + data.error);
+                return;
+            }
+
+            const updatedQuestion = { ...question };
+            if (data.tags && Array.isArray(data.tags)) {
+                const currentTags = question.tags || [];
+                const merged = Array.from(new Set([...currentTags, ...data.tags]));
+                updatedQuestion.tags = merged;
+            }
+            if (data.difficulty) {
+                updatedQuestion.difficulty = data.difficulty;
+            }
+
+            onChangeData(updatedQuestion);
+        } catch (err) {
+            console.error("Lỗi gợi ý thẻ:", err);
+            alert("Lỗi kết nối máy chủ: " + err.message);
+        } finally {
+            setAiTaggingLoading(false);
+        }
+    };
+
+    const handleAddManualTag = (e) => {
+        if (e.key === "Enter" || e.type === "click") {
+            e.preventDefault();
+            const trimmed = tagInput.trim();
+            if (trimmed) {
+                const currentTags = question.tags || [];
+                if (!currentTags.includes(trimmed)) {
+                    onChangeData({ ...question, tags: [...currentTags, trimmed] });
+                }
+                setTagInput("");
+            }
+        }
+    };
+
+    const handleRemoveTag = (tagToRemove) => {
+        const currentTags = question.tags || [];
+        onChangeData({ ...question, tags: currentTags.filter(t => t !== tagToRemove) });
+    };
+
+
 
     const updateField = (field, value) => {
         onChangeData({ ...question, [field]: value });
@@ -56,7 +123,7 @@ export default function QuestionForm({ question, onChangeData }) {
                 updateField(targetField, [...currentImages, reader.result]);
             };
         });
-        e.target.value = ""; // Reset value để có thể chèn lại chính bức ảnh vừa xóa
+        e.target.value = "";
     };
 
     const removeImage = (indexToRemove, targetField) => {
@@ -93,8 +160,8 @@ export default function QuestionForm({ question, onChangeData }) {
                             onChangeData({
                                 ...question,
                                 content: question.content ? `${question.content}\n${data.content}` : data.content,
-                                suggested_solution: data.suggested_solution 
-                                    ? (question.suggested_solution ? `${question.suggested_solution}\n${data.suggested_solution}` : data.suggested_solution) 
+                                suggested_solution: data.suggested_solution
+                                    ? (question.suggested_solution ? `${question.suggested_solution}\n${data.suggested_solution}` : data.suggested_solution)
                                     : question.suggested_solution
                             });
                         }
@@ -184,6 +251,78 @@ export default function QuestionForm({ question, onChangeData }) {
                     )}
                 </div>
 
+                {/* Chủ đề & Thẻ gắn (Tags) */}
+                <div className="pt-3 border-t border-border/60 space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <label className="text-xs font-bold text-violet-700 dark:text-violet-400 uppercase tracking-wider block">
+                            Thẻ phân loại (Tags):
+                        </label>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={aiTaggingLoading}
+                            onClick={handleAITagging}
+                            className="h-7 text-[10px] sm:text-xs font-bold text-violet-700 dark:text-violet-400 border-violet-300 dark:border-violet-700/80 bg-violet-50/20 hover:bg-violet-50 dark:hover:bg-violet-950/40 gap-1.5 shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] select-none"
+                        >
+                            {aiTaggingLoading ? (
+                                <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Đang phân tích...
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles className="w-3.5 h-3.5 text-violet-500 fill-violet-500/20" /> Tự động gắn thẻ & đánh giá độ khó
+                                </>
+                            )}
+                        </Button>
+                    </div>
+
+                    {/* Danh sách thẻ */}
+                    <div className="flex flex-wrap items-center gap-1.5 min-h-[36px] p-2 rounded-xl border border-dashed border-border/80 bg-muted/10">
+                        {(question.tags && question.tags.length > 0) ? (
+                            question.tags.map((tag) => (
+                                <span
+                                    key={tag}
+                                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100/70 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300 border border-violet-200/60 dark:border-violet-900/50 shadow-sm animate-in fade-in zoom-in duration-200"
+                                >
+                                    {tag}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveTag(tag)}
+                                        className="text-violet-500 hover:text-violet-700 dark:text-violet-400 dark:hover:text-violet-200 transition-colors p-0.5 rounded-full hover:bg-violet-200/50 dark:hover:bg-violet-900/50"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </span>
+                            ))
+                        ) : (
+                            <span className="text-xs text-muted-foreground italic px-1 select-none">
+                                Chưa có thẻ nào. Click nút ở trên để tự động phân tích và gắn thẻ nhanh...
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Thêm thẻ thủ công */}
+                    <div className="flex gap-2">
+                        <Input
+                            type="text"
+                            placeholder="Nhập tên thẻ mới và nhấn Enter..."
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyDown={handleAddManualTag}
+                            className="h-8 text-xs border-violet-200/60 dark:border-violet-900/60 focus-visible:ring-violet-500"
+                        />
+                        <Button
+                            type="button"
+                            onClick={handleAddManualTag}
+                            size="sm"
+                            className="h-8 text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white px-4 shrink-0"
+                        >
+                            Thêm thẻ
+                        </Button>
+                    </div>
+                </div>
+
                 <div className="space-y-2">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                         <label className="text-sm font-semibold text-foreground">
@@ -191,10 +330,10 @@ export default function QuestionForm({ question, onChangeData }) {
                         </label>
                         {loading ? (
                             <span className="text-xs text-blue-500 dark:text-blue-400 font-medium flex items-center animate-pulse">
-                                <Loader2 className="w-3 h-3 mr-1 animate-spin" /> AI đang xử lý ảnh
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Đang quét ảnh...
                             </span>
                         ) : (
-                            <span className="text-xs text-muted-foreground">Dán ảnh vào ô dưới để nhập đề nhanh bằng AI</span>
+                            <span className="text-xs text-muted-foreground">Dán ảnh vào ô dưới để quét nhập đề nhanh</span>
                         )}
                     </div>
                     <RichTextarea
@@ -209,7 +348,7 @@ export default function QuestionForm({ question, onChangeData }) {
                     {question.content && question.content.includes("$") && (
                         <div className="mt-2.5 p-3.5 rounded-xl border border-blue-150 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/15 space-y-1.5 animate-in fade-in duration-250">
                             <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest block select-none">
-                                Xem trước công thức (Word Equation View):
+                                Xem trước nội dung (Preview content):
                             </span>
                             <div className="text-sm font-medium text-foreground">
                                 <LatexRenderer text={question.content} />
@@ -259,77 +398,83 @@ export default function QuestionForm({ question, onChangeData }) {
                     )}
                 </div>
 
-                    <div className="border-t pt-4 mt-2 space-y-4 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
-                        {/* Lời giải chi tiết */}
-                        <div className="w-full space-y-2">
+                <div className="border-t pt-4 mt-2 space-y-4 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
+                    {/* Lời giải chi tiết */}
+                    <div className="w-full space-y-2">
+                        <div className="flex items-center justify-between gap-4">
                             <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block">
                                 Lời giải chi tiết (Suggested Solution):
                             </label>
-                            <RichTextarea
-                                id={`q-suggested-sol-${question.id}`}
-                                placeholder="Nhập hướng dẫn giải, phân tích và các bước lập luận chi tiết..."
-                                value={question.suggested_solution || ""}
-                                onChange={(val) => updateField("suggested_solution", val)}
-                                rows={3}
-                            />
-                            {question.suggested_solution && question.suggested_solution.includes("$") && (
-                                <div className="mt-2 p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-background/50 text-xs text-muted-foreground flex items-center gap-1.5 select-none">
-                                    <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200/30">
-                                        Xem trước LaTeX:
-                                    </span>
+                        </div>
+                        <RichTextarea
+                            id={`q-suggested-sol-${question.id}`}
+                            placeholder="Nhập hướng dẫn giải, phân tích và các bước lập luận chi tiết..."
+                            value={question.suggested_solution || ""}
+                            onChange={(val) => updateField("suggested_solution", val)}
+                            rows={3}
+                        />
+                        {question.suggested_solution && question.suggested_solution.includes("$") && (
+                            <div className="mt-2.5 p-3.5 rounded-xl border border-emerald-200/50 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/15 space-y-1.5 animate-in fade-in duration-250">
+                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block select-none">
+                                    Xem trước nội dung (Preview content):
+                                </span>
+                                <div className="text-sm font-medium text-foreground">
                                     <LatexRenderer text={question.suggested_solution} />
                                 </div>
-                            )}
-                        </div>
-
-                        {/* Hình ảnh sơ đồ minh họa cho lời giải */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 block">
-                                Hình ảnh sơ đồ minh họa kèm theo cho lời giải (nếu có):
-                            </label>
-                            <div className="flex flex-wrap gap-3 items-center">
-                                <label className="h-16 w-16 flex flex-col items-center justify-center border border-dashed border-emerald-300 dark:border-emerald-700 rounded-lg cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors bg-background">
-                                    <ImagePlus className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">Thêm ảnh</span>
-                                    <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, "answer_images")} />
-                                </label>
-                                {(question.answer_images || []).map((img, idx) => (
-                                    <div key={idx} className="relative h-16 w-16 border border-emerald-200 dark:border-emerald-800 rounded-lg overflow-hidden bg-muted shadow-sm">
-                                        <img src={img} alt="Đáp án minh họa" className="h-full w-full object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeImage(idx, "answer_images")}
-                                            className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 shadow hover:bg-red-600"
-                                        >
-                                            <X className="w-2.5 h-2.5" />
-                                        </button>
-                                    </div>
-                                ))}
                             </div>
-                        </div>
+                        )}
+                    </div>
 
-                        {/* Kết quả / Đáp số đúng cuối cùng */}
-                        <div className="w-full pt-2 border-t border-emerald-200/40 dark:border-emerald-850/30">
-                            <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
-                                Kết quả / Đáp số đúng cuối cùng:
+                    {/* Hình ảnh sơ đồ minh họa cho lời giải */}
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 block">
+                            Hình ảnh sơ đồ minh họa kèm theo cho lời giải (nếu có):
+                        </label>
+                        <div className="flex flex-wrap gap-3 items-center">
+                            <label className="h-16 w-16 flex flex-col items-center justify-center border border-dashed border-emerald-300 dark:border-emerald-700 rounded-lg cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors bg-background">
+                                <ImagePlus className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                                <span className="text-[9px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">Thêm ảnh</span>
+                                <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, "answer_images")} />
                             </label>
-                            <RichInput
-                                id={`q-final-ans-${question.id}`}
-                                placeholder="Nhập đáp số hoặc kết quả ngắn chuẩn xác (Ví dụ: x = 2; C; Đúng;...)"
-                                value={question.final_answer || ""}
-                                onChange={(val) => updateField("final_answer", val)}
-                                className="bg-background border-emerald-200 dark:border-emerald-800 font-semibold text-emerald-900 dark:text-emerald-200 placeholder:text-muted-foreground"
-                            />
-                            {question.final_answer && question.final_answer.includes("$") && (
-                                <div className="mt-2 p-2 px-3 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-background/50 text-xs text-muted-foreground flex items-center gap-1.5 select-none">
-                                    <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200/30">
-                                        Xem trước LaTeX:
-                                    </span>
-                                    <LatexRenderer text={question.final_answer} />
+                            {(question.answer_images || []).map((img, idx) => (
+                                <div key={idx} className="relative h-16 w-16 border border-emerald-200 dark:border-emerald-800 rounded-lg overflow-hidden bg-muted shadow-sm">
+                                    <img src={img} alt="Đáp án minh họa" className="h-full w-full object-cover" />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeImage(idx, "answer_images")}
+                                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 shadow hover:bg-red-600"
+                                    >
+                                        <X className="w-2.5 h-2.5" />
+                                    </button>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
+
+                    {/* Kết quả / Đáp số đúng cuối cùng */}
+                    <div className="w-full pt-2 border-t border-emerald-200/40 dark:border-emerald-850/30">
+                        <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
+                            Kết quả / Đáp số đúng cuối cùng:
+                        </label>
+                        <RichInput
+                            id={`q-final-ans-${question.id}`}
+                            placeholder="Nhập đáp số hoặc kết quả ngắn chuẩn xác (Ví dụ: x = 2; C; Đúng;...)"
+                            value={question.final_answer || ""}
+                            onChange={(val) => updateField("final_answer", val)}
+                            className="bg-background border-emerald-200 dark:border-emerald-800 font-semibold text-emerald-900 dark:text-emerald-200 placeholder:text-muted-foreground"
+                        />
+                        {question.final_answer && question.final_answer.includes("$") && (
+                            <div className="mt-2.5 p-3.5 rounded-xl border border-emerald-200/50 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/15 space-y-1.5 animate-in fade-in duration-250">
+                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block select-none">
+                                    Xem trước công thức (Word Equation View):
+                                </span>
+                                <div className="text-sm font-medium text-foreground">
+                                    <LatexRenderer text={question.final_answer} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </CardContent>
         </Card>
     );

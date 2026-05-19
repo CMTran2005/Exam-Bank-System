@@ -83,7 +83,7 @@ export default function RichInput({
                 onInput={handleInput}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholder}
-                className={`w-full min-h-[36px] h-9 px-3 py-1.5 font-medium outline-none border-0 bg-slate-50/40 dark:bg-slate-950/20 hover:bg-slate-50/60 dark:hover:bg-slate-950/30 focus:bg-background dark:focus:bg-background/80 transition-colors duration-150 overflow-x-auto whitespace-nowrap scrollbar-none flex items-center ${className}`}
+                className={`w-full min-h-[36px] h-9 px-3 py-1.5 font-question-text font-medium outline-none border-0 bg-slate-50/40 dark:bg-slate-950/20 hover:bg-slate-50/60 dark:hover:bg-slate-950/30 focus:bg-background dark:focus:bg-background/80 transition-colors duration-150 overflow-x-auto whitespace-nowrap scrollbar-none flex items-center ${className}`}
             />
         </div>
     );
