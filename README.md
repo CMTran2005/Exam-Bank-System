@@ -13,86 +13,91 @@
 
 ## Tiếng Việt
 
-> Ứng dụng web Full-stack chuyên nghiệp giúp tự động hóa quy trình số hóa và soạn thảo đề thi, tích hợp AI nhận diện ảnh (OCR) và hỗ trợ đa dạng loại câu hỏi.
+> Ứng dụng web Full-stack chuyên nghiệp giúp quản lý ngân hàng câu hỏi, lớp học và tự động hóa quy trình số hóa đề thi. Tích hợp AI nhận diện ảnh (OCR) và trình soạn thảo Toán học chuyên sâu.
 
 ### Công Nghệ Sử Dụng
 
 | Lớp | Công nghệ |
 |---|---|
 | **Framework** | Next.js 15+ (App Router) — Full-stack với API Routes |
-| **UI / Styling** | TailwindCSS + shadcn/ui (Radix UI primitives) |
-| **Database** | Firebase Firestore |
+| **UI / Styling** | TailwindCSS v4 + shadcn/ui (Radix UI) |
+| **Database & Caching** | Firebase Firestore + Local Storage Sync |
 | **Auth** | Firebase Authentication |
 | **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
-| **Lưu trữ ảnh** | Cloudinary |
+| **Rich Text & Math** | MathLive + KaTeX |
 
-### Cấu Trúc Thư Mục
+### Cấu Trúc Thư Mục Mới (Feature-based Architecture)
+
+Hệ thống đã được tái cấu trúc (refactoring) theo hướng module hóa bằng Custom Hooks để tách biệt Business Logic và UI.
 
 ```text
 exam-bank-system/
 ├── app/
-│   ├── api/
-│   │   └── ocr/
-│   │       └── route.js          ← API Route: nhận ảnh Base64, gọi Gemini AI, trả JSON
-│   ├── create-question/
-│   │   └── page.js               ← Trang soạn thảo đề thi (main feature)
-│   ├── globals.css               ← CSS Variables cho Dark/Light theme
-│   ├── layout.tsx                ← Root layout
-│   └── page.tsx                  ← Trang chủ
+│   ├── api/ocr/            ← API Route: Gọi Gemini AI
+│   ├── classes/            ← Quản lý Lớp học
+│   ├── create-question/    ← Soạn thảo Đề thi (Rich Text + Math)
+│   ├── login/ & register/  ← Xác thực người dùng (Auth)
+│   ├── my-exams/           ← Quản lý đề thi cá nhân
+│   ├── questions/          ← Ngân hàng câu hỏi (Lọc, tìm kiếm)
+│   ├── recycle-bin/        ← Thùng rác (Khôi phục dữ liệu)
+│   ├── settings/           ← Cài đặt hồ sơ & tùy chọn ứng dụng
+│   └── statistics/         ← Dashboard thống kê phân tích dữ liệu
 │
 ├── components/
-│   ├── layout/                   ← Các thành phần khung giao diện
-│   │   ├── AppLayout.jsx         ← Wrapper: Header + Sidebar + main content
-│   │   ├── Header.jsx            ← Thanh tiêu đề sticky (logo, menu toggle, theme)
-│   │   ├── Sidebar.jsx           ← Thanh điều hướng trái (thu/mở, responsive)
-│   │   └── Footer.jsx            ← Chân trang
-│   │
-│   ├── question/                 ← Các form nhập liệu câu hỏi
-│   │   ├── QuestionForm.jsx      ← Form tổng hợp (nội dung + ảnh + đáp án + kết quả)
-│   │   ├── MultipleChoiceForm.jsx← Form trắc nghiệm (A/B/C/D + màu accent + upload ảnh)
-│   │   ├── TrueFalseForm.jsx     ← Form đúng/sai (mệnh đề động + upload ảnh)
-│   │   └── EssayForm.jsx         ← Form tự luận
-│   │
-│   ├── shared/                   ← Components dùng chung
-│   │   ├── ThemeToggle.jsx       ← Nút chuyển Dark/Light mode
-│   │   └── theme-provider.jsx    ← Context provider cho next-themes
-│   │
-│   └── ui/                       ← shadcn/ui components (tùy chỉnh)
-│       ├── select.tsx            ← Custom Select: check icon trái, backdrop-blur
-│       ├── input.tsx             ← Input chuẩn h-10 (đồng bộ với Select)
-│       └── ...
+│   ├── layout/             ← Header, Sidebar, Footer, Layout vỏ
+│   ├── question/           ← Form Câu hỏi (Đơn/Nhóm, Trắc nghiệm, Đúng/Sai, Tự luận)
+│   ├── shared/             ← ThemeToggle, Context providers
+│   └── ui/                 ← Component shadcn/ui
 │
-├── lib/
-│   └── firebase.js               ← Cấu hình Firebase Client SDK
+├── context/
+│   └── AuthContext.jsx     ← Quản lý State đăng nhập toàn cục
 │
-├── .env.local                    ← API Keys (không commit)
-└── README.md
+├── hooks/                  ← Tách biệt toàn bộ Business Logic
+│   ├── useClasses.js
+│   ├── useCreateExam.js
+│   ├── useQuestionForm.js
+│   ├── useStatistics.js
+│   └── ...
+│
+├── services/               ← Data Access Layer (Tương tác Firebase)
+│   ├── classService.js
+│   ├── examService.js
+│   └── teacherService.js
+└── ...
 ```
 
-### Tính Năng Đã Hoàn Thành
+### Tính Năng Nổi Bật
 
-**Layout & Điều hướng**
-- [x] Header sticky với logo, toggle sidebar và chuyển đổi theme
-- [x] Sidebar responsive: thu gọn (icon-only) trên desktop, overlay trên mobile
-- [x] Footer với thông tin thương hiệu và liên kết liên hệ
-- [x] Dark / Light mode toàn ứng dụng
+**1. Xác thực & Hồ sơ (Authentication & Profile)**
+- Đăng nhập / Đăng ký qua Firebase Auth.
+- Đồng bộ và lưu trữ thông tin hồ sơ chuyên sâu (Học vị, Môn giảng dạy chính).
+- Kiến trúc bền vững với tính năng tự động đồng bộ Local Storage và Firestore.
 
-**Trang Soạn Thảo Đề Thi**
-- [x] Cấu hình đề thi: Tiêu đề, Năm học, Cấp học, Môn học, Tỉnh thành, Thời gian
-- [x] Quản lý danh sách câu hỏi: thêm, xóa, thu gọn/mở rộng
-- [x] Nút chèn câu hỏi duy nhất ở cuối danh sách
+**2. Quản Lý Đề Thi & Trình Soạn Thảo (Exam Editor)**
+- Hỗ trợ câu hỏi Đơn và câu hỏi Nhóm (Group Questions).
+- 3 loại hình câu hỏi cốt lõi: Trắc nghiệm (A/B/C/D), Đúng/Sai (Mệnh đề động), Tự luận.
+- **AI OCR**: Dán ảnh đề bài → Gemini Vision phân tích → Tự động điền văn bản.
+- **Toán Học**: Tích hợp MathLive để gõ công thức trực quan và KaTeX để hiển thị chuẩn xác.
+- Đính kèm hình ảnh minh họa cho từng đáp án/mệnh đề.
 
-**Form Câu Hỏi**
-- [x] **Trắc nghiệm**: 4 đáp án A/B/C/D với màu accent riêng + upload ảnh từng đáp án
-- [x] **Đúng / Sai**: Mệnh đề động + toggle ✓/✗ + màu nền theo trạng thái + upload ảnh
-- [x] **Tự luận**: Ô nhập hướng dẫn chấm / lời giải gợi ý
-- [x] OCR bằng AI: Dán ảnh → Gemini Vision → Auto-fill nội dung
-- [x] Upload ảnh minh họa cho đề bài và đáp án
+**3. Bảng Điều Khiển & Thống Kê (Dashboard & Statistics)**
+- Theo dõi tốc độ tăng trưởng câu hỏi/đề thi theo từng tháng.
+- Thống kê tỷ lệ loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận) qua biểu đồ Donut.
+- Phân tích độ khó: Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao.
+- Đo lường hiệu suất AI (OCR Confidence) và độ trễ (Latency).
 
-**UI/UX**
-- [x] Custom Select/Dropdown: check icon bên trái, backdrop-blur, rounded-xl
-- [x] Chiều cao field đồng nhất: `Input h-10 = SelectTrigger h-10`
-- [x] Padding nội dung thoáng trong các ô đáp án/mệnh đề
+**4. Quản Lý Lớp Học & Học Sinh (Class Management)**
+- Giáo viên có thể tạo và quản lý nhiều lớp học.
+- Theo dõi số lượng học sinh, cài đặt lớp học.
+
+**5. Thùng Rác & Ngân Hàng Câu Hỏi (Recycle Bin & Question Bank)**
+- Thùng rác (Soft Delete): Lưu trữ các đề thi/câu hỏi đã xóa, cho phép phục hồi (Restore) hoặc xóa vĩnh viễn (Hard Delete).
+- Ngân hàng câu hỏi: Bộ lọc đa chiều giúp tìm kiếm câu hỏi dễ dàng theo khối lớp, môn học, độ khó.
+
+**6. Giao Diện & Trải Nghiệm (UI/UX)**
+- Giao diện Premium, responsive với Dark/Light mode toàn diện.
+- Custom Component đẹp mắt (Select, Input) đồng bộ chiều cao và thiết kế.
+- Tách biệt UI và Logic giúp ứng dụng mượt mà, dễ bảo trì.
 
 ### Cài Đặt & Chạy
 
@@ -121,65 +126,15 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### Mô Hình Dữ Liệu (Firestore)
-
-<details>
-<summary><b>Trắc nghiệm</b></summary>
-
-```json
-{
-  "id": "q_001",
-  "type": "multiple_choice",
-  "content": "Cho hàm số có đồ thị như hình vẽ. Tìm số nghiệm của $f(x) = 0$.",
-  "image": "data:image/png;base64,...",
-  "options": ["1", "2", "3", "4"],
-  "options_images": ["", "", "data:image/png;base64,...", ""],
-  "correct_answer": "C",
-  "answer_image": null
-}
-```
-</details>
-
-<details>
-<summary><b>Đúng / Sai</b></summary>
-
-```json
-{
-  "id": "q_002",
-  "type": "true_false",
-  "content": "Xác định tính đúng/sai của các mệnh đề:",
-  "statements": [
-    { "text": "Trung bình cộng là 7.5", "correct": true, "image": "" },
-    { "text": "Phương sai là 4", "correct": false, "image": "" }
-  ],
-  "correct_answer": "Đúng, Sai"
-}
-```
-</details>
-
-<details>
-<summary><b>Tự luận</b></summary>
-
-```json
-{
-  "id": "q_003",
-  "type": "essay",
-  "content": "Chứng minh tổng các góc trong một tam giác bằng 180°.",
-  "suggested_solution": "Vẽ đường thẳng d song song với BC đi qua A...",
-  "correct_answer": ""
-}
-```
-</details>
-
-### Lộ Trình Phát Triển
+### Lộ Trình Phát Triển Hiện Tại
 
 | Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
-| **1 — Nền móng** | Next.js + TailwindCSS + shadcn/ui + Firebase + Dark/Light mode | Hoàn thành |
-| **2 — Soạn thảo** | Form động 3 loại câu + OCR Gemini + Upload ảnh per-option | Hoàn thành |
-| **3 — Backend** | Lưu Firestore + Cloud Storage + Firebase Auth | Đang phát triển |
-| **4 — Ngân hàng** | Dashboard + bộ lọc + QuestionPreview + KaTeX | Kế hoạch |
-| **5 — Tối ưu** | Skeleton loading + Toast + MathLive + Kiểm thử E2E | Kế hoạch |
+| **1 — Nền móng & UI** | Next.js 15, Tailwind v4, shadcn, Dark Mode | Hoàn thành |
+| **2 — Soạn thảo Core** | Editor đa dạng + Gemini OCR + MathLive | Hoàn thành |
+| **3 — Kiến Trúc Tách Rời** | Custom hooks, Services, Tính năng Lớp học, Thùng rác | Hoàn thành |
+| **4 — Dashboard & Auth** | Firebase Auth, Sync Profile, Thống kê trực quan | Hoàn thành |
+| **5 — Tối ưu & Collaboration** | Zen mode, Auto-save, Shared Workspace | Đang phát triển |
 
 ---
 
@@ -187,86 +142,91 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 ## English
 
-> A professional Full-stack web application for automating exam digitization and question management, with AI-powered image recognition (OCR) supporting multiple question types.
+> A professional Full-stack web application designed for educators to manage question banks, classes, and automate exam digitization. Features AI-powered OCR and advanced Math editing capabilities.
 
 ### Tech Stack
 
 | Layer | Technology |
 |---|---|
 | **Framework** | Next.js 15+ (App Router) — Full-stack with API Routes |
-| **UI / Styling** | TailwindCSS + shadcn/ui (Radix UI primitives) |
-| **Database** | Firebase Firestore |
+| **UI / Styling** | TailwindCSS v4 + shadcn/ui (Radix UI) |
+| **Database & Caching**| Firebase Firestore + Local Storage Sync |
 | **Auth** | Firebase Authentication |
 | **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
-| **Image Storage** | Cloudinary |
+| **Rich Text & Math** | MathLive + KaTeX |
 
-### Project Structure
+### Modular Project Structure
+
+The project has been refactored into a feature-based architecture utilizing Custom Hooks to decouple Business Logic from the UI.
 
 ```text
 exam-bank-system/
 ├── app/
-│   ├── api/
-│   │   └── ocr/
-│   │       └── route.js          ← API Route: receives Base64 image, calls Gemini, returns JSON
-│   ├── create-question/
-│   │   └── page.js               ← Exam editor page (main feature)
-│   ├── globals.css               ← CSS Variables for Dark/Light theme
-│   ├── layout.tsx                ← Root layout
-│   └── page.tsx                  ← Home page
+│   ├── api/ocr/            ← API Route: Gemini AI invocation
+│   ├── classes/            ← Class Management
+│   ├── create-question/    ← Exam Editor (Rich Text + Math)
+│   ├── login/ & register/  ← Authentication flows
+│   ├── my-exams/           ← Personal Exam Management
+│   ├── questions/          ← Question Bank (Filtering & Search)
+│   ├── recycle-bin/        ← Soft Delete & Data Restoration
+│   ├── settings/           ← User Profile & App Preferences
+│   └── statistics/         ← Analytical Dashboard
 │
 ├── components/
-│   ├── layout/                   ← App shell components
-│   │   ├── AppLayout.jsx         ← Wrapper: Header + Sidebar + main content
-│   │   ├── Header.jsx            ← Sticky header (logo, menu toggle, theme switcher)
-│   │   ├── Sidebar.jsx           ← Left navigation (collapsible, responsive)
-│   │   └── Footer.jsx            ← Footer
-│   │
-│   ├── question/                 ← Question input forms
-│   │   ├── QuestionForm.jsx      ← Master form (content + image + answers + result)
-│   │   ├── MultipleChoiceForm.jsx← Multiple choice form (A/B/C/D + color accent + per-option image)
-│   │   ├── TrueFalseForm.jsx     ← True/False form (dynamic statements + per-statement image)
-│   │   └── EssayForm.jsx         ← Essay form
-│   │
-│   ├── shared/                   ← Shared components
-│   │   ├── ThemeToggle.jsx       ← Dark/Light mode toggle button
-│   │   └── theme-provider.jsx    ← next-themes context provider
-│   │
-│   └── ui/                       ← Customized shadcn/ui components
-│       ├── select.tsx            ← Custom Select: left-aligned check icon, backdrop-blur
-│       ├── input.tsx             ← Standard Input with h-10 (synced with Select height)
-│       └── ...
+│   ├── layout/             ← App shell (Header, Sidebar, Footer)
+│   ├── question/           ← Question Forms (Single/Group, Multiple Choice, T/F, Essay)
+│   ├── shared/             ← Theme providers, utility components
+│   └── ui/                 ← shadcn/ui generic components
 │
-├── lib/
-│   └── firebase.js               ← Firebase Client SDK configuration
+├── context/
+│   └── AuthContext.jsx     ← Global Authentication State
 │
-├── .env.local                    ← API Keys (not committed)
-└── README.md
+├── hooks/                  ← Business Logic isolation
+│   ├── useClasses.js
+│   ├── useCreateExam.js
+│   ├── useQuestionForm.js
+│   ├── useStatistics.js
+│   └── ...
+│
+├── services/               ← Data Access Layer (Firebase interaction)
+│   ├── classService.js
+│   ├── examService.js
+│   └── teacherService.js
+└── ...
 ```
 
-### Completed Features
+### Key Features
 
-**Layout & Navigation**
-- [x] Sticky header with logo, sidebar toggle, and theme switcher
-- [x] Responsive sidebar: icon-only on desktop, overlay on mobile
-- [x] Footer with branding and contact links
-- [x] App-wide Dark / Light mode
+**1. Authentication & User Profiles**
+- Secure Login / Registration powered by Firebase Auth.
+- Persistent synchronization of professional profile data (e.g., Academic Degree, Teaching Subject).
+- Robust state hydration between Local Storage and Firestore.
 
-**Exam Editor Page**
-- [x] Exam configuration: Title, Academic Year, Grade, Subject, Province, Duration
-- [x] Question list management: add, delete, collapse/expand
-- [x] Single insert button at the bottom of the list
+**2. Advanced Exam Editor**
+- Support for both Single and Group Questions.
+- Three core types: Multiple Choice (A/B/C/D), True/False (Dynamic statements), and Essay.
+- **AI OCR**: Paste an image → Gemini Vision processes it → Content is auto-filled.
+- **Mathematics**: Integrated MathLive for visual equation editing and KaTeX for precise rendering.
+- Per-option and per-statement image upload support.
 
-**Question Forms**
-- [x] **Multiple Choice**: A/B/C/D with unique color accents + per-option image upload
-- [x] **True/False**: Dynamic statements + ✓/✗ toggle + colored rows + per-statement image
-- [x] **Essay**: Marking guide / suggested solution field
-- [x] AI OCR: Paste image → Gemini Vision → Auto-fill content
-- [x] Image upload for question content and answer illustrations
+**3. Analytics Dashboard**
+- Monitor monthly growth of exams and questions.
+- Donut charts visualizing question type distribution (MC, T/F, Essay).
+- Cognitive level analysis: Recognizing, Understanding, Applying, High Applying.
+- AI performance metrics (OCR Confidence rate & Latency).
 
-**UI/UX**
-- [x] Custom Select/Dropdown: left-aligned check icon, backdrop-blur, rounded-xl
-- [x] Uniform field height: `Input h-10 = SelectTrigger h-10`
-- [x] Comfortable padding inside answer option and statement rows
+**4. Class Management**
+- Empower teachers to create and orchestrate multiple classes.
+- Track student enrollment and configure class-specific settings.
+
+**5. Recycle Bin & Question Bank**
+- Soft Deletion: Safely remove exams/questions with full restore capabilities or permanent deletion.
+- Question Bank: Multi-dimensional filters to easily search by grade, subject, and difficulty.
+
+**6. Premium UI/UX**
+- Responsive, polished design featuring full Dark/Light mode support.
+- Highly consistent custom components ensuring a seamless user experience.
+- Clean separation of UI and logic for optimal maintainability and performance.
 
 ### Installation & Setup
 
@@ -295,65 +255,15 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### Data Models (Firestore)
-
-<details>
-<summary><b>Multiple Choice</b></summary>
-
-```json
-{
-  "id": "q_001",
-  "type": "multiple_choice",
-  "content": "Given the graph of a function, find the number of solutions of $f(x) = 0$.",
-  "image": "data:image/png;base64,...",
-  "options": ["1", "2", "3", "4"],
-  "options_images": ["", "", "data:image/png;base64,...", ""],
-  "correct_answer": "C",
-  "answer_image": null
-}
-```
-</details>
-
-<details>
-<summary><b>True / False</b></summary>
-
-```json
-{
-  "id": "q_002",
-  "type": "true_false",
-  "content": "Determine whether each statement is True or False:",
-  "statements": [
-    { "text": "The arithmetic mean is 7.5", "correct": true, "image": "" },
-    { "text": "The variance is 4", "correct": false, "image": "" }
-  ],
-  "correct_answer": "True, False"
-}
-```
-</details>
-
-<details>
-<summary><b>Essay</b></summary>
-
-```json
-{
-  "id": "q_003",
-  "type": "essay",
-  "content": "Prove that the sum of angles in a triangle equals 180°.",
-  "suggested_solution": "Draw a line d through A parallel to BC...",
-  "correct_answer": ""
-}
-```
-</details>
-
-### Roadmap
+### Current Roadmap
 
 | Phase | Description | Status |
 |---|---|---|
-| **1 — Foundation** | Next.js + TailwindCSS + shadcn/ui + Firebase + Dark/Light mode | Done |
-| **2 — Editor** | Dynamic forms for 3 question types + Gemini OCR + per-option image upload | Done |
-| **3 — Backend** | Save to Firestore + Cloud Storage + Firebase Auth | In Progress |
-| **4 — Question Bank** | Dashboard + filters + QuestionPreview + KaTeX render | Planned |
-| **5 — Polish** | Skeleton loading + Toast notifications + MathLive + E2E testing | Planned |
+| **1 — Foundation & UI** | Next.js 15, Tailwind v4, shadcn, Dark Mode | Done |
+| **2 — Core Editor** | Versatile forms + Gemini OCR + MathLive | Done |
+| **3 — Modular Refactor** | Custom hooks, Services, Classes, Recycle Bin | Done |
+| **4 — Dashboard & Auth** | Firebase Auth, Profile Sync, Analytics | Done |
+| **5 — Collaboration** | Zen mode, Auto-save, Shared Workspace | In Progress |
 
 ---
 
