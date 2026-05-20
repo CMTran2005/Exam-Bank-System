@@ -3,11 +3,32 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CustomDatePicker } from "@/components/ui/date-time-picker";
 
+const DEGREE_OPTIONS = [
+    "Giáo viên", "Cộng tác viên", "Cử nhân (Đại học)", "Kĩ sư (Đại học)",
+    "Thạc sĩ", "Tiến sĩ", "Phó Giáo sư", "Giáo sư"
+];
+
+const SUBJECT_OPTIONS = [
+    "Toán học", "Vật lý", "Hóa học", "Sinh học", "Ngữ văn", "Tiếng Anh",
+    "Lịch sử", "Địa lý", "Tin học", "Khoa học máy tính (CS)",
+    "Kỹ thuật phần mềm (SE)", "Công nghệ thông tin (IT)",
+    "Kỹ thuật Điện - Điện tử", "Kỹ thuật Cơ khí - Chế tạo máy",
+    "Kỹ thuật Xây dựng", "Kế toán - Kiểm toán", "Quản trị kinh doanh",
+    "Tài chính - Ngân hàng", "Luật học", "Y khoa - Dược học",
+    "Ngoại thương - Kinh tế đối ngoại"
+];
+
 export function ProfileTab({
     name, setName, email, school, setSchool, phone, setPhone, degree, setDegree, mainSubject, setMainSubject,
     avatarUrl, setAvatarUrl, birthDate, setBirthDate, graduationYear, setGraduationYear, graduationGrade, setGraduationGrade, uploadingAvatar, handleAvatarChange,
     activeDropdown, setActiveDropdown
 }) {
+    const rawDegree = (degree || "").trim().normalize("NFC");
+    const rawSubject = (mainSubject || "").trim().normalize("NFC");
+
+    const safeDegree = DEGREE_OPTIONS.includes(rawDegree) ? rawDegree : (DEGREE_OPTIONS.find(d => d.localeCompare(rawDegree, undefined, { sensitivity: 'base' }) === 0) || "Thạc sĩ");
+    const safeSubject = SUBJECT_OPTIONS.includes(rawSubject) ? rawSubject : (SUBJECT_OPTIONS.find(s => s.localeCompare(rawSubject, undefined, { sensitivity: 'base' }) === 0) || "Toán học");
+
     return (
         <div className="space-y-4">
             <h2 className="text-sm font-bold text-foreground uppercase tracking-wider pb-2 border-b border-border/60 flex items-center gap-2">
@@ -30,8 +51,8 @@ export function ProfileTab({
                     )}
                 </div>
                 <div className="flex-1 text-center sm:text-left space-y-1">
-                    <p className="text-xs font-bold text-foreground">Ảnh đại diện Giáo viên</p>
-                    <p className="text-[10px] text-muted-foreground">Tải ảnh mới từ máy tính của bạn. Lưu trữ điện toán đám mây an toàn qua Cloudinary.</p>
+                    <p className="text-xs font-bold text-foreground">Avatar của người dùng</p>
+                    <p className="text-[10px] text-muted-foreground">Tải ảnh mới từ thiết bị của bạn.</p>
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
                         <label className="cursor-pointer">
                             <span className="inline-flex items-center justify-center h-8 px-3 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/95 rounded-lg transition-colors shadow-sm">
@@ -93,7 +114,7 @@ export function ProfileTab({
                             <SelectValue placeholder="Chọn xếp loại" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Chưa tốt nghiệp">Chưa tốt nghiệp (Đang học / CTV)</SelectItem>
+                            <SelectItem value="Chưa tốt nghiệp">Chưa tốt nghiệp</SelectItem>
                             <SelectItem value="Trung bình">Trung bình</SelectItem>
                             <SelectItem value="Khá">Khá</SelectItem>
                             <SelectItem value="Giỏi">Giỏi</SelectItem>
@@ -106,49 +127,27 @@ export function ProfileTab({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground">Học hàm / Học vị</label>
-                    <Select value={degree} onValueChange={setDegree}>
+                    <Select key={safeDegree} value={safeDegree} onValueChange={setDegree}>
                         <SelectTrigger className="h-10 border-border bg-background">
                             <SelectValue placeholder="Chọn học vị" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value={"Cộng tác viên".normalize("NFC")}>Cộng tác viên</SelectItem>
-                            <SelectItem value={"Cử nhân (Đại học)".normalize("NFC")}>Cử nhân (Đại học)</SelectItem>
-                            <SelectItem value={"Kĩ sư (Đại học)".normalize("NFC")}>Kĩ sư (Đại học)</SelectItem>
-                            <SelectItem value={"Thạc sĩ".normalize("NFC")}>Thạc sĩ</SelectItem>
-                            <SelectItem value={"Tiến sĩ".normalize("NFC")}>Tiến sĩ</SelectItem>
-                            <SelectItem value={"Phó Giáo sư".normalize("NFC")}>Phó Giáo sư</SelectItem>
-                            <SelectItem value={"Giáo sư".normalize("NFC")}>Giáo sư</SelectItem>
+                            {DEGREE_OPTIONS.map(opt => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground">Môn học giảng dạy chính</label>
-                    <Select value={mainSubject} onValueChange={setMainSubject}>
+                    <Select key={safeSubject} value={safeSubject} onValueChange={setMainSubject}>
                         <SelectTrigger className="h-10 border-border bg-background">
                             <SelectValue placeholder="Chọn môn học chính" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value={"Toán học".normalize("NFC")}>Toán học</SelectItem>
-                            <SelectItem value={"Vật lý".normalize("NFC")}>Vật lý</SelectItem>
-                            <SelectItem value={"Hóa học".normalize("NFC")}>Hóa học</SelectItem>
-                            <SelectItem value={"Sinh học".normalize("NFC")}>Sinh học</SelectItem>
-                            <SelectItem value={"Ngữ văn".normalize("NFC")}>Ngữ văn</SelectItem>
-                            <SelectItem value={"Tiếng Anh".normalize("NFC")}>Tiếng Anh</SelectItem>
-                            <SelectItem value={"Lịch sử".normalize("NFC")}>Lịch sử</SelectItem>
-                            <SelectItem value={"Địa lý".normalize("NFC")}>Địa lý</SelectItem>
-                            <SelectItem value={"Tin học".normalize("NFC")}>Tin học</SelectItem>
-                            <SelectItem value={"Khoa học máy tính (CS)".normalize("NFC")}>Khoa học máy tính (CS)</SelectItem>
-                            <SelectItem value={"Kỹ thuật phần mềm (SE)".normalize("NFC")}>Kỹ thuật phần mềm (SE)</SelectItem>
-                            <SelectItem value={"Công nghệ thông tin (IT)".normalize("NFC")}>Công nghệ thông tin (IT)</SelectItem>
-                            <SelectItem value={"Kỹ thuật Điện - Điện tử".normalize("NFC")}>Kỹ thuật Điện - Điện tử</SelectItem>
-                            <SelectItem value={"Kỹ thuật Cơ khí - Chế tạo máy".normalize("NFC")}>Kỹ thuật Cơ khí - Chế tạo máy</SelectItem>
-                            <SelectItem value={"Kỹ thuật Xây dựng".normalize("NFC")}>Kỹ thuật Xây dựng</SelectItem>
-                            <SelectItem value={"Kế toán - Kiểm toán".normalize("NFC")}>Kế toán - Kiểm toán</SelectItem>
-                            <SelectItem value={"Quản trị kinh doanh".normalize("NFC")}>Quản trị kinh doanh</SelectItem>
-                            <SelectItem value={"Tài chính - Ngân hàng".normalize("NFC")}>Tài chính - Ngân hàng</SelectItem>
-                            <SelectItem value={"Luật học".normalize("NFC")}>Luật học</SelectItem>
-                            <SelectItem value={"Y khoa - Dược học".normalize("NFC")}>Y khoa - Dược học</SelectItem>
-                            <SelectItem value={"Ngoại thương - Kinh tế đối ngoại".normalize("NFC")}>Ngoại thương - Kinh tế đối ngoại</SelectItem>
+                            {SUBJECT_OPTIONS.map(opt => (
+                                <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>

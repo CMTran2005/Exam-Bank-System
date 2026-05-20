@@ -16,7 +16,7 @@ import { auth, db } from "@/lib/firebase";
 /**
  * @file AuthContext.jsx
  * @description Context cung cấp trạng thái xác thực người dùng thời gian thực bằng Firebase Authentication.
- * Toàn bộ các thao tác truy vấn Firestore được giới hạn thời gian chờ tối đa 800ms (Fast Timeout),
+ * Toàn bộ các thao tác truy vấn Firestore được giới hạn thời gian chờ tối đa 5000ms (Fast Timeout),
  * triệt tiêu hoàn toàn hiện tượng treo màn hình hoặc chờ lâu khi chưa tạo Database trên console.
  */
 const AuthContext = createContext({
@@ -30,7 +30,7 @@ const AuthContext = createContext({
 });
 
 // Hàm tiện ích giới hạn thời gian chờ của một tác vụ Promise (tránh bị treo do mạng/DB chưa cấu hình)
-const runWithTimeout = (promise, ms = 800) => {
+const runWithTimeout = (promise, ms = 5000) => {
     return Promise.race([
         promise,
         new Promise((_, reject) =>
@@ -124,9 +124,9 @@ export function AuthProvider({ children }) {
                 };
 
                 try {
-                    // Truy vấn dữ liệu bổ sung từ Firestore (Fast Timeout 800ms)
+                    // Truy vấn dữ liệu bổ sung từ Firestore (Fast Timeout 5000ms)
                     const userDocRef = doc(db, "users", firebaseUser.uid);
-                    const userDoc = await runWithTimeout(getDoc(userDocRef), 800);
+                    const userDoc = await runWithTimeout(getDoc(userDocRef), 5000);
 
                     if (userDoc.exists()) {
                         userData = { ...userData, ...userDoc.data() };
@@ -168,9 +168,9 @@ export function AuthProvider({ children }) {
             };
 
             try {
-                // Truy vấn dữ liệu hồ sơ từ Firestore (Fast Timeout 800ms)
+                // Truy vấn dữ liệu hồ sơ từ Firestore (Fast Timeout 5000ms)
                 const userDocRef = doc(db, "users", firebaseUser.uid);
-                const userDoc = await runWithTimeout(getDoc(userDocRef), 800);
+                const userDoc = await runWithTimeout(getDoc(userDocRef), 5000);
 
                 if (userDoc.exists()) {
                     userData = { ...userData, ...userDoc.data() };
@@ -208,15 +208,15 @@ export function AuthProvider({ children }) {
             };
 
             try {
-                // Kiểm tra và lưu hồ sơ của Giáo viên vào Firestore (Fast Timeout 800ms)
+                // Kiểm tra và lưu hồ sơ của Giáo viên vào Firestore (Fast Timeout 5000ms)
                 const userDocRef = doc(db, "users", firebaseUser.uid);
-                const userDoc = await runWithTimeout(getDoc(userDocRef), 800);
+                const userDoc = await runWithTimeout(getDoc(userDocRef), 5000);
 
                 if (userDoc.exists()) {
                     userData = { ...userData, ...userDoc.data() };
                 } else {
-                    // Lưu hồ sơ mới nếu đăng nhập lần đầu tiên (Fast Timeout 800ms)
-                    await runWithTimeout(setDoc(userDocRef, userData), 800);
+                    // Lưu hồ sơ mới nếu đăng nhập lần đầu tiên (Fast Timeout 5000ms)
+                    await runWithTimeout(setDoc(userDocRef, userData), 5000);
                 }
             } catch (firestoreError) {
                 console.warn("Bỏ qua lỗi Firestore khi đăng nhập Google:", firestoreError.message);
@@ -251,9 +251,9 @@ export function AuthProvider({ children }) {
             };
 
             try {
-                // Lưu hồ sơ giáo viên vào Firestore (Fast Timeout 800ms)
+                // Lưu hồ sơ giáo viên vào Firestore (Fast Timeout 5000ms)
                 const userDocRef = doc(db, "users", firebaseUser.uid);
-                await runWithTimeout(setDoc(userDocRef, userData), 800);
+                await runWithTimeout(setDoc(userDocRef, userData), 5000);
             } catch (firestoreError) {
                 console.warn("Bỏ qua lỗi Firestore khi đăng ký Email:", firestoreError.message);
             }

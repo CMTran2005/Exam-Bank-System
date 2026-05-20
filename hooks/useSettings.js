@@ -58,11 +58,11 @@ export function useSettings(currentUser, setCurrentUser) {
             setSchool(currentUser.school || "");
             setPhone(currentUser.phone || "");
 
-            let loadedDegree = (currentUser.degree || "Thạc sĩ").normalize("NFC");
+            let loadedDegree = (currentUser.degree || "Thạc sĩ").trim().normalize("NFC");
             if (loadedDegree === "Cử nhân") loadedDegree = "Cử nhân (Đại học)";
             if (loadedDegree === "Kĩ sư") loadedDegree = "Kĩ sư (Đại học)";
 
-            let loadedSubject = (currentUser.mainSubject || "Toán học").normalize("NFC");
+            let loadedSubject = (currentUser.mainSubject || "Toán học").trim().normalize("NFC");
             if (loadedSubject === "Khoa học máy tính") loadedSubject = "Khoa học máy tính (CS)";
             if (loadedSubject === "Kỹ thuật phần mềm") loadedSubject = "Kỹ thuật phần mềm (SE)";
             if (loadedSubject === "Công nghệ thông tin") loadedSubject = "Công nghệ thông tin (IT)";
@@ -76,22 +76,6 @@ export function useSettings(currentUser, setCurrentUser) {
             if (savedSettings) {
                 try {
                     const parsed = JSON.parse(savedSettings);
-                    if (parsed.phone) setPhone(parsed.phone);
-
-                    if (parsed.degree) {
-                        let d = parsed.degree.normalize("NFC");
-                        if (d === "Cử nhân") d = "Cử nhân (Đại học)";
-                        if (d === "Kĩ sư") d = "Kĩ sư (Đại học)";
-                        loadedDegree = d;
-                    }
-
-                    if (parsed.mainSubject) {
-                        let s = parsed.mainSubject.normalize("NFC");
-                        if (s === "Khoa học máy tính") s = "Khoa học máy tính (CS)";
-                        if (s === "Kỹ thuật phần mềm") s = "Kỹ thuật phần mềm (SE)";
-                        if (s === "Công nghệ thông tin") s = "Công nghệ thông tin (IT)";
-                        loadedSubject = s;
-                    }
 
                     if (parsed.defaultPoints) setDefaultPoints(parsed.defaultPoints);
                     if (parsed.pointsStep) setPointsStep(parsed.pointsStep);

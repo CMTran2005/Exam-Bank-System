@@ -67,10 +67,18 @@ export default function RecycleBinPage() {
 
                     <div className="divide-y divide-border/60">
                         {trashExams.map((ex) => {
-                            const deletedDate = ex.deletedAt ? new Date(ex.deletedAt) : new Date(ex.updatedAt);
-                            const expireDate = new Date(deletedDate);
-                            expireDate.setDate(expireDate.getDate() + 30);
-                            const daysLeft = Math.max(0, Math.ceil((expireDate - new Date()) / (1000 * 60 * 60 * 24)));
+                            let rawDate = ex.deletedAt || ex.updatedAt;
+                            let deletedDate = new Date();
+                            if (rawDate && typeof rawDate === 'object' && rawDate.seconds) {
+                                deletedDate = new Date(rawDate.seconds * 1000);
+                            } else if (rawDate) {
+                                deletedDate = new Date(rawDate);
+                            }
+                            if (isNaN(deletedDate.getTime())) deletedDate = new Date();
+
+                            const diffTime = Math.max(0, new Date() - deletedDate);
+                            const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                            const daysLeft = Math.max(0, 30 - daysPassed);
 
                             return (
                                 <div

@@ -18,7 +18,7 @@ export default function MyExamsPage() {
     const { currentUser, loading } = useAuth();
     const router = useRouter();
     const [showSettings, setShowSettings] = useState(false);
-    
+
     // Modal states
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
     const [newFolderName, setNewFolderName] = useState("");
@@ -110,35 +110,35 @@ export default function MyExamsPage() {
                 </div>
             </div>
 
-            <FolderTabs 
-                folders={folders} 
-                activeFolder={activeFolder} 
-                setActiveFolder={setActiveFolder} 
-                handleDeleteFolder={handleDeleteFolder} 
-                setIsCreateFolderModalOpen={setIsCreateFolderModalOpen} 
-                examsLength={exams.length} 
+            <FolderTabs
+                folders={folders}
+                activeFolder={activeFolder}
+                setActiveFolder={setActiveFolder}
+                handleDeleteFolder={handleDeleteFolder}
+                setIsCreateFolderModalOpen={setIsCreateFolderModalOpen}
+                examsLength={exams.length}
             />
 
             {showSettings && (
                 <DisplaySettings displaySettings={displaySettings} toggleSetting={toggleSetting} />
             )}
 
-            <BulkActionBar 
-                selectedExams={selectedExams} 
-                handleBulkDelete={handleBulkDelete} 
-                onMove={() => { setExamToMove("BULK"); setIsMoveExamModalOpen(true); }} 
+            <BulkActionBar
+                selectedExams={selectedExams}
+                handleBulkDelete={handleBulkDelete}
+                onMove={() => { setExamToMove("BULK"); setIsMoveExamModalOpen(true); }}
             />
 
             {exams.length > 0 ? (
-                <ExamList 
-                    displayedExams={displayedExams} 
-                    selectedExams={selectedExams} 
-                    displaySettings={displaySettings} 
-                    toggleSelectAll={toggleSelectAll} 
-                    toggleSelectExam={toggleSelectExam} 
-                    setExamToMove={setExamToMove} 
-                    setIsMoveExamModalOpen={setIsMoveExamModalOpen} 
-                    handleDeleteExam={handleDeleteExam} 
+                <ExamList
+                    displayedExams={displayedExams}
+                    selectedExams={selectedExams}
+                    displaySettings={displaySettings}
+                    toggleSelectAll={toggleSelectAll}
+                    toggleSelectExam={toggleSelectExam}
+                    setExamToMove={setExamToMove}
+                    setIsMoveExamModalOpen={setIsMoveExamModalOpen}
+                    handleDeleteExam={handleDeleteExam}
                 />
             ) : (
                 <div className="bg-card border border-dashed border-border p-12 rounded-2xl text-center space-y-3 max-w-md mx-auto">
@@ -157,19 +157,19 @@ export default function MyExamsPage() {
                 </div>
             )}
 
-            <ExamModals 
-                isCreateFolderModalOpen={isCreateFolderModalOpen} 
+            <ExamModals
+                isCreateFolderModalOpen={isCreateFolderModalOpen}
                 setIsCreateFolderModalOpen={setIsCreateFolderModalOpen}
-                newFolderName={newFolderName} 
-                setNewFolderName={setNewFolderName} 
+                newFolderName={newFolderName}
+                setNewFolderName={setNewFolderName}
                 handleCreateFolder={handleCreateFolderWrapper}
                 isCreatingFolder={isCreatingFolder}
-                isMoveExamModalOpen={isMoveExamModalOpen} 
+                isMoveExamModalOpen={isMoveExamModalOpen}
                 setIsMoveExamModalOpen={setIsMoveExamModalOpen}
-                examToMove={examToMove} 
-                folders={folders} 
-                handleMoveToFolder={handleMoveToFolder} 
-                selectedExams={selectedExams} 
+                examToMove={examToMove}
+                folders={folders}
+                handleMoveToFolder={handleMoveToFolder}
+                selectedExams={selectedExams}
             />
         </div>
     );
