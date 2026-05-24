@@ -1,8 +1,26 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { adminAuth } from "@/lib/firebaseAdmin";
 
 export async function POST(request) {
     try {
+        // 1. Xác thực bảo mật với Firebase Admin
+        const authHeader = request.headers.get("Authorization");
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return NextResponse.json({ error: "Unauthorized: Missing token." }, { status: 401 });
+        }
+        
+        const token = authHeader.split("Bearer ")[1];
+        if (!adminAuth) {
+             console.warn("Chưa cấu hình Firebase Admin, bỏ qua bước check Token (Vui lòng thiết lập biến môi trường FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)");
+        } else {
+             try {
+                 await adminAuth.verifyIdToken(token);
+             } catch (authError) {
+                 return NextResponse.json({ error: "Unauthorized: Invalid or expired token." }, { status: 401 });
+             }
+        }
+
         const { image } = await request.json();
         if (!image) {
             return NextResponse.json({ error: "Không tìm thấy dữ liệu ảnh." }, { status: 400 });
@@ -46,7 +64,7 @@ export async function POST(request) {
         } catch (err1) {
             console.warn("Thử gemini-2.5-flash thất bại, chuyển sang gemini-1.5-flash...", err1.message);
             try {
-                // 2. Thử mô hình gemini-1.5-flash (tương thích cực cao trên mọi tài khoản Free)
+                // 2. Thử mô hình gemini-1.5-flash
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                 const result = await model.generateContent([prompt, imagePart]);
                 responseText = result.response.text().trim();
@@ -67,7 +85,7 @@ export async function POST(request) {
             }
         }
 
-        // Tối ưu bóc tách JSON bằng Regex (bảo đảm an toàn tuyệt đối ngay cả khi AI trả về thừa văn bản hoặc markdown backticks)
+        // Tối ưu bóc tách JSON bằng Regex
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error("Không tìm thấy định dạng JSON hợp lệ trong phản hồi của AI.");

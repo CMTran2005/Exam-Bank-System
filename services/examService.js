@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, limit, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, limit, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 const runWithTimeout = (promise, ms = 2000) => {
@@ -28,6 +28,25 @@ export const examService = {
             return list;
         } catch (error) {
             console.warn("Lỗi fetch getUserExams:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Lấy chi tiết một đề thi
+     * @param {string} examId ID của đề thi
+     */
+    async getExamDetails(examId) {
+        if (!examId) return null;
+        try {
+            const docRef = doc(db, "exams", examId);
+            const docSnap = await runWithTimeout(getDoc(docRef));
+            if (docSnap.exists()) {
+                return { id: docSnap.id, ...docSnap.data() };
+            }
+            return null;
+        } catch (error) {
+            console.warn("Lỗi fetch getExamDetails:", error);
             throw error;
         }
     },

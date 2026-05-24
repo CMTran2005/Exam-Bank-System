@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function useQuestionForm(question, onChangeData) {
     const [loading, setLoading] = useState(false);
@@ -11,7 +12,7 @@ export function useQuestionForm(question, onChangeData) {
 
     const handleAITagging = async () => {
         if (!question.content || !question.content.trim()) {
-            alert("Vui lòng nhập nội dung đề bài trước khi yêu cầu gợi ý thẻ.");
+            toast.error("Vui lòng nhập nội dung đề bài trước khi yêu cầu gợi ý thẻ.");
             return;
         }
 
@@ -29,7 +30,7 @@ export function useQuestionForm(question, onChangeData) {
 
             const data = await response.json();
             if (data.error) {
-                alert("Lỗi máy chủ: " + data.error);
+                toast.error("Lỗi máy chủ: " + data.error);
                 return;
             }
 
@@ -46,7 +47,7 @@ export function useQuestionForm(question, onChangeData) {
             onChangeData(updatedQuestion);
         } catch (err) {
             console.error("Lỗi gợi ý thẻ:", err);
-            alert("Lỗi kết nối máy chủ: " + err.message);
+            toast.error("Lỗi kết nối máy chủ: " + err.message);
         } finally {
             setAiTaggingLoading(false);
         }
@@ -103,9 +104,15 @@ export function useQuestionForm(question, onChangeData) {
                 reader.onloadend = async () => {
                     const base64Image = reader.result;
                     try {
+                        const { auth } = await import("@/lib/firebase");
+                        const token = auth.currentUser ? await auth.currentUser.getIdToken() : "";
+                        
                         const response = await fetch("/api/ocr", {
                             method: "POST",
-                            headers: { "Content-Type": "application/json" },
+                            headers: { 
+                                "Content-Type": "application/json",
+                                "Authorization": `Bearer ${token}`
+                            },
                             body: JSON.stringify({ image: base64Image }),
                         });
                         const data = await response.json();

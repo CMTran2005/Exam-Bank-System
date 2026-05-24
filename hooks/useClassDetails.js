@@ -18,19 +18,42 @@ export function useClassDetails(classId) {
             return;
         }
         
+        let unsubscribe = null;
+
         if (currentUser) {
-            const fetchData = async () => {
-                try {
-                    const data = await classService.getClassDetails(classId);
-                    setClassDetails(data);
-                } catch (error) {
-                    console.error(error);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchData();
+            import("firebase/firestore").then(({ doc, onSnapshot }) => {
+                import("@/lib/firebase").then(({ db }) => {
+                    const docRef = doc(db, "classes", classId);
+                    unsubscribe = onSnapshot(docRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = { id: docSnap.id, ...docSnap.data() };
+                            setClassDetails(data);
+                            
+                            if (data.students) {
+                                // Duy trì trạng thái điểm danh hiện tại nếu có, hoặc set mặc định là pending
+                                setStudents(prevStudents => {
+                                    const prevStatusMap = {};
+                                    prevStudents.forEach(s => prevStatusMap[s.id] = s.attendance);
+                                    
+                                    return data.students.map(s => ({
+                                        ...s,
+                                        attendance: prevStatusMap[s.id] || "pending"
+                                    }));
+                                });
+                            }
+                        }
+                        setLoading(false);
+                    }, (error) => {
+                        console.error("Lỗi onSnapshot class:", error);
+                        setLoading(false);
+                    });
+                });
+            });
         }
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
     }, [currentUser, authLoading, router, classId]);
 
     const toggleAttendance = (studentId) => {

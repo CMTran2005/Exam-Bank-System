@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
@@ -10,6 +12,14 @@ export default function AppLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [zenMode, setZenMode] = useState(false);
+    const { currentUser, loading } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading && currentUser && currentUser.role === "student") {
+            router.replace("/student");
+        }
+    }, [currentUser, loading, router]);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -30,6 +40,17 @@ export default function AppLayout({ children }) {
     }, []);
 
     const handleMenuToggle = () => setSidebarOpen((prev) => !prev);
+
+    if (loading || (currentUser && currentUser.role === "student")) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-background">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm text-muted-foreground font-medium animate-pulse">Đang tải không gian làm việc...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">

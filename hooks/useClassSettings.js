@@ -2,10 +2,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { classService } from "@/services/classService";
-import { GRADE_SUBJECTS_MAP } from "@/lib/constants";
+import useSubjects from "@/hooks/useSubjects";
+import { useConfirm } from "@/context/ConfirmContext";
+import { toast } from "sonner";
 
 export function useClassSettings(classId) {
-    const GRADES = Object.keys(GRADE_SUBJECTS_MAP);
+    const confirmDialog = useConfirm();
+    const { gradeSubjectsMap, loading: subjectsLoading } = useSubjects();
+    const GRADES = Object.keys(gradeSubjectsMap);
     const { currentUser, loading: authLoading } = useAuth();
     const router = useRouter();
     
@@ -46,8 +50,8 @@ export function useClassSettings(classId) {
                     if (clsData) {
                         setClassName(clsData.name);
                         setSchoolYear(clsData.schoolYear);
-                        setGrade(clsData.grade || GRADES[11]);
-                        setSubject(clsData.subject || GRADE_SUBJECTS_MAP[GRADES[11]][0]);
+                        setGrade(clsData.grade || "12");
+                        setSubject(clsData.subject || "Toán học");
                         if (clsData.startTime) {
                             const st = new Date(clsData.startTime);
                             setExamDate(st.toISOString().split('T')[0]);
@@ -66,7 +70,7 @@ export function useClassSettings(classId) {
         };
 
         fetchClassData();
-    }, [currentUser, authLoading, router, classId, GRADES]);
+    }, [currentUser, authLoading, router, classId, gradeSubjectsMap]);
 
     const handleSave = async () => {
         if (!className.trim()) return;
@@ -90,27 +94,29 @@ export function useClassSettings(classId) {
                 endTime: computedEndTime,
                 duration: examDuration
             });
-            alert("Đã lưu cấu hình thành công!");
+            toast.success("Đã lưu cấu hình thành công!");
         } catch (error) {
-            alert("Có lỗi xảy ra khi lưu!");
+            toast.error("Có lỗi xảy ra khi lưu!");
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleDelete = async () => {
-        if (confirm("Hành động này KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn muốn xóa lớp học này và toàn bộ dữ liệu học sinh bên trong?")) {
+        if (await confirmDialog("Hành động này KHÔNG THỂ HOÀN TÁC. Bạn có chắc chắn muốn xóa lớp học này và toàn bộ dữ liệu học sinh bên trong?", "Xóa lớp học")) {
             try {
                 await classService.deleteClass(classId);
                 router.push("/classes");
+                toast.success("Đã xóa lớp học!");
             } catch (error) {
-                alert("Lỗi khi xóa lớp học!");
+                toast.error("Lỗi khi xóa lớp học!");
             }
         }
     };
 
     return {
-        authLoading, loading,
+        authLoading, loading: loading || subjectsLoading,
+        gradeSubjectsMap,
         className, setClassName,
         schoolYear, setSchoolYear,
         grade, setGrade,

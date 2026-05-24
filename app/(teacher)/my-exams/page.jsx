@@ -1,0 +1,177 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Plus, SlidersHorizontal, FileText, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext";
+import { useExams } from "@/hooks/useExams";
+
+import { FolderTabs } from "./_components/FolderTabs";
+import { DisplaySettings } from "./_components/DisplaySettings";
+import { BulkActionBar } from "./_components/BulkActionBar";
+import { ExamList } from "./_components/ExamList";
+import { ExamModals } from "./_components/ExamModals";
+
+export default function MyExamsPage() {
+    const { currentUser, loading } = useAuth();
+    const router = useRouter();
+    const [showSettings, setShowSettings] = useState(false);
+
+    // Modal states
+    const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+    const [newFolderName, setNewFolderName] = useState("");
+    const [isMoveExamModalOpen, setIsMoveExamModalOpen] = useState(false);
+    const [examToMove, setExamToMove] = useState(null);
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
+    const {
+        exams, folders, activeFolder, setActiveFolder,
+        selectedExams, setSelectedExams,
+        displaySettings, toggleSetting, mounted,
+        handleDeleteExam, handleBulkDelete, handleMoveToFolder,
+        handleCreateFolder, handleDeleteFolder, handleTogglePublic
+    } = useExams(currentUser);
+
+    useEffect(() => {
+        if (!loading && !currentUser) {
+            router.push("/login");
+        }
+    }, [currentUser, loading, router]);
+
+    if (loading || !currentUser) {
+        return (
+            <div className="flex h-[80vh] items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (!mounted) {
+        return (
+            <div className="p-8 flex justify-center items-center h-96">
+                <p className="text-sm text-muted-foreground animate-pulse">Đang tải danh sách đề thi...</p>
+            </div>
+        );
+    }
+
+    const displayedExams = exams.filter(ex => activeFolder === "all" || ex.folderId === activeFolder);
+
+    const toggleSelectAll = () => {
+        if (selectedExams.length === displayedExams.length) {
+            setSelectedExams([]);
+        } else {
+            setSelectedExams(displayedExams.map(e => e.id));
+        }
+    };
+
+    const toggleSelectExam = (id) => {
+        setSelectedExams(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    };
+
+    const handleCreateFolderWrapper = async (name) => {
+        setIsCreatingFolder(true);
+        await handleCreateFolder(name);
+        setIsCreatingFolder(false);
+        setIsCreateFolderModalOpen(false);
+    };
+
+    return (
+        <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
+                        <span className="w-2.5 h-6 bg-primary rounded-full animate-pulse" />
+                        Đề Thi Của Tôi
+                    </h1>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Danh sách các đề thi bạn đã soạn thảo ({exams.length} đề thi).
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                        variant="outline"
+                        onClick={() => setShowSettings(!showSettings)}
+                        className={`font-bold rounded-xl h-10 border-border flex items-center gap-2 ${showSettings ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                        title="Tùy chọn hiển thị"
+                    >
+                        <SlidersHorizontal className="w-4 h-4" />
+                        <span className="text-xs">Tùy chọn hiển thị</span>
+                    </Button>
+                    <Link href="/create-question">
+                        <Button className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold shadow-md shadow-primary/10 rounded-xl h-10 flex items-center gap-2">
+                            <Plus className="w-4 h-4" />
+                            <span className="text-xs sm:inline hidden">Soạn đề thi mới</span>
+                            <span className="text-xs sm:hidden">Soạn mới</span>
+                        </Button>
+                    </Link>
+                </div>
+            </div>
+
+            <FolderTabs
+                folders={folders}
+                activeFolder={activeFolder}
+                setActiveFolder={setActiveFolder}
+                handleDeleteFolder={handleDeleteFolder}
+                setIsCreateFolderModalOpen={setIsCreateFolderModalOpen}
+                examsLength={exams.length}
+            />
+
+            {showSettings && (
+                <DisplaySettings displaySettings={displaySettings} toggleSetting={toggleSetting} />
+            )}
+
+            <BulkActionBar
+                selectedExams={selectedExams}
+                handleBulkDelete={handleBulkDelete}
+                onMove={() => { setExamToMove("BULK"); setIsMoveExamModalOpen(true); }}
+            />
+
+            {exams.length > 0 ? (
+                <ExamList
+                    displayedExams={displayedExams}
+                    selectedExams={selectedExams}
+                    displaySettings={displaySettings}
+                    toggleSelectAll={toggleSelectAll}
+                    toggleSelectExam={toggleSelectExam}
+                    setExamToMove={setExamToMove}
+                    setIsMoveExamModalOpen={setIsMoveExamModalOpen}
+                    handleDeleteExam={handleDeleteExam}
+                    handleTogglePublic={handleTogglePublic}
+                />
+            ) : (
+                <div className="bg-card border border-dashed border-border p-12 rounded-2xl text-center space-y-3 max-w-md mx-auto">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+                        <FileText className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-sm font-bold text-foreground">Bạn chưa có đề thi nào!</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                        Nhấn nút dưới để bắt đầu soạn thảo đề thi đầu tiên.
+                    </p>
+                    <Link href="/create-question">
+                        <Button className="mt-2 h-11 px-6 rounded-xl font-bold bg-primary text-primary-foreground">
+                            <Plus className="w-4 h-4 mr-2" /> Soạn thảo đề thi mới
+                        </Button>
+                    </Link>
+                </div>
+            )}
+
+            <ExamModals
+                isCreateFolderModalOpen={isCreateFolderModalOpen}
+                setIsCreateFolderModalOpen={setIsCreateFolderModalOpen}
+                newFolderName={newFolderName}
+                setNewFolderName={setNewFolderName}
+                handleCreateFolder={handleCreateFolderWrapper}
+                isCreatingFolder={isCreatingFolder}
+                isMoveExamModalOpen={isMoveExamModalOpen}
+                setIsMoveExamModalOpen={setIsMoveExamModalOpen}
+                examToMove={examToMove}
+                folders={folders}
+                handleMoveToFolder={handleMoveToFolder}
+                selectedExams={selectedExams}
+            />
+        </div>
+    );
+}

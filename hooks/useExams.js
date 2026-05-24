@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useConfirm } from "@/context/ConfirmContext";
 
 const runWithTimeout = (promise, ms = 1000) => {
     return Promise.race([
@@ -12,6 +13,7 @@ const runWithTimeout = (promise, ms = 1000) => {
 };
 
 export function useExams(currentUser) {
+    const confirmDialog = useConfirm();
     const [exams, setExams] = useState([]);
     const [folders, setFolders] = useState([{ id: "all", name: "Tất cả đề thi" }]);
     const [activeFolder, setActiveFolder] = useState("all");
@@ -84,7 +86,7 @@ export function useExams(currentUser) {
 
     const handleDeleteExam = async (id, e) => {
         if (e) e.preventDefault();
-        if (!confirm("Bạn có chắc chắn muốn xóa đề thi này không? Đề thi sẽ được chuyển vào Thùng rác.")) return;
+        if (!(await confirmDialog("Bạn có chắc chắn muốn xóa đề thi này không? Đề thi sẽ được chuyển vào Thùng rác.", "Xóa đề thi"))) return;
         
         const examToDelete = exams.find(ex => ex.id === id);
         if (!examToDelete) return;
@@ -107,7 +109,7 @@ export function useExams(currentUser) {
 
     const handleBulkDelete = async () => {
         if (!selectedExams.length) return;
-        if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedExams.length} đề thi đã chọn?`)) return;
+        if (!(await confirmDialog(`Bạn có chắc chắn muốn xóa ${selectedExams.length} đề thi đã chọn?`, "Xóa nhiều đề thi"))) return;
 
         const trashedExams = exams.filter(ex => selectedExams.includes(ex.id)).map(ex => ({
             ...ex, deletedAt: new Date().toISOString()
@@ -145,6 +147,18 @@ export function useExams(currentUser) {
         }
     };
 
+    const handleTogglePublic = async (id, currentStatus) => {
+        const updatedExams = exams.map(ex => ex.id === id ? { ...ex, isPublic: !currentStatus } : ex);
+        setExams(updatedExams);
+        localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
+
+        try {
+            await runWithTimeout(setDoc(doc(db, "exams", id), { isPublic: !currentStatus }, { merge: true }), 1200);
+        } catch (err) {
+            console.error("Lỗi khi cập nhật isPublic", err);
+        }
+    };
+
     const handleCreateFolder = async (newFolderName) => {
         if (!newFolderName.trim()) return;
 
@@ -166,7 +180,7 @@ export function useExams(currentUser) {
     };
 
     const handleDeleteFolder = async (folderId) => {
-        if (!confirm("Bạn có chắc chắn muốn xóa thư mục này?")) return;
+        if (!(await confirmDialog("Bạn có chắc chắn muốn xóa thư mục này?", "Xóa thư mục"))) return;
 
         const updatedFolders = folders.filter(f => f.id !== folderId);
         setFolders(updatedFolders);
@@ -192,6 +206,6 @@ export function useExams(currentUser) {
         selectedExams, setSelectedExams,
         displaySettings, toggleSetting, mounted,
         handleDeleteExam, handleBulkDelete, handleMoveToFolder,
-        handleCreateFolder, handleDeleteFolder
+        handleCreateFolder, handleDeleteFolder, handleTogglePublic
     };
 }

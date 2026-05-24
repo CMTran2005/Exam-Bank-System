@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 
 const runWithTimeout = (promise, ms = 1000) => {
     return Promise.race([
@@ -105,7 +106,7 @@ export function useSettings(currentUser, setCurrentUser) {
         if (!file) return;
 
         if (file.size > 2 * 1024 * 1024) {
-            alert("Kích thước tệp tin phải nhỏ hơn 2MB!");
+            toast.error("Kích thước tệp tin phải nhỏ hơn 2MB!");
             return;
         }
 
@@ -129,7 +130,7 @@ export function useSettings(currentUser, setCurrentUser) {
             }
         } catch (error) {
             console.error("Lỗi tải avatar:", error);
-            alert("Có lỗi xảy ra trong quá trình tải ảnh đại diện lên Cloudinary!");
+            toast.error("Có lỗi xảy ra trong quá trình tải ảnh đại diện lên Cloudinary!");
         } finally {
             setUploadingAvatar(false);
         }

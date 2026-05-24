@@ -24,7 +24,7 @@ const AuthContext = createContext({
     setCurrentUser: () => { },
     login: async (email, password) => { },
     loginWithGoogle: async () => { },
-    register: async (name, email, password) => { },
+    register: async (name, email, password, role) => { },
     logout: () => { },
     loading: true,
 });
@@ -190,7 +190,7 @@ export function AuthProvider({ children }) {
     };
 
     // Hàm xử lý Đăng nhập / Đăng ký cực nhanh bằng Tài khoản Google
-    const loginWithGoogle = async () => {
+    const loginWithGoogle = async (role = "teacher") => {
         setLoading(true);
         try {
             const provider = new GoogleAuthProvider();
@@ -201,10 +201,10 @@ export function AuthProvider({ children }) {
 
             let userData = {
                 uid: firebaseUser.uid,
-                name: firebaseUser.displayName || "Giáo viên Google",
+                name: firebaseUser.displayName || "Người dùng Google",
                 email: firebaseUser.email,
-                role: "teacher",
-                school: "Trường THPT Chuyên Quốc Học"
+                role: role,
+                school: "Chưa cập nhật"
             };
 
             try {
@@ -232,8 +232,8 @@ export function AuthProvider({ children }) {
         }
     };
 
-    // Hàm xử lý Đăng ký tài khoản giáo viên mới qua Firebase Auth & Firestore
-    const register = async (name, email, password) => {
+    // Hàm xử lý Đăng ký tài khoản giáo viên/học sinh mới qua Firebase Auth & Firestore
+    const register = async (name, email, password, role = "teacher") => {
         setLoading(true);
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -246,8 +246,8 @@ export function AuthProvider({ children }) {
                 uid: firebaseUser.uid,
                 name,
                 email,
-                role: "teacher",
-                school: "Trường THPT Chuyên Quốc Học"
+                role: role,
+                school: "Chưa cập nhật"
             };
 
             try {

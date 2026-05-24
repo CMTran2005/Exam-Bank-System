@@ -3,6 +3,8 @@ import { useRouter } from "next/navigation";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { useConfirm } from "@/context/ConfirmContext";
+import { toast } from "sonner";
 import { createDefaultSubQuestion } from "@/components/question/GroupQuestionForm";
 
 const runWithTimeout = (promise, ms = 1000) => {
@@ -71,6 +73,7 @@ const slugify = (text) => {
 };
 
 export function useCreateExam() {
+    const confirmDialog = useConfirm();
     const { currentUser, loading } = useAuth();
     const router = useRouter();
     const [editId, setEditId] = useState(null);
@@ -131,21 +134,28 @@ export function useCreateExam() {
                         setQuestionsList(examToEdit.questions || []);
                     }
                 } else {
-                    const draftStr = localStorage.getItem("eb_exam_draft");
-                    if (draftStr) {
+                    let draft = null;
+                    if (currentUser?.uid) {
                         try {
-                            const draft = JSON.parse(draftStr);
-                            if (draft.examInfo || draft.questionsList?.length > 0) {
-                                if (confirm(`Bạn có bản nháp đang soạn dở lúc ${new Date(draft.timestamp).toLocaleTimeString('vi-VN')}. Bạn có muốn khôi phục không?`)) {
-                                    setExamInfo(draft.examInfo || examInfo);
-                                    setQuestionsList(draft.questionsList || []);
-                                    isCodeManuallyEdited.current = !!draft.examInfo?.code;
-                                } else {
-                                    localStorage.removeItem("eb_exam_draft");
-                                }
+                            const draftDoc = await getDoc(doc(db, "drafts", currentUser.uid));
+                            if (draftDoc.exists() && !draftDoc.data().deleted) draft = draftDoc.data();
+                        } catch (e) { console.warn("Lỗi tải nháp Cloud:", e); }
+                    }
+                    if (!draft) {
+                        const draftStr = localStorage.getItem("eb_exam_draft");
+                        if (draftStr) try { draft = JSON.parse(draftStr); } catch (e) {}
+                    }
+
+                    if (draft && (draft.examInfo || draft.questionsList?.length > 0)) {
+                        if (await confirmDialog(`Bạn có bản nháp (Cloud/Local) đang soạn dở lúc ${new Date(draft.timestamp).toLocaleTimeString('vi-VN')}. Bạn có muốn khôi phục không?`, "Khôi phục bản nháp")) {
+                            setExamInfo(draft.examInfo || examInfo);
+                            setQuestionsList(draft.questionsList || []);
+                            isCodeManuallyEdited.current = !!draft.examInfo?.code;
+                        } else {
+                            localStorage.removeItem("eb_exam_draft");
+                            if (currentUser?.uid) {
+                                try { await setDoc(doc(db, "drafts", currentUser.uid), { deleted: true }); } catch (e) {}
                             }
-                        } catch (e) {
-                            console.error("Lỗi đọc bản nháp:", e);
                         }
                     }
                 }
@@ -157,13 +167,19 @@ export function useCreateExam() {
     // Auto-save
     useEffect(() => {
         if (!examInfo.title && questionsList.length === 0) return;
-        const timer = setTimeout(() => {
+        const timer = setTimeout(async () => {
             const draft = { examInfo, questionsList, timestamp: new Date().toISOString() };
             localStorage.setItem("eb_exam_draft", JSON.stringify(draft));
+            
+            if (currentUser?.uid) {
+                try {
+                    await setDoc(doc(db, "drafts", currentUser.uid), draft);
+                } catch (err) { console.warn("Lỗi lưu nháp Cloud:", err); }
+            }
             setLastSaved(new Date());
         }, 5000);
         return () => clearTimeout(timer);
-    }, [examInfo, questionsList]);
+    }, [examInfo, questionsList, currentUser]);
 
     // Keyboard Shortcuts
     useEffect(() => {
@@ -201,7 +217,7 @@ export function useCreateExam() {
 
     const handleAIGenerateQuestion = async () => {
         if (!aiPromptText.trim()) {
-            alert("Vui lòng nhập chủ đề hoặc yêu cầu trước khi tạo câu hỏi.");
+            toast.error("Vui lòng nhập chủ đề hoặc yêu cầu trước khi tạo câu hỏi.");
             return;
         }
 
@@ -215,7 +231,7 @@ export function useCreateExam() {
 
             const data = await response.json();
             if (data.error) {
-                alert("Lỗi tạo câu hỏi: " + data.error);
+                toast.error("Lỗi tạo câu hỏi: " + data.error);
                 return;
             }
 
@@ -250,10 +266,10 @@ export function useCreateExam() {
             setQuestionsList(prev => [...prev, newQ]);
             setAiPromptText("");
             setShowAIAssistant(false);
-            alert("Tạo câu hỏi thành công!");
+            toast.success("Tạo câu hỏi thành công!");
         } catch (err) {
             console.error("Lỗi gọi AI tạo câu hỏi:", err);
-            alert("Lỗi kết nối AI: " + err.message);
+            toast.error("Lỗi kết nối AI: " + err.message);
         } finally {
             setAiGenerating(false);
         }
@@ -304,9 +320,9 @@ export function useCreateExam() {
     const updateQuestionData = (id, updatedData) => setQuestionsList(questionsList.map((q) => q.id === id ? { ...q, ...updatedData } : q));
 
     const handleSaveExam = async () => {
-        if (!examInfo.title.trim()) return alert("Vui lòng nhập Tiêu đề đề thi.");
-        if (!examInfo.code.trim()) return alert("Vui lòng nhập Mã đề thi.");
-        if (questionsList.length === 0) return alert("Vui lòng thêm ít nhất một câu hỏi.");
+        if (!examInfo.title.trim()) return toast.error("Vui lòng nhập Tiêu đề đề thi.");
+        if (!examInfo.code.trim()) return toast.error("Vui lòng nhập Mã đề thi.");
+        if (questionsList.length === 0) return toast.error("Vui lòng thêm ít nhất một câu hỏi.");
 
         const savedExams = JSON.parse(localStorage.getItem("eb_exams") || "[]");
         const finalId = examInfo.code.trim();
@@ -335,14 +351,14 @@ export function useCreateExam() {
             localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
         } else {
             const exists = savedExams.some((e) => String(e.id) === String(finalId));
-            if (exists && !confirm("Mã đề thi này đã tồn tại trong hệ thống. Bạn có chắc chắn muốn ghi đè lên đề thi hiện tại không?")) return;
+            if (exists && !(await confirmDialog("Mã đề thi này đã tồn tại trong hệ thống. Bạn có chắc chắn muốn ghi đè lên đề thi hiện tại không?", "Trùng mã đề thi"))) return;
             const updatedExams = savedExams.filter((e) => String(e.id) !== String(finalId));
             updatedExams.push(finalExamPayload);
             localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
         }
 
         localStorage.removeItem("eb_exam_draft");
-        alert(editId ? "Cập nhật đề thi thành công!" : "Lưu đề thi mới thành công!");
+        toast.success(editId ? "Cập nhật đề thi thành công!" : "Lưu đề thi mới thành công!");
         router.push("/my-exams");
     };
 

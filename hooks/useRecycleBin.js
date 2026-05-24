@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useConfirm } from "@/context/ConfirmContext";
 import { doc, deleteDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -14,6 +15,7 @@ const runWithTimeout = (promise, ms = 1000) => {
 };
 
 export function useRecycleBin() {
+    const confirmDialog = useConfirm();
     const { currentUser, loading } = useAuth();
     const router = useRouter();
     const [trashExams, setTrashExams] = useState([]);
@@ -102,7 +104,7 @@ export function useRecycleBin() {
 
     const handlePermanentDelete = async (id, e) => {
         e.preventDefault();
-        if (confirm("Hành động này sẽ XÓA VĨNH VIỄN đề thi và không thể khôi phục. Bạn có chắc chắn?")) {
+        if (await confirmDialog("Hành động này sẽ XÓA VĨNH VIỄN đề thi và không thể khôi phục. Bạn có chắc chắn?", "Xóa vĩnh viễn")) {
             const updatedTrash = trashExams.filter(ex => ex.id !== id);
             setTrashExams(updatedTrash);
             localStorage.setItem("eb_trash", JSON.stringify(updatedTrash));
@@ -117,7 +119,7 @@ export function useRecycleBin() {
     };
 
     const handleEmptyTrash = async () => {
-        if (confirm("Bạn có chắc chắn muốn dọn sạch thùng rác? Toàn bộ đề thi trong này sẽ bị xóa vĩnh viễn.")) {
+        if (await confirmDialog("Bạn có chắc chắn muốn dọn sạch thùng rác? Toàn bộ đề thi trong này sẽ bị xóa vĩnh viễn.", "Dọn sạch thùng rác")) {
             const idsToDelete = trashExams.map(ex => ex.id);
             
             setTrashExams([]);

@@ -17,7 +17,8 @@ import {
     Trash2,
     GraduationCap,
     Bot,
-    PenTool
+    PenTool,
+    BookOpen
 } from "lucide-react";
 
 const navGroups = [
@@ -34,6 +35,7 @@ const navGroups = [
         label: "Trường Học",
         items: [
             { href: "/classes", icon: GraduationCap, label: "Lớp Thi" },
+            { href: "/subjects", icon: BookOpen, label: "Môn Học" },
         ],
     },
     {

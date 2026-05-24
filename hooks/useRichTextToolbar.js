@@ -125,9 +125,15 @@ export function useRichTextToolbar(targetId, value, onChange) {
         reader.onloadend = async () => {
             const base64Image = reader.result;
             try {
+                const { auth } = await import("@/lib/firebase");
+                const token = auth.currentUser ? await auth.currentUser.getIdToken() : "";
+                
                 const response = await fetch("/api/ocr", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
                     body: JSON.stringify({ image: base64Image }),
                 });
                 const data = await response.json();

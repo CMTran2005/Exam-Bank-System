@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/context/ConfirmContext";
 
 export function useQuestions() {
+    const confirmDialog = useConfirm();
     const { currentUser, loading } = useAuth();
     const router = useRouter();
 
@@ -87,8 +89,8 @@ export function useQuestions() {
         );
     };
 
-    const handleDelete = (id) => {
-        if (confirm("Bạn có chắc chắn muốn xóa câu hỏi này khỏi ngân hàng câu hỏi và đề thi tương ứng?")) {
+    const handleDelete = async (id) => {
+        if (await confirmDialog("Bạn có chắc chắn muốn xóa câu hỏi này khỏi ngân hàng câu hỏi và đề thi tương ứng?", "Xóa câu hỏi")) {
             setQuestions(questions.filter((q) => q.id !== id));
             const savedExams = localStorage.getItem("eb_exams");
             if (savedExams) {

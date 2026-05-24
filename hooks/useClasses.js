@@ -1,20 +1,23 @@
+import useSWR from "swr";
 import { useState, useEffect } from "react";
 import { classService } from "@/services/classService";
-import { GRADE_SUBJECTS_MAP } from "@/lib/constants";
+import useSubjects from "@/hooks/useSubjects";
+import { useConfirm } from "@/context/ConfirmContext";
+import { toast } from "sonner";
 
 export function useClasses(currentUser) {
-    const GRADES = Object.keys(GRADE_SUBJECTS_MAP);
+    const confirmDialog = useConfirm();
+    const { gradeSubjectsMap, loading: subjectsLoading } = useSubjects();
+    const GRADES = Object.keys(gradeSubjectsMap);
     const [searchQuery, setSearchQuery] = useState("");
-    const [classes, setClasses] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [activeDropdown, setActiveDropdown] = useState(null);
 
     // Create modal state
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newClassName, setNewClassName] = useState("");
     const [newSchoolYear, setNewSchoolYear] = useState("2025-2026");
-    const [newGrade, setNewGrade] = useState(GRADES[11]); 
-    const [newSubject, setNewSubject] = useState(GRADE_SUBJECTS_MAP[GRADES[11]][0]); 
+    const [newGrade, setNewGrade] = useState("12"); 
+    const [newSubject, setNewSubject] = useState("Toán học"); 
     const [examDate, setExamDate] = useState("");
     const [examTime, setExamTime] = useState("");
     const [examDuration, setExamDuration] = useState(45);
@@ -40,21 +43,17 @@ export function useClasses(currentUser) {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [isCreateModalOpen, qrModalCode]);
 
-    useEffect(() => {
-        if (!currentUser) return;
-        const fetchClasses = async () => {
-            setLoading(true);
-            try {
-                const data = await classService.getTeacherClasses(currentUser.uid);
-                setClasses(data);
-            } catch (error) {
-                console.error("Lỗi tải lớp học:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchClasses();
-    }, [currentUser]);
+    const fetcher = async () => {
+        return await classService.getTeacherClasses(currentUser.uid);
+    };
+
+    const { data: classes = [], isLoading: classesLoading, mutate } = useSWR(
+        currentUser ? `classes-${currentUser.uid}` : null,
+        fetcher,
+        { revalidateOnFocus: true }
+    );
+
+    const loading = classesLoading || subjectsLoading;
 
     const handleCreateClass = async (e) => {
         if (e) e.preventDefault();
@@ -86,37 +85,38 @@ export function useClasses(currentUser) {
             };
             
             const newClass = await classService.createClass(classData);
-            setClasses([...classes, newClass]);
+            mutate([...classes, newClass], false); // Cập nhật cache cục bộ không cần tải lại
             setIsCreateModalOpen(false);
             setNewClassName("");
         } catch (error) {
-            alert("Lỗi khi tạo lớp thi!");
+            toast.error("Lỗi khi tạo lớp thi!");
         } finally {
             setIsCreating(false);
         }
     };
 
     const handleDeleteClass = async (classId) => {
-        if (confirm("Bạn có chắc chắn muốn xóa lớp thi này không? Toàn bộ dữ liệu sẽ bị xóa!")) {
+        if (await confirmDialog("Bạn có chắc chắn muốn xóa lớp thi này không? Toàn bộ dữ liệu sẽ bị xóa!", "Xóa lớp thi")) {
             try {
                 await classService.deleteClass(classId);
-                setClasses(classes.filter(c => c.id !== classId));
+                mutate(classes.filter(c => c.id !== classId), false);
+                toast.success("Đã xóa lớp thi!");
             } catch (error) {
-                alert("Lỗi xóa lớp thi!");
+                toast.error("Lỗi xóa lớp thi!");
             }
         }
     };
 
     const handleRefreshCode = async (classId) => {
-        if (confirm("Làm mới mã lớp sẽ khiến các thí sinh dùng mã cũ không thể truy cập. Bạn có chắc chắn không?")) {
+        if (await confirmDialog("Làm mới mã lớp sẽ khiến các thí sinh dùng mã cũ không thể truy cập. Bạn có chắc chắn không?", "Làm mới mã lớp")) {
             try {
                 const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
                 await classService.updateClass(classId, { classCode: newCode });
-                setClasses(classes.map(c => c.id === classId ? { ...c, classCode: newCode } : c));
+                mutate(classes.map(c => c.id === classId ? { ...c, classCode: newCode } : c), false);
                 if (qrModalCode) setQrModalCode(newCode);
-                alert("Đã làm mới mã lớp thành công!");
+                toast.success("Đã làm mới mã lớp thành công!");
             } catch (error) {
-                alert("Lỗi làm mới mã lớp!");
+                toast.error("Lỗi làm mới mã lớp!");
             }
         }
     };
@@ -126,7 +126,7 @@ export function useClasses(currentUser) {
     );
 
     return {
-        GRADES, searchQuery, setSearchQuery, classes, loading,
+        gradeSubjectsMap, GRADES, searchQuery, setSearchQuery, classes, loading: loading || subjectsLoading,
         activeDropdown, setActiveDropdown, toggleDropdown,
         isCreateModalOpen, setIsCreateModalOpen,
         newClassName, setNewClassName, newSchoolYear, setNewSchoolYear,
