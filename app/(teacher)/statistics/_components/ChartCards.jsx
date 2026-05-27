@@ -159,28 +159,33 @@ export function GrowthChartCard({ monthlyGrowth, totalQuestions }) {
                 <h2 className="text-base font-bold text-foreground">Tăng trưởng Ngân hàng Câu hỏi</h2>
             </div>
 
-            <div className="relative flex flex-col justify-end h-56 w-full pt-4">
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-8 pt-4">
+            <div className="relative h-56 w-full mt-4">
+                <div className="absolute top-4 bottom-8 left-0 right-0 flex flex-col justify-between pointer-events-none">
                     <div className="border-b border-border/30 w-full" />
                     <div className="border-b border-border/30 w-full" />
                     <div className="border-b border-border/30 w-full" />
-                    <div className="border-b border-border/50 w-full" />
+                    <div className="border-b border-border/60 w-full" />
                 </div>
 
-                <div className="relative z-10 flex items-end justify-between px-2 sm:px-6 h-44 pb-1">
+                <div className="absolute inset-0 flex justify-between px-2 sm:px-6">
                     {monthlyGrowth.map((g) => {
                         const maxCount = Math.max(...monthlyGrowth.map(item => item.count)) || 1;
-                        const pctHeight = (g.count / maxCount) * 92;
+                        const pctHeight = (g.count / maxCount) * 100;
                         return (
-                            <div key={g.month} className="flex flex-col items-center space-y-1.5 flex-1 group mx-1">
-                                <span className="text-[10px] font-extrabold text-primary bg-primary/10 px-1.5 py-0.5 rounded transition-all duration-300 transform group-hover:scale-110 mb-0.5">
-                                    {g.count}
-                                </span>
-                                <div
-                                    className="w-5 sm:w-8 bg-gradient-to-t from-primary/70 to-primary rounded-t-md transition-all duration-500 group-hover:from-violet-500 group-hover:to-violet-600 shadow-sm"
-                                    style={{ height: `${pctHeight}%`, minHeight: "6px" }}
-                                />
-                                <span className="text-xs font-bold text-muted-foreground mt-1">{g.month}</span>
+                            <div key={g.month} className="flex flex-col items-center h-full flex-1 group mx-1">
+                                <div className="w-full relative mt-4 flex-1">
+                                    <div
+                                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 sm:w-8 bg-gradient-to-t from-primary/70 to-primary rounded-t-md transition-all duration-500 group-hover:from-violet-500 group-hover:to-violet-600 shadow-sm"
+                                        style={{ height: `${pctHeight}%`, minHeight: "4px" }}
+                                    >
+                                        <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-extrabold text-primary bg-primary/10 px-1.5 py-0.5 rounded transition-all duration-300 transform group-hover:scale-125 opacity-80 group-hover:opacity-100 sm:opacity-100">
+                                            {g.count}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="h-8 flex items-center justify-center shrink-0">
+                                    <span className="text-xs font-bold text-muted-foreground">{g.month}</span>
+                                </div>
                             </div>
                         );
                     })}

@@ -45,10 +45,7 @@ export default function ClassesPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                    <Button variant="outline" className="font-semibold rounded-xl h-10 border-border gap-2">
-                        <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                        Nhập từ Excel
-                    </Button>
+
                     <Button 
                         onClick={() => setIsCreateModalOpen(true)}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 rounded-xl h-10 gap-2"

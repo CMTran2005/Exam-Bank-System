@@ -161,6 +161,10 @@ export default function RichTextarea({
                     pointer-events: none;
                     display: block;
                 }
+                #${escapedSelectorId} * {
+                    background-color: transparent !important;
+                    color: inherit !important;
+                }
             `}} />
 
             {isCleaningWord && (
@@ -179,7 +183,7 @@ export default function RichTextarea({
                 onPaste={handleLocalPaste}
                 onBlur={() => setTimeout(() => setShowMathSuggest(false), 200)}
                 placeholder={placeholder}
-                className={`w-full border-0 rounded-t-none rounded-b-xl focus-visible:ring-0 outline-none shadow-none px-4 py-3 font-question-text font-medium overflow-y-auto bg-slate-50/40 dark:bg-slate-950/20 hover:bg-slate-50/60 dark:hover:bg-slate-950/30 focus:bg-background dark:focus:bg-background/80 transition-colors duration-150 ${className}`}
+                className={`w-full border-0 rounded-t-none rounded-b-xl focus-visible:ring-0 outline-none shadow-none px-4 py-3 font-question-text font-medium overflow-y-auto bg-slate-50/40 dark:bg-slate-950/20 hover:bg-slate-50/60 dark:hover:bg-slate-950/30 focus:bg-background dark:focus:bg-background/80 text-foreground transition-colors duration-150 ${className}`}
                 style={{ minHeight: `${rows * 28}px` }}
             />
 

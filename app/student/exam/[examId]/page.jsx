@@ -3,8 +3,9 @@
 import { use } from "react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Clock, Flag, LayoutGrid, ChevronLeft, ChevronRight, LogOut, AlertTriangle, Send, Loader2 } from "lucide-react";
+import { Clock, Flag, LayoutGrid, ChevronLeft, ChevronRight, LogOut, AlertTriangle, Send, Loader2, CheckCircle2, XCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { classService } from "@/services/classService";
 import { examService } from "@/services/examService";
 import { examAttemptService } from "@/services/examAttemptService";
 import { useAuth } from "@/context/AuthContext";
@@ -24,10 +25,13 @@ export default function ExamInterface({ params }) {
     const [exam, setExam] = useState(null);
     const [attempt, setAttempt] = useState(null);
     
-    // Trạng thái bài làm
     const [answers, setAnswers] = useState({});
     const [reviewMarks, setReviewMarks] = useState({});
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+    
+    // Practice Mode State
+    const isPracticeMode = searchParams.get("mode") === "practice";
+    const [practiceResults, setPracticeResults] = useState({});
     
     const [timeLeft, setTimeLeft] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,6 +55,30 @@ export default function ExamInterface({ params }) {
             }
             setExam(examData);
 
+            // 0. Kiểm tra thời gian bắt đầu của lớp
+            let durationMins = examData.duration || 45;
+            let classData = null;
+            if (classId) {
+                classData = await classService.getClassDetails(classId);
+                if (!classData) {
+                    toast.error("Không tìm thấy lớp học!");
+                    router.push("/student");
+                    return;
+                }
+                if (classData.startTime) {
+                    const now = new Date().getTime();
+                    const start = new Date(classData.startTime).getTime();
+                    if (now < start) {
+                        toast.error(`Chưa đến giờ thi! Bài thi sẽ bắt đầu lúc ${new Date(classData.startTime).toLocaleString('vi-VN')}`);
+                        router.push("/student");
+                        return;
+                    }
+                }
+                if (classData.duration) {
+                    durationMins = classData.duration;
+                }
+            }
+
             // 2. Tải hoặc Khởi tạo Attempt
             const attempts = await examAttemptService.getStudentAttempts(currentUser.uid);
             let currentAttempt = attempts.find(a => a.examId === examId && a.classId === classId);
@@ -62,7 +90,8 @@ export default function ExamInterface({ params }) {
             }
 
             if (!currentAttempt) {
-                currentAttempt = await examAttemptService.startExam(currentUser.uid, currentUser.name, examId, classId);
+                // Trong chế độ luyện tập tự do, có thể bỏ qua classId
+                currentAttempt = await examAttemptService.startExam(currentUser.uid, currentUser.name, examId, classId || "practice");
             }
             
             setAttempt(currentAttempt);
@@ -70,7 +99,7 @@ export default function ExamInterface({ params }) {
 
             // 3. Tính toán thời gian còn lại
             const startTime = new Date(currentAttempt.startTime).getTime();
-            const durationMs = (examData.duration || 45) * 60 * 1000;
+            const durationMs = durationMins * 60 * 1000;
             const endTime = startTime + durationMs;
             const now = new Date().getTime();
             
@@ -91,10 +120,10 @@ export default function ExamInterface({ params }) {
     }, [examId, classId, currentUser, router]);
 
     useEffect(() => {
-        if (currentUser && examId && classId) {
+        if (currentUser && examId && (classId || isPracticeMode)) {
             loadExamData();
         }
-    }, [currentUser, examId, classId, loadExamData]);
+    }, [currentUser, examId, classId, isPracticeMode, loadExamData]);
 
     // Đếm ngược thời gian
     useEffect(() => {
@@ -221,7 +250,34 @@ export default function ExamInterface({ params }) {
     const handleSelectAnswer = (questionId, optionIndex) => {
         setAnswers(prev => {
             const updated = { ...prev, [questionId]: optionIndex };
-            // Auto save immediately for good UX, but don't await to avoid blocking UI
+            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(()=>{});
+            return updated;
+        });
+    };
+
+    const handleSelectTrueFalse = (questionId, statementIdx, value) => {
+        setAnswers(prev => {
+            const currentAns = prev[questionId] || {};
+            const updatedAns = { ...currentAns, [statementIdx]: value };
+            const updated = { ...prev, [questionId]: updatedAns };
+            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(()=>{});
+            return updated;
+        });
+    };
+
+    const handleTextAnswer = (questionId, text) => {
+        setAnswers(prev => {
+            const updated = { ...prev, [questionId]: text };
+            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(()=>{});
+            return updated;
+        });
+    };
+
+    const handleFillBlankAnswer = (questionId, blankIdx, value) => {
+        setAnswers(prev => {
+            const currentAns = prev[questionId] || {};
+            const updatedAns = { ...currentAns, [blankIdx]: value };
+            const updated = { ...prev, [questionId]: updatedAns };
             if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(()=>{});
             return updated;
         });
@@ -237,14 +293,29 @@ export default function ExamInterface({ params }) {
     const handleSubmit = async () => {
         // Kiểm tra câu chưa làm
         const totalQ = exam?.questions?.length || 0;
-        const answeredQ = Object.keys(answers).length;
+        
+        let answeredQ = 0;
+        exam?.questions?.forEach(q => {
+            const ans = answers[q.id];
+            if (q.type === 'true_false') {
+                if (ans && Object.keys(ans).length === (q.statements?.length || 0)) answeredQ++;
+            } else if (q.type === 'fill_blank') {
+                const blanksCount = (q.content?.match(/\[\[.*?\]\]/g) || []).length;
+                const ansKeys = ans ? Object.keys(ans).filter(k => ans[k] && ans[k].trim() !== "") : [];
+                if (ansKeys.length === blanksCount && blanksCount > 0) answeredQ++;
+            } else if (q.type === 'essay') {
+                if (ans && ans.trim().length > 0) answeredQ++;
+            } else {
+                if (ans !== undefined) answeredQ++;
+            }
+        });
         
         let msg = "Bạn có chắc chắn muốn nộp bài?";
         if (answeredQ < totalQ) {
             msg = `Bạn mới trả lời ${answeredQ}/${totalQ} câu. Các câu chưa trả lời sẽ không có điểm. Xác nhận nộp bài?`;
         }
 
-        if (await confirmDialog(msg, "Xác nhận nộp bài")) {
+        if (await confirmDialog(msg, "Xác nhận nộp bài", "Nộp bài", "Xem lại")) {
             await executeSubmit();
         }
     };
@@ -280,12 +351,57 @@ export default function ExamInterface({ params }) {
             await examAttemptService.submitExam(aId, ans, score);
             
             toast.success("Nộp bài thành công!");
-            router.push(`/student/exam/${ex.id}/result`);
+            router.push(`/student/exam/${ex.id}/result${isPracticeMode ? '?mode=practice' : ''}`);
         } catch (error) {
             console.error(error);
             toast.error("Lỗi khi nộp bài. Vui lòng thử lại!");
             setIsSubmitting(false);
         }
+    };
+
+    const handleCheckAnswer = (qId) => {
+        const q = exam.questions.find(x => x.id === qId);
+        if (!q) return;
+
+        const studentAns = answers[qId];
+        let isCorrect = false;
+
+        if (q.type === 'true_false') {
+            const stmts = q.statements || [];
+            let stmtCorrectCount = 0;
+            stmts.forEach((stmt, idx) => {
+                if (studentAns && studentAns[idx] === stmt.correct) {
+                    stmtCorrectCount++;
+                }
+            });
+            isCorrect = (stmtCorrectCount === stmts.length && stmts.length > 0);
+        } else if (q.type === 'fill_blank') {
+            const regex = /\[\[(.*?)\]\]/g;
+            const correctAnswers = [];
+            let match;
+            while ((match = regex.exec(q.content || "")) !== null) {
+                correctAnswers.push(match[1].trim().toLowerCase());
+            }
+            let blankCorrectCount = 0;
+            correctAnswers.forEach((correct, idx) => {
+                const sAns = (studentAns && studentAns[idx] || "").trim().toLowerCase();
+                if (sAns && sAns === correct) blankCorrectCount++;
+            });
+            isCorrect = (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0);
+        } else if (q.type === 'essay') {
+            const finalAns = (q.final_answer || "").trim().toLowerCase();
+            const sAns = (studentAns || "").trim().toLowerCase();
+            isCorrect = (finalAns && sAns === finalAns);
+        } else {
+            const alphabet = ["A", "B", "C", "D", "E", "F"];
+            const actualCorrectIndex = alphabet.indexOf(q.correct_answer);
+            isCorrect = (studentAns === actualCorrectIndex);
+        }
+
+        setPracticeResults(prev => ({
+            ...prev,
+            [qId]: { checked: true, isCorrect }
+        }));
     };
 
     // Format thời gian
@@ -341,10 +457,10 @@ export default function ExamInterface({ params }) {
                     <Button 
                         onClick={handleSubmit} 
                         disabled={isSubmitting}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 sm:h-10 rounded-xl px-4 sm:px-6 text-xs sm:text-sm shadow-sm"
+                        className={`${isPracticeMode ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700"} text-white font-bold h-9 sm:h-10 rounded-xl px-4 sm:px-6 text-xs sm:text-sm shadow-sm`}
                     >
                         {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                        <span className="hidden sm:inline">Nộp bài</span>
+                        <span className="hidden sm:inline">{isPracticeMode ? "Hoàn thành luyện tập" : "Nộp bài"}</span>
                         <span className="sm:hidden">Nộp</span>
                     </Button>
                 </div>
@@ -379,39 +495,174 @@ export default function ExamInterface({ params }) {
                         </div>
 
                         {/* Question Content */}
-                        <div className="bg-card border border-border shadow-sm rounded-2xl p-5 sm:p-8 mb-6 text-base sm:text-lg text-foreground font-medium">
-                            <LatexRenderer content={currentQuestion?.content || ""} inline={false} />
+                        <div className="bg-card border border-border shadow-sm rounded-2xl p-5 sm:p-8 mb-6 text-base sm:text-lg text-foreground font-medium leading-loose">
+                            {currentQuestion?.type === 'fill_blank' ? (
+                                (() => {
+                                    const content = currentQuestion.content || "";
+                                    const parts = content.split(/\[\[.*?\]\]/g);
+                                    const regex = /\[\[(.*?)\]\]/g;
+                                    const blanks = [];
+                                    let match;
+                                    while ((match = regex.exec(content)) !== null) {
+                                        blanks.push(match[1]);
+                                    }
+                                    
+                                    return (
+                                        <div className="inline-block leading-loose w-full">
+                                            {parts.map((part, idx) => (
+                                                <span key={idx}>
+                                                    {part && <span className="inline"><LatexRenderer content={part} inline={true} /></span>}
+                                                    {idx < blanks.length && (
+                                                        <input
+                                                            type="text"
+                                                            value={answers[currentQuestion.id]?.[idx] || ""}
+                                                            onChange={(e) => handleFillBlankAnswer(currentQuestion.id, idx, e.target.value)}
+                                                            className="mx-2 inline-block min-w-[120px] max-w-full border-b-2 border-border focus:border-blue-500 bg-blue-50/30 dark:bg-blue-900/10 px-2 py-1 text-center font-bold text-blue-700 dark:text-blue-300 outline-none transition-colors rounded-sm"
+                                                            placeholder="..."
+                                                        />
+                                                    )}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    );
+                                })()
+                            ) : (
+                                <LatexRenderer content={currentQuestion?.content || ""} inline={false} />
+                            )}
                         </div>
 
                         {/* Options */}
-                        <div className="space-y-3 sm:space-y-4 mb-8">
-                            {currentQuestion?.options?.map((opt, idx) => {
-                                const isSelected = answers[currentQuestion.id] === idx;
-                                const alphabet = ["A", "B", "C", "D", "E", "F"];
-                                return (
-                                    <button
-                                        key={idx}
-                                        onClick={() => handleSelectAnswer(currentQuestion.id, idx)}
-                                        className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left group ${
-                                            isSelected 
-                                                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
-                                                : "border-border bg-card hover:border-blue-300 dark:hover:border-blue-700"
-                                        }`}
+                        {(!currentQuestion?.type || currentQuestion.type === "multiple_choice") && (
+                            <div className="space-y-3 sm:space-y-4 mb-8">
+                                {currentQuestion?.options?.map((opt, idx) => {
+                                    const isSelected = answers[currentQuestion.id] === idx;
+                                    const alphabet = ["A", "B", "C", "D", "E", "F"];
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleSelectAnswer(currentQuestion.id, idx)}
+                                            className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left group ${
+                                                isSelected 
+                                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
+                                                    : "border-border bg-card hover:border-blue-300 dark:hover:border-blue-700"
+                                            }`}
+                                        >
+                                            <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm transition-colors ${
+                                                isSelected 
+                                                    ? "bg-blue-500 text-white shadow-sm" 
+                                                    : "bg-muted text-muted-foreground group-hover:bg-blue-100 group-hover:text-blue-600 dark:group-hover:bg-blue-900 dark:group-hover:text-blue-300"
+                                            }`}>
+                                                {alphabet[idx]}
+                                            </div>
+                                            <div className={`mt-1 font-medium ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+                                                <LatexRenderer content={opt} inline={false} />
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {currentQuestion?.type === "true_false" && (
+                            <div className="space-y-3 sm:space-y-4 mb-8">
+                                <p className="text-sm font-bold text-muted-foreground mb-4">Chọn Đúng hoặc Sai cho mỗi mệnh đề sau:</p>
+                                {currentQuestion.statements?.map((stmt, idx) => {
+                                    const studentChoice = answers[currentQuestion.id]?.[idx];
+                                    return (
+                                        <div key={idx} className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border-2 border-border bg-card">
+                                            <div className="flex-1">
+                                                <span className="font-bold mr-2">{idx + 1}.</span>
+                                                <LatexRenderer content={stmt.text} inline={true} />
+                                                {stmt.image && (
+                                                    <div className="mt-3">
+                                                        <img src={stmt.image} alt="Minh họa" className="max-h-40 rounded-lg border border-border" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <button
+                                                    onClick={() => handleSelectTrueFalse(currentQuestion.id, idx, true)}
+                                                    className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${
+                                                        studentChoice === true 
+                                                            ? "bg-emerald-500 border-emerald-600 text-white" 
+                                                            : "bg-background border-border text-muted-foreground hover:border-emerald-300"
+                                                    }`}
+                                                >
+                                                    Đúng
+                                                </button>
+                                                <button
+                                                    onClick={() => handleSelectTrueFalse(currentQuestion.id, idx, false)}
+                                                    className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${
+                                                        studentChoice === false 
+                                                            ? "bg-red-500 border-red-600 text-white" 
+                                                            : "bg-background border-border text-muted-foreground hover:border-red-300"
+                                                    }`}
+                                                >
+                                                    Sai
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
+
+                        {currentQuestion?.type === "essay" && (
+                            <div className="space-y-3 sm:space-y-4 mb-8">
+                                <p className="text-sm font-bold text-muted-foreground mb-2">Nhập câu trả lời của bạn:</p>
+                                <textarea
+                                    className="w-full min-h-[150px] p-4 rounded-xl border-2 border-border bg-card text-foreground focus:ring-2 focus:ring-primary focus:border-primary resize-y shadow-sm"
+                                    placeholder="Gõ câu trả lời tự luận vào đây..."
+                                    value={answers[currentQuestion.id] || ""}
+                                    onChange={(e) => handleTextAnswer(currentQuestion.id, e.target.value)}
+                                />
+                            </div>
+                        )}
+
+                        {/* Check Answer Button (Practice Mode) */}
+                        {isPracticeMode && (
+                            <div className="mt-2 mb-8 p-5 rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 dark:border-indigo-900/50 dark:bg-indigo-950/20">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                    <span className="text-sm font-bold text-indigo-800 dark:text-indigo-300">
+                                        💡 Chế độ Luyện Tập: Bạn có thể kiểm tra đáp án ngay!
+                                    </span>
+                                    <Button 
+                                        onClick={() => handleCheckAnswer(currentQuestion.id)}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm shrink-0"
+                                        disabled={!isAnswered || practiceResults[currentQuestion.id]?.checked}
                                     >
-                                        <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm transition-colors ${
-                                            isSelected 
-                                                ? "bg-blue-500 text-white shadow-sm" 
-                                                : "bg-muted text-muted-foreground group-hover:bg-blue-100 group-hover:text-blue-600 dark:group-hover:bg-blue-900 dark:group-hover:text-blue-300"
-                                        }`}>
-                                            {alphabet[idx]}
+                                        Kiểm tra đáp án
+                                    </Button>
+                                </div>
+                                {practiceResults[currentQuestion.id]?.checked && (
+                                    <div className="mt-5 pt-5 border-t-2 border-indigo-200/60 dark:border-indigo-900/60 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className="font-black text-lg mb-3">
+                                            {practiceResults[currentQuestion.id].isCorrect ? (
+                                                <span className="text-emerald-600 flex items-center gap-2"><CheckCircle2 className="w-6 h-6"/> Làm tốt lắm! Trả lời chính xác.</span>
+                                            ) : (
+                                                <span className="text-red-600 flex items-center gap-2"><XCircle className="w-6 h-6"/> Rất tiếc, câu trả lời chưa đúng hoặc chưa đủ!</span>
+                                            )}
                                         </div>
-                                        <div className={`mt-1 font-medium ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
-                                            <LatexRenderer content={opt} inline={false} />
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                                        {currentQuestion.explanation && (
+                                            <div className="text-sm mt-4 bg-background p-4 rounded-xl border-2 border-border/80 shadow-sm leading-loose">
+                                                <p className="font-black text-foreground mb-2 flex items-center gap-2">
+                                                    <BookOpen className="w-4 h-4 text-primary" /> Lời giải chi tiết:
+                                                </p>
+                                                <LatexRenderer content={currentQuestion.explanation} inline={false} />
+                                            </div>
+                                        )}
+                                        {!currentQuestion.explanation && currentQuestion.final_answer && (
+                                            <div className="text-sm mt-4 bg-background p-4 rounded-xl border-2 border-border/80 shadow-sm">
+                                                <p className="font-black text-foreground mb-1">Đáp án đúng:</p>
+                                                <div className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                    {currentQuestion.final_answer}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Navigation Buttons */}
@@ -447,7 +698,20 @@ export default function ExamInterface({ params }) {
                     <div className="flex-1 overflow-y-auto p-4">
                         <div className="grid grid-cols-5 md:grid-cols-4 lg:grid-cols-5 gap-2">
                             {exam.questions?.map((q, idx) => {
-                                const isAns = answers[q.id] !== undefined;
+                                const ans = answers[q.id];
+                                let isAns = false;
+                                if (q.type === 'true_false') {
+                                    isAns = ans && Object.keys(ans).length === (q.statements?.length || 0);
+                                } else if (q.type === 'fill_blank') {
+                                    const blanksCount = (q.content?.match(/\[\[.*?\]\]/g) || []).length;
+                                    const ansKeys = ans ? Object.keys(ans).filter(k => ans[k] && ans[k].trim() !== "") : [];
+                                    isAns = ansKeys.length === blanksCount && blanksCount > 0;
+                                } else if (q.type === 'essay') {
+                                    isAns = ans && ans.trim().length > 0;
+                                } else {
+                                    isAns = ans !== undefined;
+                                }
+                                
                                 const isRev = reviewMarks[q.id];
                                 const isCur = currentQuestionIdx === idx;
                                 

@@ -2,14 +2,14 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
 const ConfirmContext = createContext();
@@ -23,15 +23,19 @@ export const ConfirmProvider = ({ children }) => {
         isOpen: false,
         title: "",
         description: "",
+        confirmText: "Xác nhận",
+        cancelText: "Hủy",
         resolve: null,
     });
 
-    const confirm = useCallback((description, title = "Xác nhận hành động") => {
+    const confirm = useCallback((description, title = "Xác nhận hành động", confirmText = "Xác nhận", cancelText = "Hủy") => {
         return new Promise((resolve) => {
             setState({
                 isOpen: true,
                 title,
                 description,
+                confirmText,
+                cancelText,
                 resolve,
             });
         });
@@ -58,14 +62,16 @@ export const ConfirmProvider = ({ children }) => {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{state.title}</AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm text-muted-foreground mt-2">
-                            {state.description}
-                        </AlertDialogDescription>
+                        {state.description && (
+                            <AlertDialogDescription className="text-sm text-muted-foreground mt-2">
+                                {state.description}
+                            </AlertDialogDescription>
+                        )}
                     </AlertDialogHeader>
                     <AlertDialogFooter className="mt-4">
-                        <AlertDialogCancel onClick={handleClose}>Hủy</AlertDialogCancel>
+                        <AlertDialogCancel onClick={handleClose}>{state.cancelText}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleConfirm} className="bg-primary text-primary-foreground font-semibold hover:bg-primary/90">
-                            Xác nhận
+                            {state.confirmText}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

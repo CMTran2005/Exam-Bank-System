@@ -29,7 +29,7 @@ export function ExamList({
                     {displaySettings.duration && <div className="w-28 shrink-0">Thời Lượng</div>}
                     {displaySettings.total_questions && <div className="w-24 shrink-0 text-center">Câu Hỏi</div>}
                     {displaySettings.updatedAt && <div className="w-32 shrink-0 text-right">Ngày Cập Nhật</div>}
-                    <div className="w-28 shrink-0 text-right">Tác vụ</div>
+                    <div className="w-40 shrink-0 text-right">Tác vụ</div>
                 </div>
 
                 <div className="divide-y divide-border/60">
@@ -119,14 +119,14 @@ export function ExamList({
                                 </div>
                             )}
 
-                            <div className="w-28 shrink-0 flex items-center justify-end gap-1.5">
+                            <div className="w-40 shrink-0 flex items-center justify-end gap-1.5">
                                 <Button
-                                    variant="ghost" size="icon"
+                                    variant="outline" size="icon"
                                     onClick={() => handleTogglePublic(ex.id, ex.isPublic)}
-                                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
                                         ex.isPublic 
-                                            ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30" 
-                                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                            ? "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50" 
+                                            : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                                     }`}
                                     title={ex.isPublic ? "Đang hiển thị trên Luyện thi" : "Đã ẩn khỏi Luyện thi"}
                                 >
@@ -150,9 +150,9 @@ export function ExamList({
                                     <ArrowRightLeft className="w-3.5 h-3.5" />
                                 </Button>
                                 <Button
-                                    variant="ghost" size="icon"
+                                    variant="outline" size="icon"
                                     onClick={(e) => handleDeleteExam(ex.id, e)}
-                                    className="w-8 h-8 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center shrink-0"
+                                    className="w-8 h-8 rounded-lg border-red-200 bg-red-50 text-red-500 hover:text-red-600 hover:bg-red-100 hover:border-red-300 dark:border-red-900/50 dark:bg-red-950/30 flex items-center justify-center shrink-0 transition-colors"
                                     title="Xóa đề thi"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
@@ -232,12 +232,12 @@ export function ExamList({
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0 ml-auto">
                                 <Button
-                                    variant="ghost" size="icon"
+                                    variant="outline" size="icon"
                                     onClick={() => handleTogglePublic(ex.id, ex.isPublic)}
-                                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
                                         ex.isPublic 
-                                            ? "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30" 
-                                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                                            ? "border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50" 
+                                            : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                                     }`}
                                 >
                                     {ex.isPublic ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
@@ -255,9 +255,9 @@ export function ExamList({
                                     <ArrowRightLeft className="w-3 h-3" />
                                 </Button>
                                 <Button
-                                    variant="ghost" size="icon"
+                                    variant="outline" size="icon"
                                     onClick={(e) => handleDeleteExam(ex.id, e)}
-                                    className="w-7 h-7 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center"
+                                    className="w-7 h-7 rounded-lg border-red-200 bg-red-50 text-red-500 hover:text-red-600 hover:bg-red-100 hover:border-red-300 dark:border-red-900/50 dark:bg-red-950/30 flex items-center justify-center shrink-0 transition-colors"
                                 >
                                     <Trash2 className="w-3 h-3" />
                                 </Button>

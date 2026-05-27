@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { ArrowLeft, Users, Search, Mail, Phone, Loader2, CheckCircle2, XCircle, Clock, BookOpen, FileText, Trophy, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Users, Search, Mail, Phone, Loader2, CheckCircle2, XCircle, Clock, BookOpen, FileText, Trophy, AlertTriangle, BarChart2, Eye, EyeOff, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,12 +19,22 @@ export default function ClassDetailsPage({ params }) {
         toggleAttendance
     } = useClassDetails(classId);
 
-    const [activeTab, setActiveTab] = useState("results");
+    const [activeTab, setActiveTab] = useState("exams");
     const [exams, setExams] = useState([]);
     const [allEligibleExams, setAllEligibleExams] = useState([]);
     const [selectedExamId, setSelectedExamId] = useState("");
     const [attempts, setAttempts] = useState([]);
     const [isUpdatingExams, setIsUpdatingExams] = useState(false);
+    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+
+    const handleSort = (key) => {
+        setSortConfig(prev => {
+            if (prev.key === key) {
+                return { ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+            }
+            return { key, direction: 'asc' };
+        });
+    };
 
     useEffect(() => {
         if (classDetails) {
@@ -120,6 +130,24 @@ export default function ClassDetailsPage({ params }) {
         }
     };
 
+
+
+    const toggleShowResults = async () => {
+        if (isUpdatingExams) return;
+        setIsUpdatingExams(true);
+        try {
+            const newShowValue = classDetails.showResults === undefined ? false : !classDetails.showResults;
+            await classService.updateClass(classId, { showResults: newShowValue });
+            classDetails.showResults = newShowValue;
+            toast.success(newShowValue ? "Học sinh sẽ được xem kết quả và đáp án" : "Đã ẩn kết quả và đáp án đối với học sinh");
+        } catch (error) {
+            console.error(error);
+            toast.error("Không thể thay đổi cài đặt");
+        } finally {
+            setIsUpdatingExams(false);
+        }
+    };
+
     if (authLoading || loading) {
         return (
             <div className="flex h-[80vh] items-center justify-center">
@@ -176,16 +204,16 @@ export default function ClassDetailsPage({ params }) {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex bg-muted p-1 rounded-xl w-full sm:w-auto">
                     <button
-                        onClick={() => setActiveTab("results")}
-                        className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "results" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                        <Trophy className="w-4 h-4 inline-block mr-2" /> Kết quả thi
-                    </button>
-                    <button
                         onClick={() => setActiveTab("exams")}
                         className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "exams" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     >
                         <BookOpen className="w-4 h-4 inline-block mr-2" /> Đề thi
+                    </button>
+                    <button
+                        onClick={() => setActiveTab("results")}
+                        className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "results" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                        <Trophy className="w-4 h-4 inline-block mr-2" /> Kết quả thi
                     </button>
                     <button
                         onClick={() => setActiveTab("cheatLogs")}
@@ -193,7 +221,25 @@ export default function ClassDetailsPage({ params }) {
                     >
                         <AlertTriangle className="w-4 h-4 inline-block mr-2" /> Gian lận
                     </button>
+                    <button
+                        onClick={() => setActiveTab("stats")}
+                        className={`flex-1 sm:flex-none px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === "stats" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                        <BarChart2 className="w-4 h-4 inline-block mr-2" /> Thống kê
+                    </button>
                 </div>
+                
+                {(activeTab === "results" || activeTab === "stats") && (
+                    <Button 
+                        variant="outline" 
+                        onClick={toggleShowResults}
+                        disabled={isUpdatingExams}
+                        className={`font-semibold rounded-xl h-10 ${classDetails?.showResults !== false ? 'text-emerald-600 border-emerald-200 bg-emerald-50' : 'text-amber-600 border-amber-200 bg-amber-50'}`}
+                    >
+                        {classDetails?.showResults !== false ? <Eye className="w-4 h-4 mr-2" /> : <EyeOff className="w-4 h-4 mr-2" />}
+                        {classDetails?.showResults !== false ? "Học sinh đang xem được kết quả" : "Đang ẩn kết quả đối với học sinh"}
+                    </Button>
+                )}
                 
             </div>
 
@@ -219,15 +265,21 @@ export default function ClassDetailsPage({ params }) {
                         <table className="w-full text-sm text-left">
                             <thead className="bg-muted/50 text-muted-foreground font-semibold uppercase text-[11px] tracking-wider">
                                 <tr>
-                                    <th className="px-6 py-4">Họ và Tên</th>
+                                    <th className="px-6 py-4 cursor-pointer hover:bg-muted/70 transition-colors" onClick={() => handleSort('name')}>
+                                        Họ và Tên <ArrowUpDown className="w-3 h-3 inline-block ml-1 opacity-50" />
+                                    </th>
                                     <th className="px-6 py-4 text-center">Trạng thái</th>
-                                    <th className="px-6 py-4 text-center">Điểm số</th>
-                                    <th className="px-6 py-4 text-right">Nộp bài lúc</th>
+                                    <th className="px-6 py-4 text-center cursor-pointer hover:bg-muted/70 transition-colors" onClick={() => handleSort('score')}>
+                                        Điểm số <ArrowUpDown className="w-3 h-3 inline-block ml-1 opacity-50" />
+                                    </th>
+                                    <th className="px-6 py-4 text-right cursor-pointer hover:bg-muted/70 transition-colors" onClick={() => handleSort('submitTime')}>
+                                        Nộp bài lúc <ArrowUpDown className="w-3 h-3 inline-block ml-1 opacity-50" />
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/60">
                                 {(() => {
-                                    const mergedStudents = [];
+                                    let mergedStudents = [];
                                     const studentIds = new Set();
                                     
                                     if (classDetails.students) {
@@ -257,12 +309,33 @@ export default function ClassDetailsPage({ params }) {
                                         );
                                     }
 
-                                    return mergedStudents.map((student) => {
+                                    mergedStudents = mergedStudents.map((student) => {
                                         const attempt = attempts.find(a => a.studentId === student.id);
+                                        return { ...student, attempt };
+                                    });
+
+                                    mergedStudents.sort((a, b) => {
+                                        let valA, valB;
+                                        if (sortConfig.key === 'name') {
+                                            valA = a.name.toLowerCase();
+                                            valB = b.name.toLowerCase();
+                                        } else if (sortConfig.key === 'score') {
+                                            valA = a.attempt ? (a.attempt.score || 0) : -1;
+                                            valB = b.attempt ? (b.attempt.score || 0) : -1;
+                                        } else if (sortConfig.key === 'submitTime') {
+                                            valA = a.attempt?.submitTime ? new Date(a.attempt.submitTime).getTime() : 0;
+                                            valB = b.attempt?.submitTime ? new Date(b.attempt.submitTime).getTime() : 0;
+                                        }
+                                        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+                                        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+                                        return 0;
+                                    });
+
+                                    return mergedStudents.map(({ id, name, attempt }) => {
                                         return (
-                                        <tr key={student.id} className="hover:bg-muted/20 transition-colors">
+                                        <tr key={id} className="hover:bg-muted/20 transition-colors">
                                             <td className="px-6 py-4 font-bold text-foreground">
-                                                {student.name}
+                                                {name}
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 {attempt ? (
@@ -415,6 +488,117 @@ export default function ClassDetailsPage({ params }) {
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                ) : activeTab === "stats" ? (
+                    <div className="p-4 sm:p-6">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                            <h3 className="font-bold text-lg flex items-center gap-2">
+                                <BarChart2 className="w-5 h-5 text-blue-500" /> Thống kê bài thi
+                            </h3>
+                            <Select value={selectedExamId} onValueChange={setSelectedExamId}>
+                                <SelectTrigger className="w-full sm:w-[280px]">
+                                    <SelectValue placeholder="Chọn đề thi..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {exams.length === 0 && <SelectItem value="none" disabled>Chưa có bài kiểm tra nào</SelectItem>}
+                                    {exams.map(ex => (
+                                        <SelectItem key={ex.id} value={ex.id}>{ex.title}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        
+                        {(() => {
+                            const selectedExam = exams.find(e => e.id === selectedExamId);
+                            if (!selectedExam || !selectedExam.questions || selectedExam.questions.length === 0) {
+                                return (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        Không đủ dữ liệu thống kê cho đề thi này. Đề thi không có câu hỏi hoặc chưa tải đủ dữ liệu.
+                                    </div>
+                                );
+                            }
+
+                            const completedAttempts = attempts.filter(a => a.status === 'completed');
+                            if (completedAttempts.length === 0) {
+                                return (
+                                    <div className="text-center py-12 text-muted-foreground">
+                                        Chưa có học sinh nào nộp bài để thống kê.
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+                                            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Số lượt nộp bài</p>
+                                            <p className="text-3xl font-black text-foreground">{completedAttempts.length}</p>
+                                        </div>
+                                        <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
+                                            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-1">Điểm trung bình</p>
+                                            <p className="text-3xl font-black text-foreground">
+                                                {(completedAttempts.reduce((acc, a) => acc + (a.score || 0), 0) / completedAttempts.length).toFixed(2)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <h4 className="font-bold text-md mt-8 mb-4">Chi tiết từng câu hỏi</h4>
+                                    <div className="overflow-x-auto border border-border/60 rounded-xl">
+                                        <table className="w-full text-sm text-left">
+                                            <thead className="bg-muted/50 text-muted-foreground font-semibold uppercase text-[11px] tracking-wider">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-center">Câu</th>
+                                                    <th className="px-4 py-3 text-center">Tỉ lệ Đúng</th>
+                                                    <th className="px-4 py-3 text-center">Lượt chọn A</th>
+                                                    <th className="px-4 py-3 text-center">Lượt chọn B</th>
+                                                    <th className="px-4 py-3 text-center">Lượt chọn C</th>
+                                                    <th className="px-4 py-3 text-center">Lượt chọn D</th>
+                                                    <th className="px-4 py-3 text-center">Bỏ qua</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border/60">
+                                                {selectedExam.questions.map((q, idx) => {
+                                                    const alphabet = ["A", "B", "C", "D", "E", "F"];
+                                                    const actualCorrectIndex = alphabet.indexOf(q.correct_answer);
+                                                    
+                                                    let correctCount = 0;
+                                                    const choiceCounts = { 0: 0, 1: 0, 2: 0, 3: 0 };
+                                                    let skippedCount = 0;
+
+                                                    completedAttempts.forEach(a => {
+                                                        const ansIdx = a.answers?.[q.id];
+                                                        if (ansIdx === undefined || ansIdx === null) {
+                                                            skippedCount++;
+                                                        } else {
+                                                            if (choiceCounts[ansIdx] !== undefined) choiceCounts[ansIdx]++;
+                                                            if (ansIdx === actualCorrectIndex) correctCount++;
+                                                        }
+                                                    });
+
+                                                    const correctRate = Math.round((correctCount / completedAttempts.length) * 100) || 0;
+                                                    
+                                                    return (
+                                                        <tr key={q.id} className="hover:bg-muted/20 transition-colors">
+                                                            <td className="px-4 py-3 text-center font-bold">Câu {idx + 1}</td>
+                                                            <td className="px-4 py-3 text-center">
+                                                                <span className={`px-2 py-1 rounded font-bold text-xs ${correctRate >= 50 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                                                    {correctRate}%
+                                                                </span>
+                                                            </td>
+                                                            <td className={`px-4 py-3 text-center ${actualCorrectIndex === 0 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>{choiceCounts[0]}</td>
+                                                            <td className={`px-4 py-3 text-center ${actualCorrectIndex === 1 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>{choiceCounts[1]}</td>
+                                                            <td className={`px-4 py-3 text-center ${actualCorrectIndex === 2 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>{choiceCounts[2]}</td>
+                                                            <td className={`px-4 py-3 text-center ${actualCorrectIndex === 3 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>{choiceCounts[3]}</td>
+                                                            <td className="px-4 py-3 text-center text-muted-foreground">{skippedCount}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            );
+                        })()}
                     </div>
                 ) : null}
             </div>

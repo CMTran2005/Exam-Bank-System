@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen } from "lucide-react";
+import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal } from "lucide-react";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 
 export default function StudentLayout({ children }) {
@@ -78,6 +78,16 @@ export default function StudentLayout({ children }) {
                                 }`}
                             >
                                 <BookOpen className="h-4 w-4" /> Luyện thi
+                            </Link>
+                            <Link 
+                                href="/student/badges" 
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                    pathname === "/student/badges" 
+                                    ? "bg-primary/10 text-primary" 
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                            >
+                                <Medal className="h-4 w-4" /> Huy hiệu
                             </Link>
                             <Link 
                                 href="/student/settings" 

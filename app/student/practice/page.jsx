@@ -130,9 +130,9 @@ export default function PracticePage() {
                                     </div>
                                     
                                     <div className="mt-5 pt-4 border-t border-border/50">
-                                        <Link href={`/student/exam/${ex.id}`}>
+                                        <Link href={`/student/exam/${ex.id}?mode=practice`}>
                                             <Button className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground font-bold rounded-xl transition-colors">
-                                                <Play className="w-4 h-4 mr-2" /> Bắt đầu làm bài
+                                                <Play className="w-4 h-4 mr-2" /> Bắt đầu luyện tập
                                             </Button>
                                         </Link>
                                     </div>

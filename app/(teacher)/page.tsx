@@ -86,11 +86,12 @@ export default function Home() {
                     const { getCountFromServer, orderBy, limit } = await import("firebase/firestore");
                     const examsRef = collection(db, "exams");
                     const usersRef = collection(db, "users");
+                    const teachersQuery = query(usersRef, where("role", "==", "teacher"));
 
                     // Chạy song song các truy vấn để tối ưu thời gian (sử dụng getCountFromServer rất nhẹ và không tốn nhiều tiền Firebase)
                     const [examsCountSnap, usersCountSnap, recentExamsSnap] = await Promise.all([
                         runWithTimeout(getCountFromServer(examsRef), 2000).catch(() => ({ data: () => ({ count: 0 }) })),
-                        runWithTimeout(getCountFromServer(usersRef), 2000).catch(() => ({ data: () => ({ count: 1 }) })),
+                        runWithTimeout(getCountFromServer(teachersQuery), 2000).catch(() => ({ data: () => ({ count: 1 }) })),
                         runWithTimeout(getDocs(query(examsRef, orderBy("updatedAt", "desc"), limit(4))), 2000).catch(() => ({ docs: [] }))
                     ]);
 

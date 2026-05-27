@@ -1,6 +1,6 @@
 "use client";
 
-import { ListChecks, Layers, ToggleLeft, GitBranch, FileText, FilePlus2, X } from "lucide-react";
+import { ListChecks, Layers, ToggleLeft, GitBranch, FileText, FilePlus2, X, TextCursorInput, Type } from "lucide-react";
 
 const TYPES = [
     {
@@ -69,6 +69,28 @@ const TYPES = [
         hover: "hover:bg-orange-100 dark:hover:bg-orange-900/50",
         iconColor: "text-orange-500 dark:text-orange-400",
     },
+    {
+        value: "fill_blank",
+        label: "Điền khuyết",
+        sub: "Đơn",
+        Icon: TextCursorInput,
+        bg: "bg-pink-50 dark:bg-pink-950/40",
+        border: "border-pink-300 dark:border-pink-700",
+        text: "text-pink-700 dark:text-pink-300",
+        hover: "hover:bg-pink-100 dark:hover:bg-pink-900/50",
+        iconColor: "text-pink-500 dark:text-pink-400",
+    },
+    {
+        value: "group_fill_blank",
+        label: "Điền khuyết",
+        sub: "Nhóm",
+        Icon: Type,
+        bg: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
+        border: "border-fuchsia-300 dark:border-fuchsia-700",
+        text: "text-fuchsia-700 dark:text-fuchsia-300",
+        hover: "hover:bg-fuchsia-100 dark:hover:bg-fuchsia-900/50",
+        iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
+    }
 ];
 
 export default function QuestionTypePicker({ onSelect, onCancel }) {
