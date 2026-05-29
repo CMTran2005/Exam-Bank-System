@@ -18,7 +18,8 @@ import {
     GraduationCap,
     Bot,
     PenTool,
-    BookOpen
+    BookOpen,
+    Globe
 } from "lucide-react";
 
 const navGroups = [
@@ -26,6 +27,7 @@ const navGroups = [
         label: "Chính",
         items: [
             { href: "/", icon: Home, label: "Trang Chủ" },
+            { href: "/community", icon: Globe, label: "Cộng Đồng" },
             { href: "/create-question", icon: FilePlus2, label: "Tạo Đề Thi" },
             { href: "/my-exams", icon: FileText, label: "Đề Thi Của Tôi" },
             { href: "/questions", icon: Library, label: "Ngân Hàng Câu Hỏi" },

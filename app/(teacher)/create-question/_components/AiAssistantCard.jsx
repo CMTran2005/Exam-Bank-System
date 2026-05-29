@@ -1,13 +1,23 @@
-import { Sparkles, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Sparkles, ChevronDown, ChevronUp, Loader2, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRef } from "react";
 
 export function AiAssistantCard({
     showAIAssistant, setShowAIAssistant, aiPromptText, setAiPromptText,
-    aiGenType, setAiGenType, aiGenerating, handleAIGenerateQuestion
+    aiGenType, setAiGenType, aiGenerating, handleAIGenerateQuestion, handleAIImageParse
 }) {
+    const fileInputRef = useRef(null);
+
+    const onFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleAIImageParse(file);
+        }
+        e.target.value = ''; // Reset
+    };
     return (
         <Card className="border-violet-200 bg-violet-50/10 dark:border-violet-900/40 dark:bg-violet-950/10 shadow-sm overflow-hidden transition-all duration-300">
             <div 
@@ -67,11 +77,30 @@ export function AiAssistantCard({
                         </div>
                     </div>
 
-                    <div className="flex justify-end pt-1">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-1 mt-2 border-t border-violet-100 dark:border-violet-900/30">
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                className="hidden" 
+                                ref={fileInputRef} 
+                                onChange={onFileChange} 
+                            />
+                            <Button
+                                variant="outline"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={aiGenerating}
+                                className="w-full sm:w-auto border-violet-200 text-violet-700 hover:bg-violet-100 dark:border-violet-800 dark:text-violet-300 dark:hover:bg-violet-900/50"
+                            >
+                                <ImagePlus className="w-4 h-4 mr-2" /> 
+                                {aiGenerating ? "Đang xử lý ảnh..." : "Bóc tách từ Ảnh"}
+                            </Button>
+                        </div>
+                        
                         <Button
                             onClick={handleAIGenerateQuestion}
                             disabled={aiGenerating}
-                            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold px-6 shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] gap-1.5"
+                            className="w-full sm:w-auto bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-bold px-6 shadow-md transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] gap-1.5"
                         >
                             {aiGenerating ? (
                                 <>
@@ -79,7 +108,7 @@ export function AiAssistantCard({
                                 </>
                             ) : (
                                 <>
-                                    <Sparkles className="w-4 h-4 fill-white/10" /> Soạn Câu Hỏi
+                                    <Sparkles className="w-4 h-4 fill-white/10" /> Soạn Câu Hỏi (Text)
                                 </>
                             )}
                         </Button>

@@ -15,7 +15,7 @@ export default function CreateExamPage() {
         questionsList, addQuestion, removeQuestion, toggleCollapse, updateQuestionData, duplicateQuestion,
         showPicker, setShowPicker,
         zenMode, toggleZenMode, lastSaved,
-        showAIAssistant, setShowAIAssistant, aiPromptText, setAiPromptText, aiGenType, setAiGenType, aiGenerating, handleAIGenerateQuestion,
+        showAIAssistant, setShowAIAssistant, aiPromptText, setAiPromptText, aiGenType, setAiGenType, aiGenerating, handleAIGenerateQuestion, handleAIImageParse,
         handleSaveExam
     } = useCreateExam();
 
@@ -67,6 +67,7 @@ export default function CreateExamPage() {
                 aiPromptText={aiPromptText} setAiPromptText={setAiPromptText}
                 aiGenType={aiGenType} setAiGenType={setAiGenType}
                 aiGenerating={aiGenerating} handleAIGenerateQuestion={handleAIGenerateQuestion}
+                handleAIImageParse={handleAIImageParse}
             />
 
             <QuestionListCard 

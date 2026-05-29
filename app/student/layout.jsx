@@ -4,8 +4,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal } from "lucide-react";
+import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle } from "lucide-react";
 import ThemeToggle from "@/components/shared/ThemeToggle";
+import Footer from "@/components/layout/Footer";
 
 export default function StudentLayout({ children }) {
     const { currentUser, logout, loading } = useAuth();
@@ -80,6 +81,16 @@ export default function StudentLayout({ children }) {
                                 <BookOpen className="h-4 w-4" /> Luyện thi
                             </Link>
                             <Link 
+                                href="/student/profile" 
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                    pathname === "/student/profile" 
+                                    ? "bg-primary/10 text-primary" 
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                            >
+                                <UserCircle className="h-4 w-4" /> Cá nhân
+                            </Link>
+                            <Link 
                                 href="/student/badges" 
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
                                     pathname === "/student/badges" 
@@ -128,6 +139,8 @@ export default function StudentLayout({ children }) {
             <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
                 {children}
             </main>
+
+            <Footer />
         </div>
     );
 }

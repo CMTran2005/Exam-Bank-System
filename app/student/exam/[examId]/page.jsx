@@ -3,7 +3,7 @@
 import { use } from "react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Clock, Flag, LayoutGrid, ChevronLeft, ChevronRight, LogOut, AlertTriangle, Send, Loader2, CheckCircle2, XCircle, BookOpen, Timer, TimerOff } from "lucide-react";
+import { Clock, Flag, LayoutGrid, ChevronLeft, ChevronRight, LogOut, AlertTriangle, Send, Loader2, CheckCircle2, XCircle, BookOpen, Timer, TimerOff, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classService } from "@/services/classService";
 import { examService } from "@/services/examService";
@@ -37,12 +37,14 @@ export default function ExamInterface({ params }) {
     const [practiceResults, setPracticeResults] = useState({});
     const [isTimerEnabled, setIsTimerEnabled] = useState(true);
     
-    const [timeLeft, setTimeLeft] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(null);
     const [loading, setLoading] = useState(true);
-    
+    const [isSpeaking, setIsSpeaking] = useState(false);
+
     const timerRef = useRef(null);
     const autoSaveTimerRef = useRef(null);
+    const lastSavedAnswersRef = useRef({});
 
     const loadExamData = useCallback(async () => {
         try {
@@ -168,12 +170,19 @@ export default function ExamInterface({ params }) {
         return () => clearInterval(timerRef.current);
     }, [timeLeft, isSubmitting, attempt, answers, exam, isTimerEnabled, isPracticeMode]);
 
-    // Auto-save định kỳ
+    // Auto-save định kỳ (Chỉ lưu khi có thay đổi để tiết kiệm query Firebase)
     useEffect(() => {
         if (attempt && !isSubmitting) {
             autoSaveTimerRef.current = setInterval(() => {
-                examAttemptService.saveAnswersDraft(attempt.id, answers);
-            }, 30000); // Lưu nháp mỗi 30 giây
+                const currentAnswersStr = JSON.stringify(answers);
+                const lastSavedStr = JSON.stringify(lastSavedAnswersRef.current);
+                
+                if (currentAnswersStr !== lastSavedStr) {
+                    examAttemptService.saveAnswersDraft(attempt.id, answers).then(() => {
+                        lastSavedAnswersRef.current = answers;
+                    }).catch(err => console.error("Auto-save failed", err));
+                }
+            }, 30000); // Kiểm tra mỗi 30 giây
         }
         return () => clearInterval(autoSaveTimerRef.current);
     }, [attempt, answers, isSubmitting]);
@@ -427,6 +436,46 @@ export default function ExamInterface({ params }) {
         }));
     };
 
+    // Xử lý Text-To-Speech (Đọc câu hỏi)
+    const handleReadAloud = (question) => {
+        if (!("speechSynthesis" in window)) {
+            toast.error("Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.");
+            return;
+        }
+
+        if (isSpeaking) {
+            window.speechSynthesis.cancel();
+            setIsSpeaking(false);
+            return;
+        }
+
+        let textToRead = question.content || "";
+        textToRead = textToRead.replace(/<[^>]*>?/gm, ''); // Xóa HTML
+        textToRead = textToRead.replace(/\[\[.*?\]\]/g, 'chỗ trống'); // Điền khuyết
+        textToRead = textToRead.replace(/\$/g, ''); // Bỏ dấu $ LaTeX
+
+        if (question.type === "multiple_choice" && question.options) {
+            const labels = ["A", "B", "C", "D", "E"];
+            textToRead += ". Các phương án là: ";
+            question.options.forEach((opt, idx) => {
+                let optText = opt.replace(/<[^>]*>?/gm, '').replace(/\$/g, '');
+                textToRead += ` Phương án ${labels[idx]}: ${optText}.`;
+            });
+        }
+
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+        
+        // Tự động nhận diện nếu có tiếng Anh
+        utterance.lang = exam.subject?.toLowerCase().includes("anh") ? "en-US" : "vi-VN"; 
+        utterance.rate = 0.9;
+
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+
+        setIsSpeaking(true);
+        window.speechSynthesis.speak(utterance);
+    };
+
     // Format thời gian
     const formatTime = (seconds) => {
         if (seconds === null) return "--:--";
@@ -526,19 +575,37 @@ export default function ExamInterface({ params }) {
                                 Câu {currentQuestionIdx + 1}
                                 <span className="text-sm font-semibold text-muted-foreground ml-2">/ {exam.questions?.length}</span>
                             </h2>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className={`h-8 rounded-lg gap-2 font-bold text-xs border-2 transition-colors ${
-                                    isMarked 
-                                        ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950/30" 
-                                        : "border-border text-muted-foreground hover:bg-muted"
-                                }`}
-                                onClick={() => handleToggleReview(currentQuestion.id)}
-                            >
-                                <Flag className={`w-3.5 h-3.5 ${isMarked ? "fill-amber-500" : ""}`} />
-                                <span className="hidden sm:inline">{isMarked ? "Bỏ đánh dấu" : "Đánh dấu xem lại"}</span>
-                            </Button>
+                            <div className="flex gap-2">
+                                {exam?.subject?.toLowerCase().includes("anh") && (
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className={`h-8 rounded-lg gap-2 font-bold text-xs border-2 transition-colors ${
+                                            isSpeaking 
+                                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800" 
+                                                : "border-border text-muted-foreground hover:bg-muted"
+                                        }`}
+                                        onClick={() => handleReadAloud(currentQuestion)}
+                                        title="Đọc câu hỏi và đáp án"
+                                    >
+                                        {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                                        <span className="hidden sm:inline">{isSpeaking ? "Dừng đọc" : "Đọc đề"}</span>
+                                    </Button>
+                                )}
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className={`h-8 rounded-lg gap-2 font-bold text-xs border-2 transition-colors ${
+                                        isMarked 
+                                            ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950/30" 
+                                            : "border-border text-muted-foreground hover:bg-muted"
+                                    }`}
+                                    onClick={() => handleToggleReview(currentQuestion.id)}
+                                >
+                                    <Flag className={`w-3.5 h-3.5 ${isMarked ? "fill-amber-500" : ""}`} />
+                                    <span className="hidden sm:inline">{isMarked ? "Bỏ đánh dấu" : "Đánh dấu xem lại"}</span>
+                                </Button>
+                            </div>
                         </div>
 
                         {/* Question Content */}

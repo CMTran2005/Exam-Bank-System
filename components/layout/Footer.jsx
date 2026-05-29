@@ -1,4 +1,4 @@
-import { BookOpen, ExternalLink, Mail } from "lucide-react";
+import { BookOpen, ExternalLink, Mail, MessageSquareText } from "lucide-react";
 
 export default function Footer() {
     const year = new Date().getFullYear();
@@ -16,7 +16,14 @@ export default function Footer() {
                     </span>
                 </div>
 
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+                    <a
+                        href="mailto:cmtran2005@gmail.com?subject=Góp ý hệ thống Exam Bank"
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                    >
+                        <MessageSquareText className="h-3.5 w-3.5" />
+                        <span>Góp ý (Feedback)</span>
+                    </a>
                     <a
                         href="mailto:cmtran2005@gmail.com"
                         className="flex items-center gap-1 hover:text-foreground transition-colors"

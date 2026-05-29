@@ -33,7 +33,7 @@ export function useExams(currentUser) {
             try {
                 const q = query(collection(db, "exams"), where("uid", "==", currentUser.uid));
                 const querySnapshot = await runWithTimeout(getDocs(q), 1500);
-                querySnapshot.forEach((doc) => list.push(doc.data()));
+                querySnapshot.forEach((doc) => list.push({ ...doc.data(), id: doc.id }));
             } catch (e) {
                 console.warn("Bỏ qua lỗi Firestore khi tải đề thi, dùng LocalStorage");
             }

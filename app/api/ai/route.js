@@ -12,6 +12,7 @@ export async function POST(request) {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         let prompt = "";
+        let imagePart = null;
 
         if (action === "generate_solution") {
             const { type, content, choices } = params;
@@ -139,6 +140,50 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
   "clean_content": "Đoạn mã HTML siêu sạch có chứa công thức LaTeX đã chuyển đổi"
 }
 `;
+        } else if (action === "parse_image_to_questions") {
+            const { image } = params;
+            if (!image) {
+                return NextResponse.json({ error: "Không tìm thấy dữ liệu ảnh." }, { status: 400 });
+            }
+
+            const base64Data = image.split(",")[1] || image;
+            imagePart = {
+                inlineData: {
+                    data: base64Data,
+                    mimeType: "image/png",
+                },
+            };
+
+            prompt = `
+Bạn là chuyên gia số hóa đề thi chuyên nghiệp hàng đầu. Hãy phân tích hình ảnh đề thi (chứa nhiều câu hỏi) được cung cấp.
+Nhiệm vụ của bạn là bóc tách tất cả các câu hỏi trắc nghiệm có trong ảnh thành danh sách JSON chuẩn mực.
+
+Yêu cầu nghiêm ngặt:
+1. Mỗi câu hỏi bóc ra phải có "content" (đề bài chính) và mảng 4 phương án "choices" (A, B, C, D). Mỗi choice có "text" và "isCorrect" (để mặc định false nếu không rõ đáp án).
+2. TẤT CẢ công thức toán học/hóa học/vật lý phải được định dạng chuẩn bằng mã LaTeX và bọc trong 1 cặp dấu $ (Ví dụ: $x^2 + y^2 = 1$). KHÔNG dùng $$.
+3. Cố gắng suy luận đáp án đúng (isCorrect = true) nếu có thể giải, hoặc nếu trong ảnh có đánh dấu sẵn đáp án.
+4. Tự động sinh ra "suggested_solution" (Lời giải chi tiết ngắn gọn) cho mỗi câu hỏi nếu bạn có thể giải được.
+
+Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG bao bọc trong ký tự markdown \`\`\`json, tuân thủ đúng cấu trúc sau:
+{
+  "questions": [
+    {
+      "content": "Nội dung đề bài câu 1...",
+      "type": "multiple_choice",
+      "difficulty": "thong_hieu",
+      "points": "1.0",
+      "suggested_solution": "Lời giải chi tiết (nếu có)",
+      "final_answer": "A",
+      "choices": [
+        { "text": "Nội dung A", "isCorrect": true },
+        { "text": "Nội dung B", "isCorrect": false },
+        { "text": "Nội dung C", "isCorrect": false },
+        { "text": "Nội dung D", "isCorrect": false }
+      ]
+    }
+  ]
+}
+`;
         } else {
             return NextResponse.json({ error: "Hành động AI không hợp lệ." }, { status: 400 });
         }
@@ -161,8 +206,14 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             try {
                 console.log(`Đang thử gọi model AI: ${modelName}...`);
                 const model = genAI.getGenerativeModel({ model: modelName });
+                
+                const requestContents = [{ role: "user", parts: [{ text: prompt }] }];
+                if (imagePart) {
+                    requestContents[0].parts.push(imagePart);
+                }
+
                 const result = await model.generateContent({
-                    contents: [{ role: "user", parts: [{ text: prompt }] }],
+                    contents: requestContents,
                     generationConfig
                 });
                 const text = result.response.text().trim();

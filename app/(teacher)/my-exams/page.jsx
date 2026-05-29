@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, SlidersHorizontal, FileText, Loader2 } from "lucide-react";
+import { Plus, SlidersHorizontal, FileText, Loader2, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useExams } from "@/hooks/useExams";
@@ -13,11 +13,13 @@ import { DisplaySettings } from "./_components/DisplaySettings";
 import { BulkActionBar } from "./_components/BulkActionBar";
 import { ExamList } from "./_components/ExamList";
 import { ExamModals } from "./_components/ExamModals";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function MyExamsPage() {
     const { currentUser, loading } = useAuth();
     const router = useRouter();
     const [showSettings, setShowSettings] = useState(false);
+    const [sortOption, setSortOption] = useState("newest");
 
     // Modal states
     const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
@@ -56,7 +58,25 @@ export default function MyExamsPage() {
         );
     }
 
-    const displayedExams = exams.filter(ex => activeFolder === "all" || ex.folderId === activeFolder);
+    let displayedExams = exams.filter(ex => activeFolder === "all" || ex.folderId === activeFolder);
+
+    // Xử lý Sort
+    displayedExams = [...displayedExams].sort((a, b) => {
+        if (sortOption === "newest") {
+            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+        } else if (sortOption === "oldest") {
+            return new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0);
+        } else if (sortOption === "title_asc") {
+            return (a.title || "").localeCompare(b.title || "");
+        } else if (sortOption === "title_desc") {
+            return (b.title || "").localeCompare(a.title || "");
+        } else if (sortOption === "questions_desc") {
+            const lenA = a.questions?.length || a.total_questions || 0;
+            const lenB = b.questions?.length || b.total_questions || 0;
+            return lenB - lenA;
+        }
+        return 0;
+    });
 
     const toggleSelectAll = () => {
         if (selectedExams.length === displayedExams.length) {
@@ -90,7 +110,24 @@ export default function MyExamsPage() {
                     </p>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
+                    <div className="w-[180px]">
+                        <Select value={sortOption} onValueChange={setSortOption}>
+                            <SelectTrigger className="h-10 rounded-xl bg-background border-border shadow-sm font-semibold hover:bg-muted/50 transition-colors focus:ring-1 focus:ring-primary [&>svg]:hidden">
+                                <div className="flex items-center gap-2">
+                                    <ArrowUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                                    <span className="text-sm line-clamp-1"><SelectValue placeholder="Sắp xếp" /></span>
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl shadow-lg border-border font-medium">
+                                <SelectItem value="newest" className="cursor-pointer">Ngày sửa: Gần nhất</SelectItem>
+                                <SelectItem value="oldest" className="cursor-pointer">Ngày sửa: Cũ nhất</SelectItem>
+                                <SelectItem value="title_asc" className="cursor-pointer">Tên: A - Z</SelectItem>
+                                <SelectItem value="title_desc" className="cursor-pointer">Tên: Z - A</SelectItem>
+                                <SelectItem value="questions_desc" className="cursor-pointer">Số câu hỏi: Giảm dần</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <Button
                         variant="outline"
                         onClick={() => setShowSettings(!showSettings)}

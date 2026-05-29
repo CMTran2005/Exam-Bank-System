@@ -28,16 +28,27 @@ export const ConfirmProvider = ({ children }) => {
         resolve: null,
     });
 
-    const confirm = useCallback((description, title = "Xác nhận hành động", confirmText = "Xác nhận", cancelText = "Hủy") => {
+    const confirm = useCallback((descriptionOrOptions, title = "Xác nhận hành động", confirmText = "Xác nhận", cancelText = "Hủy") => {
         return new Promise((resolve) => {
-            setState({
-                isOpen: true,
-                title,
-                description,
-                confirmText,
-                cancelText,
-                resolve,
-            });
+            if (typeof descriptionOrOptions === 'object' && descriptionOrOptions !== null) {
+                setState({
+                    isOpen: true,
+                    title: descriptionOrOptions.title || "Xác nhận hành động",
+                    description: descriptionOrOptions.message || descriptionOrOptions.description || "",
+                    confirmText: descriptionOrOptions.confirmText || "Xác nhận",
+                    cancelText: descriptionOrOptions.cancelText || "Hủy",
+                    resolve,
+                });
+            } else {
+                setState({
+                    isOpen: true,
+                    title,
+                    description: descriptionOrOptions,
+                    confirmText,
+                    cancelText,
+                    resolve,
+                });
+            }
         });
     }, []);
 

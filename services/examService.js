@@ -52,13 +52,13 @@ export const examService = {
     },
 
     /**
-     * Lấy danh sách đề thi chia sẻ (của người khác)
+     * Lấy danh sách đề thi chia sẻ (Công khai)
      * @param {string} currentUid ID của người dùng hiện tại (để loại trừ)
      * @param {number} maxLimit Số lượng tối đa
      */
     async getSharedExams(currentUid, maxLimit = 50) {
         try {
-            const q = query(collection(db, "exams"), limit(maxLimit));
+            const q = query(collection(db, "exams"), where("isPublic", "==", true), limit(maxLimit));
             const querySnapshot = await runWithTimeout(getDocs(q));
             const list = [];
             querySnapshot.forEach((doc) => {
@@ -70,6 +70,44 @@ export const examService = {
             return list;
         } catch (error) {
             console.warn("Lỗi fetch getSharedExams:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Nhân bản đề thi từ Cộng đồng về tài khoản của mình
+     * @param {string} examId ID của đề thi gốc
+     * @param {string} newUid ID của người dùng (giáo viên) mới
+     * @param {string} newAuthorName Tên tác giả mới
+     */
+    async forkExam(examId, newUid, newAuthorName) {
+        try {
+            const docRef = doc(db, "exams", examId);
+            const docSnap = await runWithTimeout(getDoc(docRef));
+            
+            if (!docSnap.exists()) {
+                throw new Error("Không tìm thấy đề thi gốc.");
+            }
+            
+            const originalData = docSnap.data();
+            const newExamId = `exam_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            
+            const forkedExam = {
+                ...originalData,
+                id: newExamId,
+                uid: newUid,
+                author: newAuthorName,
+                isPublic: false, // Bản copy mặc định là private
+                title: originalData.title + " (Bản sao)",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                forkedFrom: examId
+            };
+            
+            await runWithTimeout(setDoc(doc(db, "exams", newExamId), forkedExam));
+            return newExamId;
+        } catch (error) {
+            console.warn("Lỗi forkExam:", error);
             throw error;
         }
     },

@@ -1,8 +1,9 @@
-import { BookOpen, MapPin } from "lucide-react";
+import { BookOpen, MapPin, Globe } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
+import { Checkbox } from "@/components/ui/checkbox";
 import { getDynamicAcademicYears } from "@/lib/constants";
 import useProvinces from "@/hooks/useProvinces";
 import useSubjects from "@/hooks/useSubjects";
@@ -16,13 +17,29 @@ export function ExamInfoCard({ examInfo, setExamInfo, handleTitleChange, handleC
 
     return (
         <Card className="border-blue-200 bg-blue-50/30 dark:border-blue-900/50 dark:bg-blue-950/20 shadow-sm">
-            <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4 flex-wrap">
                 <CardTitle className="text-lg sm:text-xl font-bold text-blue-800 dark:text-blue-300 flex items-center gap-2">
                     <BookOpen className="w-5 h-5 shrink-0" />
                     Cấu Hình Thông Tin Đề Thi
                 </CardTitle>
-                <div className="text-[11px] font-extrabold uppercase bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 px-3 py-1 rounded-full border border-blue-200/60 dark:border-blue-900/40 select-none shrink-0">
-                    Tổng số: {questionsCount} câu hỏi
+                <div className="flex items-center gap-3">
+                    <div 
+                        className="flex items-center gap-2 bg-background/50 hover:bg-background/80 transition-colors px-3 py-1 rounded-full border border-blue-200/60 dark:border-blue-800 cursor-pointer"
+                        title="Cho phép giáo viên khác tìm kiếm và nhân bản đề thi này"
+                    >
+                        <Checkbox 
+                            id="isPublic" 
+                            checked={examInfo.isPublic || false} 
+                            onCheckedChange={(checked) => setExamInfo({ ...examInfo, isPublic: checked })}
+                            className="w-3.5 h-3.5"
+                        />
+                        <label htmlFor="isPublic" className="text-[11px] font-extrabold uppercase text-blue-700 dark:text-blue-400 cursor-pointer flex items-center gap-1 select-none">
+                            <Globe className="w-3 h-3" /> Chia sẻ Công khai
+                        </label>
+                    </div>
+                    <div className="text-[11px] font-extrabold uppercase bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 px-3 py-1 rounded-full border border-blue-200/60 dark:border-blue-900/40 select-none shrink-0">
+                        Tổng số: {questionsCount} câu hỏi
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>

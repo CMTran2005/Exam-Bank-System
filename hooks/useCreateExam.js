@@ -82,7 +82,7 @@ export function useCreateExam() {
     const isCodeManuallyEdited = useRef(false);
 
     const [examInfo, setExamInfo] = useState({
-        title: "", code: "", year: "", grade: "", subject: "", province: "", duration: "",
+        title: "", code: "", year: "", grade: "", subject: "", province: "", duration: "", isPublic: false
     });
     const [questionsList, setQuestionsList] = useState([]);
     const [showPicker, setShowPicker] = useState(false);
@@ -131,6 +131,7 @@ export function useCreateExam() {
                             year: examToEdit.year || "", grade: examToEdit.grade || "",
                             subject: examToEdit.subject || "", province: examToEdit.province || "",
                             duration: examToEdit.duration !== undefined ? String(examToEdit.duration) : "",
+                            isPublic: examToEdit.isPublic || false,
                         });
                         isCodeManuallyEdited.current = true;
                         setQuestionsList(examToEdit.questions || []);
@@ -277,6 +278,76 @@ export function useCreateExam() {
         }
     };
 
+    const handleAIImageParse = async (file) => {
+        if (!file) return;
+
+        setAiGenerating(true);
+        try {
+            // Chuyển file thành base64
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            await new Promise(resolve => {
+                reader.onload = resolve;
+            });
+            const base64Data = reader.result;
+
+            const response = await fetch("/api/ai", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "parse_image_to_questions", image: base64Data })
+            });
+
+            const data = await response.json();
+            if (data.error) {
+                toast.error("Lỗi AI: " + data.error);
+                return;
+            }
+
+            if (!data.questions || data.questions.length === 0) {
+                toast.error("AI không tìm thấy câu hỏi trắc nghiệm nào trong ảnh.");
+                return;
+            }
+
+            const newQuestions = data.questions.map(q => {
+                const newQ = {
+                    id: Date.now() + Math.random(),
+                    type: "multiple_choice",
+                    content: q.content || "",
+                    images: [],
+                    difficulty: q.difficulty || "nhan_biet",
+                    points: q.points || "1.0",
+                    suggested_solution: q.suggested_solution || "",
+                    final_answer: q.final_answer || "",
+                    answer_images: [],
+                    isCollapsed: false,
+                    options: ["", "", "", ""],
+                    options_images: ["", "", "", ""],
+                    correct_answer: "A"
+                };
+
+                const labels = ["A", "B", "C", "D"];
+                if (q.choices && Array.isArray(q.choices)) {
+                    newQ.options = q.choices.map(c => c.text || "");
+                    const correctIdx = q.choices.findIndex(c => c.isCorrect);
+                    if (correctIdx !== -1) {
+                        newQ.correct_answer = labels[correctIdx];
+                    }
+                }
+                
+                return newQ;
+            });
+
+            setQuestionsList(prev => [...prev, ...newQuestions]);
+            toast.success(`Đã bóc tách thành công ${newQuestions.length} câu hỏi!`);
+        } catch (err) {
+            console.error("Lỗi gọi AI bóc tách ảnh:", err);
+            toast.error("Lỗi kết nối AI: " + err.message);
+        } finally {
+            setAiGenerating(false);
+            // Có thể muốn đóng assistant panel hoặc reset state
+        }
+    };
+
     const handleTitleChange = (title) => {
         setExamInfo((prev) => {
             const updated = { ...prev, title };
@@ -333,6 +404,7 @@ export function useCreateExam() {
             id: finalId, uid: currentUser?.uid || "anonymous", author: currentUser?.name || "Giáo viên",
             title: examInfo.title, year: examInfo.year, grade: examInfo.grade,
             subject: examInfo.subject, province: examInfo.province, duration: Number(examInfo.duration) || 90,
+            isPublic: examInfo.isPublic || false,
             total_questions: questionsList.length, questions: questionsList.map(({ isCollapsed, ...rest }) => rest),
             updatedAt: new Date().toISOString(),
         };
@@ -370,7 +442,7 @@ export function useCreateExam() {
         questionsList, setQuestionsList, addQuestion, removeQuestion, toggleCollapse, updateQuestionData, duplicateQuestion,
         showPicker, setShowPicker,
         zenMode, toggleZenMode, lastSaved,
-        showAIAssistant, setShowAIAssistant, aiPromptText, setAiPromptText, aiGenType, setAiGenType, aiGenerating, handleAIGenerateQuestion,
+        showAIAssistant, setShowAIAssistant, aiPromptText, setAiPromptText, aiGenType, setAiGenType, aiGenerating, handleAIGenerateQuestion, handleAIImageParse,
         handleSaveExam
     };
 }
