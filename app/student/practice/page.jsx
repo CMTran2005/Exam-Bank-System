@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Loader2, BookOpen, Clock, Search, FileText, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -15,6 +16,13 @@ export default function PracticePage() {
     const [exams, setExams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [filterSubject, setFilterSubject] = useState("all");
+    const [filterGrade, setFilterGrade] = useState("all");
+
+    // Tính toán các bộ lọc khả dụng
+    const uniqueSubjects = [...new Set(exams.map(e => e.subject).filter(Boolean))].sort();
+    const uniqueGrades = [...new Set(exams.map(e => e.grade).filter(Boolean))].sort((a,b) => String(a).localeCompare(String(b)));
+
 
     useEffect(() => {
         if (!authLoading && currentUser) {
@@ -42,10 +50,13 @@ export default function PracticePage() {
         }
     };
 
-    const filteredExams = exams.filter(ex => 
-        ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        ex.subject?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredExams = exams.filter(ex => {
+        const matchSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            ex.subject?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchSubject = filterSubject === "all" || ex.subject === filterSubject;
+        const matchGrade = filterGrade === "all" || String(ex.grade) === String(filterGrade);
+        return matchSearch && matchSubject && matchGrade;
+    });
 
     if (authLoading || (!currentUser && loading)) {
         return (
@@ -68,14 +79,42 @@ export default function PracticePage() {
                     </p>
                 </div>
 
-                <div className="w-full md:w-auto flex items-center">
-                    <div className="relative w-full md:w-72">
+                <div className="w-full md:w-auto flex flex-col sm:flex-row items-center gap-3">
+                    <div className="w-full sm:w-auto">
+                        <Select value={filterSubject} onValueChange={setFilterSubject}>
+                            <SelectTrigger className="w-full sm:w-[160px] h-11 rounded-xl bg-background/50 border-border font-medium text-sm text-foreground">
+                                <SelectValue placeholder="Tất cả môn học" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                <SelectItem value="all" className="font-medium rounded-lg cursor-pointer">Tất cả môn học</SelectItem>
+                                {uniqueSubjects.map(sub => (
+                                    <SelectItem key={sub} value={sub} className="rounded-lg cursor-pointer">{sub}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="w-full sm:w-auto">
+                        <Select value={filterGrade} onValueChange={setFilterGrade}>
+                            <SelectTrigger className="w-full sm:w-[150px] h-11 rounded-xl bg-background/50 border-border font-medium text-sm text-foreground">
+                                <SelectValue placeholder="Tất cả các lớp" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                                <SelectItem value="all" className="font-medium rounded-lg cursor-pointer">Tất cả các lớp</SelectItem>
+                                {uniqueGrades.map(g => (
+                                    <SelectItem key={g} value={g} className="rounded-lg cursor-pointer">Lớp {g}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="relative w-full sm:w-64 md:w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
-                            placeholder="Tìm kiếm đề thi, môn học..."
+                            placeholder="Tìm kiếm từ khóa..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-11 rounded-xl bg-background/50 focus-visible:ring-primary border-border"
+                            className="pl-9 h-11 rounded-xl bg-background/50 focus-visible:ring-primary border-border w-full"
                         />
                     </div>
                 </div>

@@ -10,8 +10,14 @@ import { classService } from "@/services/classService";
 import { examService } from "@/services/examService";
 import { examAttemptService } from "@/services/examAttemptService";
 import { useAuth } from "@/context/AuthContext";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/shared/LatexRenderer";
+import { studentService } from "@/services/studentService";
+import { badgeService } from "@/services/badgeService";
+import confetti from "canvas-confetti";
+import { getShuffleMap } from "@/lib/shuffleUtils";
 
 export default function ExamResultPage({ params }) {
     const { examId } = use(params);
@@ -20,12 +26,17 @@ export default function ExamResultPage({ params }) {
 
     const [exam, setExam] = useState(null);
     const [attempt, setAttempt] = useState(null);
+    const [shuffleMap, setShuffleMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [showDetails, setShowDetails] = useState(true);
+    const [newBadges, setNewBadges] = useState([]);
+    const [showBadgeModal, setShowBadgeModal] = useState(false);
 
     useEffect(() => {
         if (currentUser && examId) {
-            loadResultData();
+            loadResultData().then((success) => {
+                if (success) checkNewBadges();
+            });
         }
     }, [currentUser, examId]);
 
@@ -66,11 +77,58 @@ export default function ExamResultPage({ params }) {
             }
 
             setAttempt(currentAttempt);
+            
+            // Generate shuffleMap to keep options exactly like they were during the exam
+            setShuffleMap(getShuffleMap(currentAttempt.id, examData.questions));
+            
+            return true;
         } catch (error) {
             console.error(error);
             toast.error("Lỗi khi tải kết quả");
+            return false;
         } finally {
             setLoading(false);
+        }
+    };
+
+    const checkNewBadges = async () => {
+        try {
+            const userRef = doc(db, "users", currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            const oldBadgeIds = userSnap.exists() ? (userSnap.data().badges || []) : [];
+            
+            const [allBadges, classes, attempts] = await Promise.all([
+                badgeService.getBadges(),
+                studentService.getJoinedClasses(currentUser.uid),
+                examAttemptService.getStudentAttempts(currentUser.uid)
+            ]);
+
+            const newlyEarned = [];
+            for (const b of allBadges) {
+                if (!oldBadgeIds.includes(b.id) && badgeService.evaluateCondition(b, attempts, classes)) {
+                    newlyEarned.push(b);
+                }
+            }
+
+            if (newlyEarned.length > 0) {
+                const newIds = newlyEarned.map(b => b.id);
+                await updateDoc(userRef, { badges: [...oldBadgeIds, ...newIds], lastBadgeSync: new Date().toISOString() });
+                
+                setNewBadges(newlyEarned);
+                
+                setTimeout(() => {
+                    setShowBadgeModal(true);
+                    // Bắn pháo hoa
+                    confetti({
+                        particleCount: 150,
+                        spread: 80,
+                        origin: { y: 0.6 },
+                        colors: ['#FFD700', '#FFA500', '#FF6347', '#00FA9A', '#00BFFF', '#9370DB']
+                    });
+                }, 800); // Chờ giao diện điểm số render xong 1 tí rồi hẵng nhảy popup
+            }
+        } catch (error) {
+            console.error("Lỗi khi kiểm tra huy hiệu mới:", error);
         }
     };
 
@@ -190,10 +248,54 @@ export default function ExamResultPage({ params }) {
     const s = timeSpentSeconds % 60;
 
     return (
-        <div className="space-y-6 max-w-4xl mx-auto">
+        <div className="space-y-6 max-w-4xl mx-auto relative">
+            
+            {/* Modal Chúc Mừng Huy Hiệu Mới */}
+            {showBadgeModal && newBadges.length > 0 && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                    <div className="bg-card border border-border shadow-2xl rounded-3xl p-8 max-w-md w-full text-center relative animate-in zoom-in-95 fade-in duration-500">
+                        <button 
+                            onClick={() => setShowBadgeModal(false)}
+                            className="absolute top-4 right-4 p-2 bg-muted/50 hover:bg-muted text-muted-foreground rounded-full transition-colors"
+                        >
+                            <XCircle className="w-5 h-5" />
+                        </button>
+                        
+                        <div className="w-20 h-20 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Trophy className="w-10 h-10 animate-bounce" />
+                        </div>
+                        
+                        <h2 className="text-2xl font-black mb-2">Chúc Mừng! 🎉</h2>
+                        <p className="text-muted-foreground mb-6 font-medium">Bạn vừa mở khóa được {newBadges.length} huy hiệu mới nhờ thành tích xuất sắc của mình.</p>
+                        
+                        <div className="flex flex-col gap-4 mb-8 max-h-[40vh] overflow-y-auto p-2">
+                            {newBadges.map(b => (
+                                <div key={b.id} className={`p-4 rounded-2xl border ${b.tier?.color || "border-border"} flex items-center gap-4 text-left shadow-sm bg-background/50`}>
+                                    <div className="p-3 bg-background rounded-xl border border-border/50 shadow-sm">
+                                        <Trophy className="w-6 h-6" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{b.tier?.label}</p>
+                                        <h3 className="font-bold text-sm">{b.name}</h3>
+                                        <p className="text-xs opacity-80 mt-0.5">{b.desc}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="flex gap-3">
+                            <Link href="/student/badges" className="flex-1">
+                                <Button className="w-full rounded-xl" variant="default">Xem Bộ Sưu Tập</Button>
+                            </Link>
+                            <Button className="flex-1 rounded-xl" variant="outline" onClick={() => setShowBadgeModal(false)}>Đóng</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="flex items-center gap-4 border-b border-border/60 pb-6">
-                <Link href={`/student/class/${attempt.classId}`}>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-muted">
+                <Link href={attempt?.classId === "practice" ? "/student/practice" : `/student/class/${attempt?.classId}`}>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-muted" title={attempt?.classId === "practice" ? "Trở về Luyện thi" : "Trở về lớp học"}>
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
                 </Link>
@@ -316,13 +418,21 @@ export default function ExamResultPage({ params }) {
                                                 <span className="text-foreground font-medium">
                                                     <LatexRenderer content={q.content} inline={true} />
                                                 </span>
+                                                {q.images && q.images.length > 0 && (
+                                                    <div className="mt-4 space-y-3">
+                                                        {q.images.map((img, i) => (
+                                                            img ? <img key={i} src={img} alt={`Minh họa câu hỏi ${i+1}`} className="max-h-60 rounded-xl border border-border object-contain shadow-sm" /> : null
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {(!q.type || q.type === 'multiple_choice') && (
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                                                    {q.options?.map((opt, oIdx) => {
-                                                        const isStudentChoice = studentAns === oIdx;
-                                                        const isActualCorrect = actualCorrectIndex === oIdx;
+                                                    {(shuffleMap[q.id] || q.options?.map((_, i) => i) || []).map((originalIdx, renderIdx) => {
+                                                        const opt = q.options[originalIdx];
+                                                        const isStudentChoice = studentAns === originalIdx;
+                                                        const isActualCorrect = actualCorrectIndex === originalIdx;
                                                         
                                                         let style = "bg-card border-border text-muted-foreground";
                                                         
@@ -333,15 +443,20 @@ export default function ExamResultPage({ params }) {
                                                         }
 
                                                         return (
-                                                            <div key={oIdx} className={`p-3 rounded-xl border-2 flex items-start gap-3 transition-colors ${style}`}>
+                                                            <div key={originalIdx} className={`p-3 rounded-xl border-2 flex items-start gap-3 transition-colors ${style}`}>
                                                                 <div className={`shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-black ${
                                                                     isActualCorrect ? "bg-emerald-500 text-white" :
                                                                     (isStudentChoice ? "bg-red-500 text-white" : "bg-muted text-muted-foreground")
                                                                 }`}>
-                                                                    {alphabet[oIdx]}
+                                                                    {alphabet[renderIdx]}
                                                                 </div>
                                                                 <div className={`mt-0.5 font-medium ${isActualCorrect || isStudentChoice ? "text-inherit" : "text-muted-foreground"}`}>
                                                                     <LatexRenderer content={opt} inline={true} />
+                                                                    {q.options_images && q.options_images[originalIdx] && (
+                                                                        <div className="mt-2">
+                                                                            <img src={q.options_images[originalIdx]} alt={`Minh họa đáp án ${alphabet[renderIdx]}`} className="max-h-24 rounded-md border border-border object-contain" />
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         );
@@ -483,9 +598,9 @@ export default function ExamResultPage({ params }) {
             )}
 
             <div className="pt-6 flex justify-center pb-12">
-                <Link href={`/student/class/${attempt.classId}`}>
+                <Link href={attempt?.classId === "practice" ? "/student/practice" : `/student/class/${attempt?.classId}`}>
                     <Button className="h-11 px-8 rounded-xl font-bold gap-2">
-                        <LayoutDashboard className="w-5 h-5" /> Trở về lớp học
+                        <LayoutDashboard className="w-5 h-5" /> {attempt?.classId === "practice" ? "Trở về Luyện thi" : "Trở về lớp học"}
                     </Button>
                 </Link>
             </div>

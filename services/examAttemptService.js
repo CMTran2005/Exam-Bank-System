@@ -16,14 +16,20 @@ export const examAttemptService = {
      */
     async startExam(studentUid, studentName, examId, classId) {
         try {
-            // Sử dụng ID cố định để tránh tạo nhiều attempt cho 1 học sinh trong 1 đề thi
-            const attemptId = `attempt_${studentUid}_${classId}_${examId}`;
+            // Sử dụng ID cố định cho thi thật, ID ngẫu nhiên (chứa timestamp) cho luyện thi
+            let attemptId = `attempt_${studentUid}_${classId}_${examId}`;
+            if (classId === "practice") {
+                attemptId = `attempt_${studentUid}_practice_${examId}_${Date.now()}`;
+            }
+
             const docRef = doc(db, "exam_attempts", attemptId);
             
-            // Kiểm tra xem đã có bài làm nào tồn tại chưa (chống React Strict Mode / Click đúp)
-            const docSnap = await runWithTimeout(getDoc(docRef));
-            if (docSnap.exists()) {
-                return { id: docSnap.id, ...docSnap.data() };
+            // Chỉ kiểm tra tồn tại (chống click đúp) đối với thi thật
+            if (classId !== "practice") {
+                const docSnap = await runWithTimeout(getDoc(docRef));
+                if (docSnap.exists()) {
+                    return { id: docSnap.id, ...docSnap.data() };
+                }
             }
 
             const newAttempt = {

@@ -3,7 +3,7 @@
 import { use } from "react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Clock, Flag, LayoutGrid, ChevronLeft, ChevronRight, LogOut, AlertTriangle, Send, Loader2, CheckCircle2, XCircle, BookOpen } from "lucide-react";
+import { Clock, Flag, LayoutGrid, ChevronLeft, ChevronRight, LogOut, AlertTriangle, Send, Loader2, CheckCircle2, XCircle, BookOpen, Timer, TimerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { classService } from "@/services/classService";
 import { examService } from "@/services/examService";
@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/shared/LatexRenderer";
 import { useConfirm } from "@/context/ConfirmContext";
+import { getShuffleMap } from "@/lib/shuffleUtils";
 
 export default function ExamInterface({ params }) {
     const { examId } = use(params);
@@ -24,6 +25,8 @@ export default function ExamInterface({ params }) {
 
     const [exam, setExam] = useState(null);
     const [attempt, setAttempt] = useState(null);
+    const [shuffleMap, setShuffleMap] = useState({});
+    const [pastAttemptsCount, setPastAttemptsCount] = useState(0);
     
     const [answers, setAnswers] = useState({});
     const [reviewMarks, setReviewMarks] = useState({});
@@ -32,6 +35,7 @@ export default function ExamInterface({ params }) {
     // Practice Mode State
     const isPracticeMode = searchParams.get("mode") === "practice";
     const [practiceResults, setPracticeResults] = useState({});
+    const [isTimerEnabled, setIsTimerEnabled] = useState(true);
     
     const [timeLeft, setTimeLeft] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,21 +85,34 @@ export default function ExamInterface({ params }) {
 
             // 2. Tải hoặc Khởi tạo Attempt
             const attempts = await examAttemptService.getStudentAttempts(currentUser.uid);
-            let currentAttempt = attempts.find(a => a.examId === examId && a.classId === classId);
             
-            if (currentAttempt && currentAttempt.status === "completed") {
-                toast.info("Bạn đã hoàn thành bài thi này rồi.");
-                router.push(`/student/exam/${examId}/result`);
-                return;
-            }
+            // Đếm số lần đã làm ở chế độ practice
+            const previousCompleted = attempts.filter(a => a.examId === examId && a.classId === "practice" && a.status === "completed");
+            setPastAttemptsCount(previousCompleted.length);
 
+            // Tìm attempt chưa hoàn thành
+            let currentAttempt = attempts.find(a => a.examId === examId && a.classId === (classId || "practice") && a.status !== "completed");
+            
+            // Nếu không có attempt dở dang, kiểm tra xem đã thi xong chưa
             if (!currentAttempt) {
-                // Trong chế độ luyện tập tự do, có thể bỏ qua classId
+                const completedAttempt = previousCompleted.length > 0 ? previousCompleted[0] : attempts.find(a => a.examId === examId && a.classId === (classId || "practice") && a.status === "completed");
+                
+                // Nếu là thi thật (có classId cụ thể) và đã hoàn thành -> Không cho thi lại
+                if (completedAttempt && classId && classId !== "practice") {
+                    toast.info("Bạn đã hoàn thành bài thi này rồi.");
+                    router.push(`/student/exam/${examId}/result`);
+                    return;
+                }
+
+                // Nếu là luyện tập (hoặc chưa từng thi), tạo attempt mới
                 currentAttempt = await examAttemptService.startExam(currentUser.uid, currentUser.name, examId, classId || "practice");
             }
             
             setAttempt(currentAttempt);
             if (currentAttempt.answers) setAnswers(currentAttempt.answers);
+            
+            // Xáo trộn đáp án
+            setShuffleMap(getShuffleMap(currentAttempt.id, examData.questions));
 
             // 3. Tính toán thời gian còn lại
             const startTime = new Date(currentAttempt.startTime).getTime();
@@ -106,10 +123,12 @@ export default function ExamInterface({ params }) {
             let remainingSeconds = Math.floor((endTime - now) / 1000);
             if (remainingSeconds <= 0) {
                 remainingSeconds = 0;
-                handleAutoSubmit(currentAttempt.id, currentAttempt.answers || {}, examData);
-            } else {
-                setTimeLeft(remainingSeconds);
+                // Nếu là thi thật thì auto-submit ngay, nếu là luyện thi thì bỏ qua để học sinh tự nộp
+                if (!isPracticeMode || (isPracticeMode && isTimerEnabled && false)) { 
+                    handleAutoSubmit(currentAttempt.id, currentAttempt.answers || {}, examData);
+                }
             }
+            setTimeLeft(remainingSeconds);
             
             setLoading(false);
         } catch (error) {
@@ -127,14 +146,18 @@ export default function ExamInterface({ params }) {
 
     // Đếm ngược thời gian
     useEffect(() => {
-        if (timeLeft !== null && timeLeft > 0 && !isSubmitting) {
+        if (timeLeft !== null && timeLeft > 0 && !isSubmitting && isTimerEnabled) {
             timerRef.current = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
                         clearInterval(timerRef.current);
                         // Hết giờ
                         if (attempt && exam) {
-                            handleAutoSubmit(attempt.id, answers, exam);
+                            if (!isPracticeMode) {
+                                handleAutoSubmit(attempt.id, answers, exam);
+                            } else {
+                                toast.info("Đã hết thời gian chuẩn của đề thi, nhưng bạn vẫn có thể làm tiếp trong chế độ Luyện Tập!");
+                            }
                         }
                         return 0;
                     }
@@ -143,7 +166,7 @@ export default function ExamInterface({ params }) {
             }, 1000);
         }
         return () => clearInterval(timerRef.current);
-    }, [timeLeft, isSubmitting, attempt, answers, exam]);
+    }, [timeLeft, isSubmitting, attempt, answers, exam, isTimerEnabled, isPracticeMode]);
 
     // Auto-save định kỳ
     useEffect(() => {
@@ -437,19 +460,43 @@ export default function ExamInterface({ params }) {
             <header className="h-14 sm:h-16 shrink-0 bg-card border-b border-border flex items-center justify-between px-3 sm:px-6 shadow-sm">
                 <div className="flex items-center gap-3 w-1/3 truncate">
                     <div className="truncate pl-2">
-                        <h1 className="font-bold text-sm sm:text-base text-foreground truncate">{exam.title}</h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="font-bold text-sm sm:text-base text-foreground truncate">{exam.title}</h1>
+                            {isPracticeMode && pastAttemptsCount > 0 && (
+                                <span className="hidden sm:inline-block bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">
+                                    Làm lại lần {pastAttemptsCount + 1}
+                                </span>
+                            )}
+                        </div>
                         <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block truncate">{exam.subject} • {currentUser?.name}</p>
                     </div>
                 </div>
 
                 <div className="flex items-center justify-center w-1/3">
-                    <div className={`flex items-center gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-black text-sm sm:text-lg tracking-wider border-2 transition-colors ${
-                        timeLeft !== null && timeLeft <= 300 
-                            ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950/30' 
-                            : 'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:border-blue-500'
-                    }`}>
-                        <Clock className={`w-4 h-4 sm:w-5 sm:h-5 ${timeLeft !== null && timeLeft <= 300 ? 'animate-pulse' : ''}`} />
-                        {formatTime(timeLeft)}
+                    <div className="flex items-center gap-2">
+                        <div className={`flex items-center gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-black text-sm sm:text-lg tracking-wider border-2 transition-colors ${
+                            !isTimerEnabled 
+                                ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30'
+                                : timeLeft !== null && timeLeft <= 300 && timeLeft > 0
+                                    ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950/30' 
+                                    : 'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:border-blue-500'
+                        }`}>
+                            <Clock className={`w-4 h-4 sm:w-5 sm:h-5 ${timeLeft !== null && timeLeft <= 300 && timeLeft > 0 && isTimerEnabled ? 'animate-pulse' : ''}`} />
+                            {isTimerEnabled ? formatTime(timeLeft) : "Vô hạn"}
+                        </div>
+                        {isPracticeMode && (
+                            <button
+                                onClick={() => setIsTimerEnabled(!isTimerEnabled)}
+                                className={`p-2 rounded-full border-2 transition-colors flex shrink-0 ${
+                                    isTimerEnabled 
+                                        ? "bg-background border-border text-muted-foreground hover:text-red-500 hover:border-red-200" 
+                                        : "bg-indigo-100 border-indigo-200 text-indigo-600 dark:bg-indigo-900/50 dark:border-indigo-800 dark:text-indigo-400"
+                                }`}
+                                title={isTimerEnabled ? "Tắt đếm ngược" : "Bật đếm ngược"}
+                            >
+                                {isTimerEnabled ? <TimerOff className="w-4 h-4" /> : <Timer className="w-4 h-4" />}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -529,18 +576,28 @@ export default function ExamInterface({ params }) {
                             ) : (
                                 <LatexRenderer content={currentQuestion?.content || ""} inline={false} />
                             )}
+                            
+                            {/* Render question images */}
+                            {currentQuestion?.images && currentQuestion.images.length > 0 && (
+                                <div className="mt-6 space-y-4">
+                                    {currentQuestion.images.map((img, i) => (
+                                        img ? <img key={i} src={img} alt={`Hình ảnh minh họa ${i+1}`} className="max-h-[400px] mx-auto rounded-xl border border-border object-contain shadow-sm" /> : null
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Options */}
                         {(!currentQuestion?.type || currentQuestion.type === "multiple_choice") && (
                             <div className="space-y-3 sm:space-y-4 mb-8">
-                                {currentQuestion?.options?.map((opt, idx) => {
-                                    const isSelected = answers[currentQuestion.id] === idx;
+                                {(shuffleMap[currentQuestion.id] || currentQuestion?.options?.map((_, i) => i) || []).map((originalIdx, renderIdx) => {
+                                    const opt = currentQuestion.options[originalIdx];
+                                    const isSelected = answers[currentQuestion.id] === originalIdx;
                                     const alphabet = ["A", "B", "C", "D", "E", "F"];
                                     return (
                                         <button
-                                            key={idx}
-                                            onClick={() => handleSelectAnswer(currentQuestion.id, idx)}
+                                            key={originalIdx}
+                                            onClick={() => handleSelectAnswer(currentQuestion.id, originalIdx)}
                                             className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left group ${
                                                 isSelected 
                                                     ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
@@ -552,10 +609,15 @@ export default function ExamInterface({ params }) {
                                                     ? "bg-blue-500 text-white shadow-sm" 
                                                     : "bg-muted text-muted-foreground group-hover:bg-blue-100 group-hover:text-blue-600 dark:group-hover:bg-blue-900 dark:group-hover:text-blue-300"
                                             }`}>
-                                                {alphabet[idx]}
+                                                {alphabet[renderIdx]}
                                             </div>
                                             <div className={`mt-1 font-medium ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
                                                 <LatexRenderer content={opt} inline={false} />
+                                                {currentQuestion.options_images && currentQuestion.options_images[originalIdx] && (
+                                                    <div className="mt-3">
+                                                        <img src={currentQuestion.options_images[originalIdx]} alt={`Minh họa đáp án ${alphabet[renderIdx]}`} className="max-h-32 rounded-lg border border-border object-contain" />
+                                                    </div>
+                                                )}
                                             </div>
                                         </button>
                                     );
@@ -651,11 +713,23 @@ export default function ExamInterface({ params }) {
                                                 <LatexRenderer content={currentQuestion.explanation} inline={false} />
                                             </div>
                                         )}
-                                        {!currentQuestion.explanation && currentQuestion.final_answer && (
+                                        {!currentQuestion.explanation && (currentQuestion.final_answer || currentQuestion.correct_answer) && (
                                             <div className="text-sm mt-4 bg-background p-4 rounded-xl border-2 border-border/80 shadow-sm">
                                                 <p className="font-black text-foreground mb-1">Đáp án đúng:</p>
                                                 <div className="font-bold text-emerald-600 dark:text-emerald-400">
-                                                    {currentQuestion.final_answer}
+                                                    {(!currentQuestion.type || currentQuestion.type === 'multiple_choice') ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 px-2 py-0.5 rounded font-black text-xs">
+                                                                {currentQuestion.correct_answer}
+                                                            </span>
+                                                            <LatexRenderer 
+                                                                content={currentQuestion.options[Math.max(0, ["A","B","C","D","E","F"].indexOf(currentQuestion.correct_answer))]} 
+                                                                inline={true} 
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <LatexRenderer content={currentQuestion.final_answer || ""} inline={true} />
+                                                    )}
                                                 </div>
                                             </div>
                                         )}

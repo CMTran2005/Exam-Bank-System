@@ -4,51 +4,21 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { studentService } from "@/services/studentService";
 import { examAttemptService } from "@/services/examAttemptService";
-import { Trophy, Medal, Flame, Star, Zap, ShieldCheck, Compass, MoonStar, Loader2, Crown, Target, Brain } from "lucide-react";
+import { badgeService } from "@/services/badgeService";
+import * as Icons from "lucide-react";
 import { toast } from "sonner";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-const TIERS = {
-    BRONZE: { label: "Đồng", color: "text-orange-700 dark:text-orange-500 bg-orange-700/10 border-orange-700/30" },
-    SILVER: { label: "Bạc", color: "text-slate-500 dark:text-slate-300 bg-slate-500/10 border-slate-500/30" },
-    GOLD: { label: "Vàng", color: "text-yellow-500 bg-yellow-500/10 border-yellow-500/30" },
-    PLATINUM: { label: "Bạch Kim", color: "text-cyan-500 bg-cyan-500/10 border-cyan-500/30" },
-    DIAMOND: { label: "Kim Cương", color: "text-fuchsia-500 bg-fuchsia-500/10 border-fuchsia-500/30" },
-};
-
-const ALL_BADGES = [
-    { id: "first_blood", name: "Tân Binh Tích Cực", desc: "Hoàn thành bài thi đầu tiên", icon: Zap, tier: TIERS.BRONZE, condition: (a, c) => a.length >= 1 },
-    
-    // Người Chăm Chỉ Tiers
-    { id: "hardworker_bronze", name: "Người Chăm Chỉ", desc: "Hoàn thành 5 bài thi", icon: Flame, tier: TIERS.BRONZE, condition: (a) => a.length >= 5 },
-    { id: "hardworker_silver", name: "Người Chăm Chỉ", desc: "Hoàn thành 15 bài thi", icon: Flame, tier: TIERS.SILVER, condition: (a) => a.length >= 15 },
-    { id: "hardworker_gold", name: "Người Chăm Chỉ", desc: "Hoàn thành 30 bài thi", icon: Flame, tier: TIERS.GOLD, condition: (a) => a.length >= 30 },
-    { id: "hardworker_diamond", name: "Kẻ Cuồng Học", desc: "Hoàn thành 100 bài thi", icon: Flame, tier: TIERS.DIAMOND, condition: (a) => a.length >= 100 },
-    
-    // Thợ Săn Điểm Tốt Tiers
-    { id: "excellent_bronze", name: "Thợ Săn Điểm", desc: "Đạt 1 bài thi >= 8 điểm", icon: Star, tier: TIERS.BRONZE, condition: (a) => a.filter(x => x.score >= 8).length >= 1 },
-    { id: "excellent_silver", name: "Thợ Săn Điểm", desc: "Đạt 5 bài thi >= 8 điểm", icon: Star, tier: TIERS.SILVER, condition: (a) => a.filter(x => x.score >= 8).length >= 5 },
-    { id: "excellent_gold", name: "Thợ Săn Điểm", desc: "Đạt 15 bài thi >= 8 điểm", icon: Star, tier: TIERS.GOLD, condition: (a) => a.filter(x => x.score >= 8).length >= 15 },
-    
-    // Thủ Khoa Tiers
-    { id: "perfect_bronze", name: "Thủ Khoa", desc: "Đạt 1 bài thi >= 9.5 điểm", icon: Trophy, tier: TIERS.BRONZE, condition: (a) => a.filter(x => x.score >= 9.5).length >= 1 },
-    { id: "perfect_gold", name: "Thủ Khoa Tuyệt Đối", desc: "Đạt 5 bài thi >= 9.5 điểm", icon: Trophy, tier: TIERS.GOLD, condition: (a) => a.filter(x => x.score >= 9.5).length >= 5 },
-    { id: "perfect_diamond", name: "Thủ Khoa Huyền Thoại", desc: "Đạt 10 bài thi >= 9.5 điểm", icon: Crown, tier: TIERS.DIAMOND, condition: (a) => a.filter(x => x.score >= 9.5).length >= 10 },
-    
-    // Nhà Thám Hiểm
-    { id: "explorer_bronze", name: "Nhà Thám Hiểm", desc: "Tham gia 3 lớp thi", icon: Compass, tier: TIERS.BRONZE, condition: (a, c) => c.length >= 3 },
-    { id: "explorer_gold", name: "Chúa Tể Lớp Học", desc: "Tham gia 10 lớp thi", icon: Compass, tier: TIERS.GOLD, condition: (a, c) => c.length >= 10 },
-
-    // Special
-    { id: "flawless", name: "Xạ Thủ Hoàn Hảo", desc: "Đạt điểm 10 tròn trịa", icon: Target, tier: TIERS.PLATINUM, condition: (a) => a.some(x => x.score === 10) },
-    { id: "night_owl", name: "Cú Đêm", desc: "Làm bài thi vào lúc 22h - 4h", icon: MoonStar, tier: TIERS.SILVER, condition: (a) => a.some(x => x.startTime && (new Date(x.startTime).getHours() >= 22 || new Date(x.startTime).getHours() <= 4)) },
-];
+// Global cache để giữ dữ liệu khi chuyển trang (SWR pattern)
+let badgesCache = null;
 
 export default function BadgesPage() {
     const { currentUser } = useAuth();
+    const [allBadges, setAllBadges] = useState([]);
     const [badges, setBadges] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!badgesCache);
+    const [showLocked, setShowLocked] = useState(false);
     const [stats, setStats] = useState({ attempts: 0, classes: 0 });
 
     useEffect(() => {
@@ -58,23 +28,34 @@ export default function BadgesPage() {
     }, [currentUser]);
 
     const loadBadgesData = async () => {
-        setLoading(true);
+        if (badgesCache && badgesCache.uid === currentUser.uid) {
+            setAllBadges(badgesCache.allBadges);
+            setBadges(badgesCache.badges);
+            setStats(badgesCache.stats);
+            setLoading(false); // Hiện UI ngay lập tức
+        } else {
+            setLoading(true);
+        }
+
         try {
-            const [data, attempts] = await Promise.all([
+            const [data, attempts, fetchedBadges] = await Promise.all([
                 studentService.getJoinedClasses(currentUser.uid),
-                examAttemptService.getStudentAttempts(currentUser.uid)
+                examAttemptService.getStudentAttempts(currentUser.uid),
+                badgeService.getBadges()
             ]);
             
+            setAllBadges(fetchedBadges);
+
             setStats({
                 attempts: attempts.length,
                 classes: data.length
             });
 
-            // Tính toán huy hiệu thông minh
+            // Tính toán huy hiệu thông minh qua badgeService
             const earnedBadgeIds = [];
-            ALL_BADGES.forEach(badge => {
+            fetchedBadges.forEach(badge => {
                 try {
-                    if (badge.condition(attempts, data)) {
+                    if (badgeService.evaluateCondition(badge, attempts, data)) {
                         earnedBadgeIds.push(badge.id);
                     }
                 } catch (e) {
@@ -83,6 +64,13 @@ export default function BadgesPage() {
             });
             
             setBadges(earnedBadgeIds);
+
+            badgesCache = {
+                uid: currentUser.uid,
+                allBadges: fetchedBadges,
+                badges: earnedBadgeIds,
+                stats: { attempts: attempts.length, classes: data.length }
+            };
 
             // Đồng bộ danh sách huy hiệu lên Firebase để giáo viên/hệ thống dễ truy xuất
             try {
@@ -101,6 +89,80 @@ export default function BadgesPage() {
         }
     };
 
+    const getBadgeFamily = (id) => {
+        if (id.startsWith("hardworker_")) return "hardworker";
+        if (id.startsWith("excellent_")) return "excellent";
+        if (id.startsWith("perfect_")) return "perfect";
+        if (id.startsWith("explorer_")) return "explorer";
+        if (id.startsWith("score_accumulator_")) return "score_accumulator";
+        if (id.startsWith("consistent_")) return "consistent";
+        if (id.startsWith("polymath_")) return "polymath";
+        if (id.startsWith("streak_")) return "streak_days"; 
+        return id; // single badges
+    };
+
+    const getTierLevel = (label) => {
+        if (label === "Đồng") return 1;
+        if (label === "Bạc") return 2;
+        if (label === "Vàng") return 3;
+        if (label === "Bạch Kim") return 4;
+        if (label === "Kim Cương") return 5;
+        return 0;
+    };
+
+    const processBadges = () => {
+        const grouped = {};
+        allBadges.forEach(b => {
+            const family = getBadgeFamily(b.id);
+            if (!grouped[family]) grouped[family] = [];
+            grouped[family].push(b);
+        });
+
+        const displayList = [];
+        let earnedFamiliesCount = 0;
+
+        Object.values(grouped).forEach(familyBadges => {
+            familyBadges.sort((a, b) => getTierLevel(a.tier?.label) - getTierLevel(b.tier?.label));
+            
+            let highestEarned = null;
+            let nextLocked = null;
+            
+            for (const b of familyBadges) {
+                if (badges.includes(b.id)) {
+                    highestEarned = b;
+                } else if (!nextLocked) {
+                    nextLocked = b;
+                }
+            }
+            
+            if (highestEarned) {
+                earnedFamiliesCount++;
+                displayList.push({ ...highestEarned, isEarned: true, nextTarget: nextLocked });
+            } else if (nextLocked) {
+                displayList.push({ ...nextLocked, isEarned: false });
+            }
+        });
+
+        // Ẩn huy hiệu khoá nếu showLocked = false
+        const filteredList = showLocked ? displayList : displayList.filter(b => b.isEarned);
+
+        // Sắp xếp displayList: Đã mở khóa lên trước, sau đó sắp xếp theo tier từ cao xuống thấp
+        filteredList.sort((a, b) => {
+            if (a.isEarned && !b.isEarned) return -1;
+            if (!a.isEarned && b.isEarned) return 1;
+            
+            const tierA = getTierLevel(a.tier?.label);
+            const tierB = getTierLevel(b.tier?.label);
+            if (tierA !== tierB) return tierB - tierA;
+            
+            return a.name.localeCompare(b.name);
+        });
+
+        return { displayList: filteredList, totalFamilies: Object.keys(grouped).length, earnedFamiliesCount };
+    };
+
+    const { displayList, totalFamilies, earnedFamiliesCount } = processBadges();
+
     return (
         <div className="space-y-8">
             {/* Header Section */}
@@ -109,15 +171,24 @@ export default function BadgesPage() {
                 <div className="relative z-10">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2.5 bg-amber-500/10 text-amber-500 rounded-xl">
-                            <Medal className="w-6 h-6" />
+                            <Icons.Medal className="w-6 h-6" />
                         </div>
                         <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">
                             Bộ sưu tập Huy Hiệu
                         </h1>
                     </div>
                     <p className="text-muted-foreground font-medium max-w-2xl">
-                        Khám phá và thu thập các danh hiệu độc quyền bằng cách tích cực hoàn thành bài thi và đạt điểm cao. Bạn đã thu thập được {badges.length}/{ALL_BADGES.length} huy hiệu!
+                        Khám phá và thu thập các danh hiệu độc quyền bằng cách tích cực hoàn thành bài thi và đạt điểm cao. Bạn đã thu thập được {earnedFamiliesCount}/{totalFamilies} nhóm huy hiệu!
                     </p>
+                    <div className="mt-4 flex items-center gap-2">
+                        <button 
+                            onClick={() => setShowLocked(!showLocked)}
+                            className="flex items-center gap-2 px-4 py-2 bg-background/50 hover:bg-background/80 border border-border rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-200 backdrop-blur-sm shadow-sm"
+                        >
+                            {showLocked ? <Icons.EyeOff className="w-4 h-4" /> : <Icons.Eye className="w-4 h-4" />}
+                            {showLocked ? "Ẩn danh hiệu chưa đạt" : "Hiển thị danh hiệu chưa đạt"}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -125,13 +196,13 @@ export default function BadgesPage() {
             <div className="space-y-4">
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        <Icons.Loader2 className="w-8 h-8 animate-spin text-primary" />
                     </div>
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {ALL_BADGES.map((b) => {
-                            const isEarned = badges.includes(b.id);
-                            const Icon = b.icon;
+                        {displayList.map((b) => {
+                            const isEarned = b.isEarned;
+                            const Icon = Icons[b.iconStr] || Icons.Medal;
                             
                             if (isEarned) {
                                 return (
@@ -143,6 +214,14 @@ export default function BadgesPage() {
                                         <span className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-1">{b.tier.label}</span>
                                         <h3 className="font-black text-[15px] uppercase tracking-wide mb-1.5">{b.name}</h3>
                                         <p className="text-xs opacity-90 font-medium leading-tight px-2">{b.desc}</p>
+                                        
+                                        {/* Hiển thị mục tiêu tiếp theo nếu có */}
+                                        {b.nextTarget && (
+                                            <div className="mt-3 pt-3 border-t border-white/10 w-full text-center">
+                                                <p className="text-[9px] opacity-70 uppercase tracking-widest mb-1">Mục tiêu tiếp theo</p>
+                                                <p className="text-[10px] font-medium">{b.nextTarget.desc}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             } else {
@@ -161,6 +240,13 @@ export default function BadgesPage() {
                                 );
                             }
                         })}
+                        {displayList.length === 0 && !loading && (
+                            <div className="col-span-full py-16 text-center flex flex-col items-center justify-center opacity-60">
+                                <Icons.Ghost className="w-16 h-16 mb-4 text-muted-foreground" />
+                                <h3 className="text-lg font-bold text-foreground">Chưa có huy hiệu nào</h3>
+                                <p className="text-sm font-medium text-muted-foreground mt-1">Hãy tiếp tục làm bài thi để thu thập huy hiệu đầu tiên nhé!</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
