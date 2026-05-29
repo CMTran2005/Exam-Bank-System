@@ -2,7 +2,7 @@
 
 import { TrendingUp, Loader2 } from "lucide-react";
 
-import { useStatistics } from "@/hooks/useStatistics";
+import { useStatistics } from "@/hooks/teacher/useStatistics";
 import { 
     OverviewCards, 
     SubjectCoverageCard, 

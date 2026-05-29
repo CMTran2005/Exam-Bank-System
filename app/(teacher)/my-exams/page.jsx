@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Plus, SlidersHorizontal, FileText, Loader2, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useExams } from "@/hooks/useExams";
+import { useExams } from "@/hooks/teacher/useExams";
 
 import { FolderTabs } from "./_components/FolderTabs";
 import { DisplaySettings } from "./_components/DisplaySettings";

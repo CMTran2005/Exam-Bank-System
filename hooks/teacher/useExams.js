@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import useSWR from "swr";
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useConfirm } from "@/context/ConfirmContext";
@@ -14,8 +15,42 @@ const runWithTimeout = (promise, ms = 1000) => {
 
 export function useExams(currentUser) {
     const confirmDialog = useConfirm();
-    const [exams, setExams] = useState([]);
-    const [folders, setFolders] = useState([{ id: "all", name: "Tất cả đề thi" }]);
+    const { data: exams = [], mutate: mutateExams } = useSWR(
+        currentUser ? `exams_${currentUser.uid}` : null,
+        async () => {
+            const q = query(collection(db, "exams"), where("uid", "==", currentUser.uid));
+            const snapshot = await runWithTimeout(getDocs(q), 1500);
+            const list = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
+            localStorage.setItem("eb_exams", JSON.stringify(list));
+            return list;
+        },
+        { 
+            fallbackData: (() => {
+                if (typeof window === "undefined") return [];
+                try { return JSON.parse(localStorage.getItem("eb_exams")) || []; } catch (e) { return []; }
+            })() 
+        }
+    );
+
+    const { data: folders = [{ id: "all", name: "Tất cả đề thi" }], mutate: mutateFolders } = useSWR(
+        currentUser ? `folders_${currentUser.uid}` : null,
+        async () => {
+            const fq = query(collection(db, "folders"), where("uid", "==", currentUser.uid));
+            const folderSnap = await runWithTimeout(getDocs(fq), 1500);
+            const folderList = [{ id: "all", name: "Tất cả đề thi" }];
+            folderSnap.forEach((doc) => folderList.push({ id: doc.id, ...doc.data() }));
+            localStorage.setItem("eb_folders", JSON.stringify(folderList));
+            return folderList;
+        },
+        { 
+            fallbackData: (() => {
+                if (typeof window === "undefined") return [{ id: "all", name: "Tất cả đề thi" }];
+                try { return JSON.parse(localStorage.getItem("eb_folders")) || [{ id: "all", name: "Tất cả đề thi" }]; } 
+                catch (e) { return [{ id: "all", name: "Tất cả đề thi" }]; }
+            })() 
+        }
+    );
+
     const [activeFolder, setActiveFolder] = useState("all");
     const [selectedExams, setSelectedExams] = useState([]);
     const [mounted, setMounted] = useState(false);
@@ -26,57 +61,13 @@ export function useExams(currentUser) {
 
     useEffect(() => {
         setMounted(true);
-        if (!currentUser) return;
-
-        const fetchExams = async () => {
-            let list = [];
-            try {
-                const q = query(collection(db, "exams"), where("uid", "==", currentUser.uid));
-                const querySnapshot = await runWithTimeout(getDocs(q), 1500);
-                querySnapshot.forEach((doc) => list.push({ ...doc.data(), id: doc.id }));
-            } catch (e) {
-                console.warn("Bỏ qua lỗi Firestore khi tải đề thi, dùng LocalStorage");
-            }
-
-            if (list.length === 0) {
-                const savedExams = localStorage.getItem("eb_exams");
-                if (savedExams) {
-                    try { list = JSON.parse(savedExams); } catch (err) { }
-                }
-            } else {
-                localStorage.setItem("eb_exams", JSON.stringify(list));
-            }
-            setExams(list);
-
+        if (typeof window !== "undefined") {
             const savedSettings = localStorage.getItem("eb_exam_display_settings");
             if (savedSettings) {
                 try { setDisplaySettings(JSON.parse(savedSettings)); } catch (e) {}
             }
-
-            let folderList = [{ id: "all", name: "Tất cả đề thi" }];
-            try {
-                const fq = query(collection(db, "folders"), where("uid", "==", currentUser.uid));
-                const folderSnap = await runWithTimeout(getDocs(fq), 1500);
-                folderSnap.forEach((doc) => {
-                    folderList.push({ id: doc.id, ...doc.data() });
-                });
-            } catch (e) {
-                console.warn("Lỗi tải folder từ Firebase, dùng LocalStorage");
-            }
-
-            if (folderList.length === 1) {
-                const savedFolders = localStorage.getItem("eb_folders");
-                if (savedFolders) {
-                    try { folderList = JSON.parse(savedFolders); } catch(e) {}
-                }
-            } else {
-                localStorage.setItem("eb_folders", JSON.stringify(folderList));
-            }
-            setFolders(folderList);
-        };
-
-        fetchExams();
-    }, [currentUser]);
+        }
+    }, []);
 
     const toggleSetting = (key) => {
         const updated = { ...displaySettings, [key]: !displaySettings[key] };
@@ -93,8 +84,7 @@ export function useExams(currentUser) {
 
         const trashedExam = { ...examToDelete, deletedAt: new Date().toISOString() };
         const updated = exams.filter(ex => ex.id !== id);
-        
-        setExams(updated);
+        mutateExams(updated, false);
         localStorage.setItem("eb_exams", JSON.stringify(updated));
 
         const savedTrash = JSON.parse(localStorage.getItem("eb_trash") || "[]");
@@ -116,7 +106,7 @@ export function useExams(currentUser) {
         }));
 
         const updatedExams = exams.filter(ex => !selectedExams.includes(ex.id));
-        setExams(updatedExams);
+        mutateExams(updatedExams, false);
         localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
 
         const savedTrash = JSON.parse(localStorage.getItem("eb_trash") || "[]");
@@ -137,7 +127,7 @@ export function useExams(currentUser) {
             targets.includes(ex.id) ? { ...ex, folderId: folderId === "all" ? null : folderId } : ex
         );
         
-        setExams(updatedExams);
+        mutateExams(updatedExams, false);
         localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
 
         for (const tid of targets) {
@@ -149,7 +139,7 @@ export function useExams(currentUser) {
 
     const handleTogglePublic = async (id, currentStatus) => {
         const updatedExams = exams.map(ex => ex.id === id ? { ...ex, isPublic: !currentStatus } : ex);
-        setExams(updatedExams);
+        mutateExams(updatedExams, false);
         localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
 
         try {
@@ -174,7 +164,7 @@ export function useExams(currentUser) {
         } catch (e) {}
 
         const updatedFolders = [...folders, newFolder];
-        setFolders(updatedFolders);
+        mutateFolders(updatedFolders, false);
         localStorage.setItem("eb_folders", JSON.stringify(updatedFolders));
         setActiveFolder(newFolder.id);
     };
@@ -183,13 +173,13 @@ export function useExams(currentUser) {
         if (!(await confirmDialog("Bạn có chắc chắn muốn xóa thư mục này?", "Xóa thư mục"))) return;
 
         const updatedFolders = folders.filter(f => f.id !== folderId);
-        setFolders(updatedFolders);
+        mutateFolders(updatedFolders, false);
         localStorage.setItem("eb_folders", JSON.stringify(updatedFolders));
 
         if (activeFolder === folderId) setActiveFolder("all");
 
         const updatedExams = exams.map(ex => ex.folderId === folderId ? { ...ex, folderId: null } : ex);
-        setExams(updatedExams);
+        mutateExams(updatedExams, false);
         localStorage.setItem("eb_exams", JSON.stringify(updatedExams));
 
         try {

@@ -6,7 +6,7 @@ import { ArrowLeft, Save, Trash2, ShieldAlert, Loader2, Calendar, ChevronDown } 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomDatePicker, CustomTimePicker } from "@/components/ui/date-time-picker";
-import { useClassSettings } from "@/hooks/useClassSettings";
+import { useClassSettings } from "@/hooks/teacher/useClassSettings";
 
 export default function ClassSettingsPage({ params }) {
     const { classId } = use(params);

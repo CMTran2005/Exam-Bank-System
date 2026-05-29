@@ -13,12 +13,17 @@ const QuestionForm = dynamic(() => import("@/components/question/QuestionForm"),
     )
 });
 import QuestionTypePicker from "@/components/question/QuestionTypePicker";
-import { TYPE_CONFIG } from "@/hooks/useCreateExam";
+import { TYPE_CONFIG } from "@/hooks/teacher/useCreateExam";
+import { Lock } from "lucide-react";
+import { useExamUIStore } from "@/store/useExamUIStore";
+import { useExamDataStore } from "@/store/useExamDataStore";
 
 export function QuestionListCard({
-    questionsList, updateQuestionData, duplicateQuestion, toggleCollapse, removeQuestion,
-    showPicker, setShowPicker, addQuestion
+    updateQuestionData, duplicateQuestion, toggleCollapse, removeQuestion,
+    addQuestion, currentUser
 }) {
+    const { showPicker, setShowPicker } = useExamUIStore();
+    const { questionsList, activeUsers } = useExamDataStore();
     return (
         <div className="space-y-4">
             {questionsList.map((question, index) => (
@@ -83,10 +88,24 @@ export function QuestionListCard({
                     </div>
 
                     {!question.isCollapsed && (
-                        <QuestionForm
-                            question={question}
-                            onChangeData={(updatedData) => updateQuestionData(question.id, updatedData)}
-                        />
+                        <div className="relative">
+                            {question.lockedBy && question.lockedBy !== currentUser?.uid && (
+                                <div className="absolute inset-0 z-10 bg-background/50 backdrop-blur-[1.5px] flex items-center justify-center rounded-b-lg border-x border-b border-border">
+                                    <div className="bg-popover text-popover-foreground px-4 py-2 rounded-xl shadow-md border border-border flex items-center gap-2 animate-in zoom-in duration-200">
+                                        <Lock className="w-4 h-4 text-amber-500" />
+                                        <span className="text-sm font-semibold">
+                                            {activeUsers.find(u => u.uid === question.lockedBy)?.name || "Người khác"} đang sửa...
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                            <div className={question.lockedBy && question.lockedBy !== currentUser?.uid ? "opacity-30 pointer-events-none" : ""}>
+                                <QuestionForm
+                                    question={question}
+                                    onChangeData={(updatedData) => updateQuestionData(question.id, updatedData)}
+                                />
+                            </div>
+                        </div>
                     )}
                 </div>
             ))}

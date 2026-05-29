@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { GraduationCap, Plus, Search, FileSpreadsheet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useClasses } from "@/hooks/useClasses";
+import { useClasses } from "@/hooks/teacher/useClasses";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { ClassGrid } from "./_components/ClassGrid";

@@ -5,15 +5,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Combobox } from "@/components/ui/combobox";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getDynamicAcademicYears } from "@/lib/constants";
-import useProvinces from "@/hooks/useProvinces";
-import useSubjects from "@/hooks/useSubjects";
+import useProvinces from "@/hooks/shared/useProvinces";
+import useSubjects from "@/hooks/shared/useSubjects";
+import { useExamDataStore } from "@/store/useExamDataStore";
 
 const ACADEMIC_YEARS = getDynamicAcademicYears();
 
-export function ExamInfoCard({ examInfo, setExamInfo, handleTitleChange, handleCodeChange, handleGradeChange, questionsCount }) {
+export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeChange }) {
     const { provinces } = useProvinces();
     const { gradeSubjectsMap } = useSubjects();
     const GRADES = Object.keys(gradeSubjectsMap);
+    const { examInfo, setExamInfo, questionsList } = useExamDataStore();
+    const questionsCount = questionsList.length;
 
     return (
         <Card className="border-blue-200 bg-blue-50/30 dark:border-blue-900/50 dark:bg-blue-950/20 shadow-sm">
@@ -108,7 +111,7 @@ export function ExamInfoCard({ examInfo, setExamInfo, handleTitleChange, handleC
                             </SelectContent>
                         </Select>
                     </div>
-                    <div>
+                    <div className="sm:col-span-2 lg:col-span-1">
                         <label className="text-xs font-semibold text-blue-700 dark:text-blue-400 block mb-1.5">Môn học</label>
                         <Combobox
                             value={examInfo.subject}

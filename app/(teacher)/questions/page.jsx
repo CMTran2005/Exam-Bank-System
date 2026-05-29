@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Plus, HelpCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-import { useQuestions } from "@/hooks/useQuestions";
+import { useQuestions } from "@/hooks/teacher/useQuestions";
 import { QuestionFilter } from "./_components/QuestionFilter";
 import { QuestionCard } from "./_components/QuestionCard";
 
@@ -13,11 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function QuestionsPage() {
     const {
         currentUser, loading,
-        searchTerm, setSearchTerm,
-        tagSearch, setTagSearch, examTitleSearch, setExamTitleSearch,
-        selectedGrade, setSelectedGrade, selectedSubject, setSelectedSubject,
-        selectedType, setSelectedType, selectedProvince, setSelectedProvince,
-        selectedDifficulty, setSelectedDifficulty,
         uniqueTags, uniqueExamTitles, filteredQuestions,
         toggleCollapse, handleDelete
     } = useQuestions();
@@ -61,14 +56,8 @@ export default function QuestionsPage() {
             </div>
 
             <QuestionFilter 
-                searchTerm={searchTerm} setSearchTerm={setSearchTerm}
-                examTitleSearch={examTitleSearch} setExamTitleSearch={setExamTitleSearch} uniqueExamTitles={uniqueExamTitles}
-                tagSearch={tagSearch} setTagSearch={setTagSearch} uniqueTags={uniqueTags}
-                selectedProvince={selectedProvince} setSelectedProvince={setSelectedProvince}
-                selectedGrade={selectedGrade} setSelectedGrade={setSelectedGrade}
-                selectedSubject={selectedSubject} setSelectedSubject={setSelectedSubject}
-                selectedType={selectedType} setSelectedType={setSelectedType}
-                selectedDifficulty={selectedDifficulty} setSelectedDifficulty={setSelectedDifficulty}
+                uniqueExamTitles={uniqueExamTitles}
+                uniqueTags={uniqueTags}
             />
 
             <div className="space-y-4">

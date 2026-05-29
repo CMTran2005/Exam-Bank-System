@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useSettings } from "@/hooks/useSettings";
+import { useSettings } from "@/hooks/shared/useSettings";
 
 import { SettingsSidebar } from "./_components/SettingsSidebar";
 import { ProfileTab } from "./_components/ProfileTab";

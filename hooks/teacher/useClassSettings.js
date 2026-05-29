@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { classService } from "@/services/classService";
-import useSubjects from "@/hooks/useSubjects";
+import useSubjects from "@/hooks/shared/useSubjects";
 import { useConfirm } from "@/context/ConfirmContext";
 import { toast } from "sonner";
 

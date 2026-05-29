@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { BookOpen, Plus, X, Save, Trash2, CheckCircle, Loader2, Folder, FolderOpen, FolderPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import useSubjects from "@/hooks/useSubjects";
+import useSubjects from "@/hooks/shared/useSubjects";
 import { useConfirm } from "@/context/ConfirmContext";
 import { toast } from "sonner";
 

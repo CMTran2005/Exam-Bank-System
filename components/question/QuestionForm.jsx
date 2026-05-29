@@ -21,7 +21,7 @@ import GroupQuestionForm from "./GroupQuestionForm";
 import LatexRenderer from "@/components/shared/LatexRenderer";
 import QuestionTags from "./QuestionTags";
 import QuestionMedia from "./QuestionMedia";
-import { useQuestionForm } from "@/hooks/useQuestionForm";
+import { useQuestionForm } from "@/hooks/shared/useQuestionForm";
 
 const TYPE_CONFIG = {
     multiple_choice: { label: "Trắc nghiệm Đơn", bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300", border: "border-blue-300 dark:border-blue-700" },

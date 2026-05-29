@@ -2,15 +2,17 @@ import { Search, Filter, Bookmark, Tag, MapPin, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
-import useProvinces from "@/hooks/useProvinces";
-import useSubjects from "@/hooks/useSubjects";
+import useProvinces from "@/hooks/shared/useProvinces";
+import useSubjects from "@/hooks/shared/useSubjects";
+import { useQuestionFilterStore } from "@/store/useQuestionFilterStore";
 
-export function QuestionFilter({
-    searchTerm, setSearchTerm, examTitleSearch, setExamTitleSearch, uniqueExamTitles,
-    tagSearch, setTagSearch, uniqueTags, selectedProvince, setSelectedProvince,
-    selectedGrade, setSelectedGrade, selectedSubject, setSelectedSubject,
-    selectedType, setSelectedType, selectedDifficulty, setSelectedDifficulty
-}) {
+export function QuestionFilter({ uniqueExamTitles, uniqueTags }) {
+    const {
+        searchTerm, setSearchTerm, examTitleSearch, setExamTitleSearch,
+        tagSearch, setTagSearch, selectedProvince, setSelectedProvince,
+        selectedGrade, setSelectedGrade, selectedSubject, setSelectedSubject,
+        selectedType, setSelectedType, selectedDifficulty, setSelectedDifficulty
+    } = useQuestionFilterStore();
     const { provinces } = useProvinces();
     const { gradeSubjectsMap } = useSubjects();
 

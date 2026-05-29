@@ -6,7 +6,7 @@ import { ArrowLeft, Users, Search, Mail, Phone, Loader2, CheckCircle2, XCircle, 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useClassDetails } from "@/hooks/useClassDetails";
+import { useClassDetails } from "@/hooks/teacher/useClassDetails";
 import { classService } from "@/services/classService";
 import { toast } from "sonner";
 

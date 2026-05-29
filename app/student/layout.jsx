@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle } from "lucide-react";
+import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain } from "lucide-react";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
 
@@ -79,6 +79,16 @@ export default function StudentLayout({ children }) {
                                 }`}
                             >
                                 <BookOpen className="h-4 w-4" /> Luyện thi
+                            </Link>
+                            <Link 
+                                href="/student/flashcards" 
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                    pathname === "/student/flashcards" 
+                                    ? "bg-primary/10 text-primary" 
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                            >
+                                <Brain className="h-4 w-4" /> Thẻ ghi nhớ
                             </Link>
                             <Link 
                                 href="/student/profile" 

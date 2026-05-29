@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { useConfirm } from "@/context/ConfirmContext";
-import useSubjects from "@/hooks/useSubjects";
+import useSubjects from "@/hooks/shared/useSubjects";
 
 export default function CommunityPage() {
     const { currentUser, loading: authLoading } = useAuth();

@@ -1,7 +1,11 @@
 import { ChevronDown, ChevronUp, Trash2, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LatexRenderer from "@/components/shared/LatexRenderer";
+import dynamic from "next/dynamic";
 
+const LatexRenderer = dynamic(() => import("@/components/shared/LatexRenderer"), {
+    ssr: false,
+    loading: () => <span className="text-muted-foreground animate-pulse text-xs">đang tải...</span>
+});
 const getDifficultyBadge = (difficulty) => {
     switch (difficulty) {
         case "nhan_biet": return { label: "Nhận biết", className: "bg-sky-50 text-sky-700 border-sky-200/60 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/40" };
@@ -52,7 +56,7 @@ export function QuestionCard({ q, toggleCollapse, handleDelete }) {
                     </Button>
                     <Button
                         variant="ghost" size="icon"
-                        onClick={() => handleDelete(q.id)}
+                        onClick={() => handleDelete(q.id, q.examId)}
                         className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
                     >
                         <Trash2 className="w-4 h-4" />

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { classService } from "@/services/classService";
 import { examService } from "@/services/examService";
 import { examAttemptService } from "@/services/examAttemptService";
+import { flashcardService } from "@/services/flashcardService";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import LatexRenderer from "@/components/shared/LatexRenderer";
@@ -18,7 +19,7 @@ export default function ExamInterface({ params }) {
     const { examId } = use(params);
     const searchParams = useSearchParams();
     const classId = searchParams.get("classId");
-    
+
     const { currentUser } = useAuth();
     const router = useRouter();
     const confirmDialog = useConfirm();
@@ -27,16 +28,16 @@ export default function ExamInterface({ params }) {
     const [attempt, setAttempt] = useState(null);
     const [shuffleMap, setShuffleMap] = useState({});
     const [pastAttemptsCount, setPastAttemptsCount] = useState(0);
-    
+
     const [answers, setAnswers] = useState({});
     const [reviewMarks, setReviewMarks] = useState({});
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
-    
+
     // Practice Mode State
     const isPracticeMode = searchParams.get("mode") === "practice";
     const [practiceResults, setPracticeResults] = useState({});
     const [isTimerEnabled, setIsTimerEnabled] = useState(true);
-    
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [timeLeft, setTimeLeft] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -57,7 +58,7 @@ export default function ExamInterface({ params }) {
             }
             // Sort questions if needed (ensure order)
             if (examData.questions && Array.isArray(examData.questions)) {
-                 examData.questions = examData.questions.sort((a,b) => (a.order || 0) - (b.order || 0));
+                examData.questions = examData.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
             setExam(examData);
 
@@ -87,18 +88,18 @@ export default function ExamInterface({ params }) {
 
             // 2. Tải hoặc Khởi tạo Attempt
             const attempts = await examAttemptService.getStudentAttempts(currentUser.uid);
-            
+
             // Đếm số lần đã làm ở chế độ practice
             const previousCompleted = attempts.filter(a => a.examId === examId && a.classId === "practice" && a.status === "completed");
             setPastAttemptsCount(previousCompleted.length);
 
             // Tìm attempt chưa hoàn thành
             let currentAttempt = attempts.find(a => a.examId === examId && a.classId === (classId || "practice") && a.status !== "completed");
-            
+
             // Nếu không có attempt dở dang, kiểm tra xem đã thi xong chưa
             if (!currentAttempt) {
                 const completedAttempt = previousCompleted.length > 0 ? previousCompleted[0] : attempts.find(a => a.examId === examId && a.classId === (classId || "practice") && a.status === "completed");
-                
+
                 // Nếu là thi thật (có classId cụ thể) và đã hoàn thành -> Không cho thi lại
                 if (completedAttempt && classId && classId !== "practice") {
                     toast.info("Bạn đã hoàn thành bài thi này rồi.");
@@ -109,10 +110,10 @@ export default function ExamInterface({ params }) {
                 // Nếu là luyện tập (hoặc chưa từng thi), tạo attempt mới
                 currentAttempt = await examAttemptService.startExam(currentUser.uid, currentUser.name, examId, classId || "practice");
             }
-            
+
             setAttempt(currentAttempt);
             if (currentAttempt.answers) setAnswers(currentAttempt.answers);
-            
+
             // Xáo trộn đáp án
             setShuffleMap(getShuffleMap(currentAttempt.id, examData.questions));
 
@@ -121,17 +122,17 @@ export default function ExamInterface({ params }) {
             const durationMs = durationMins * 60 * 1000;
             const endTime = startTime + durationMs;
             const now = new Date().getTime();
-            
+
             let remainingSeconds = Math.floor((endTime - now) / 1000);
             if (remainingSeconds <= 0) {
                 remainingSeconds = 0;
                 // Nếu là thi thật thì auto-submit ngay, nếu là luyện thi thì bỏ qua để học sinh tự nộp
-                if (!isPracticeMode || (isPracticeMode && isTimerEnabled && false)) { 
+                if (!isPracticeMode || (isPracticeMode && isTimerEnabled && false)) {
                     handleAutoSubmit(currentAttempt.id, currentAttempt.answers || {}, examData);
                 }
             }
             setTimeLeft(remainingSeconds);
-            
+
             setLoading(false);
         } catch (error) {
             console.error(error);
@@ -176,7 +177,7 @@ export default function ExamInterface({ params }) {
             autoSaveTimerRef.current = setInterval(() => {
                 const currentAnswersStr = JSON.stringify(answers);
                 const lastSavedStr = JSON.stringify(lastSavedAnswersRef.current);
-                
+
                 if (currentAnswersStr !== lastSavedStr) {
                     examAttemptService.saveAnswersDraft(attempt.id, answers).then(() => {
                         lastSavedAnswersRef.current = answers;
@@ -206,12 +207,12 @@ export default function ExamInterface({ params }) {
         // 3. Chặn các hành vi sao chép và xem mã nguồn
         const handleContextMenu = (e) => e.preventDefault();
         const handleCopyPaste = (e) => e.preventDefault();
-        
+
         const handleKeyDown = (e) => {
             // Chặn F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (Xem nguồn / Inspect)
             if (
-                e.key === "F12" || 
-                (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) || 
+                e.key === "F12" ||
+                (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
                 (e.ctrlKey && e.key === "U") ||
                 (e.ctrlKey && e.key === "P") || // In ấn
                 (e.ctrlKey && e.key === "C") || // Copy
@@ -231,20 +232,20 @@ export default function ExamInterface({ params }) {
                         const tag = node.tagName.toLowerCase();
                         const id = node.id ? node.id.toLowerCase() : "";
                         const cls = (typeof node.className === 'string') ? node.className.toLowerCase() : "";
-                        
+
                         // Web Components (thẻ có dấu gạch ngang là dấu hiệu của Extension)
                         // Bỏ qua các class hợp lệ của Tailwind như "text-"
                         if (
-                            tag === "iframe" || 
-                            (tag.includes("-") && !tag.includes("lucide")) || 
+                            tag === "iframe" ||
+                            (tag.includes("-") && !tag.includes("lucide")) ||
                             id.includes("sider") || id.includes("grammarly") || id.includes("chatgpt") ||
-                            (cls.includes("sider") && !cls.includes("slider")) || 
-                            cls.includes("grammarly") || 
+                            (cls.includes("sider") && !cls.includes("slider")) ||
+                            cls.includes("grammarly") ||
                             cls.includes("extension-")
                         ) {
                             suspiciousInjected = true;
                             // Ẩn luôn thẻ đó để vô hiệu hóa extension
-                            node.style.display = 'none'; 
+                            node.style.display = 'none';
                         }
                     }
                 });
@@ -262,7 +263,7 @@ export default function ExamInterface({ params }) {
         document.addEventListener("cut", handleCopyPaste);
         document.addEventListener("paste", handleCopyPaste);
         document.addEventListener("keydown", handleKeyDown);
-        
+
         // Theo dõi sự thay đổi của DOM để phát hiện Extension
         observer.observe(document.body, { childList: true, subtree: true });
 
@@ -282,7 +283,7 @@ export default function ExamInterface({ params }) {
     const handleSelectAnswer = (questionId, optionIndex) => {
         setAnswers(prev => {
             const updated = { ...prev, [questionId]: optionIndex };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(()=>{});
+            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
             return updated;
         });
     };
@@ -292,7 +293,7 @@ export default function ExamInterface({ params }) {
             const currentAns = prev[questionId] || {};
             const updatedAns = { ...currentAns, [statementIdx]: value };
             const updated = { ...prev, [questionId]: updatedAns };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(()=>{});
+            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
             return updated;
         });
     };
@@ -300,7 +301,7 @@ export default function ExamInterface({ params }) {
     const handleTextAnswer = (questionId, text) => {
         setAnswers(prev => {
             const updated = { ...prev, [questionId]: text };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(()=>{});
+            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
             return updated;
         });
     };
@@ -310,7 +311,7 @@ export default function ExamInterface({ params }) {
             const currentAns = prev[questionId] || {};
             const updatedAns = { ...currentAns, [blankIdx]: value };
             const updated = { ...prev, [questionId]: updatedAns };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(()=>{});
+            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
             return updated;
         });
     };
@@ -325,7 +326,7 @@ export default function ExamInterface({ params }) {
     const handleSubmit = async () => {
         // Kiểm tra câu chưa làm
         const totalQ = exam?.questions?.length || 0;
-        
+
         let answeredQ = 0;
         exam?.questions?.forEach(q => {
             const ans = answers[q.id];
@@ -341,7 +342,7 @@ export default function ExamInterface({ params }) {
                 if (ans !== undefined) answeredQ++;
             }
         });
-        
+
         let msg = "Bạn có chắc chắn muốn nộp bài?";
         if (answeredQ < totalQ) {
             msg = `Bạn mới trả lời ${answeredQ}/${totalQ} câu. Các câu chưa trả lời sẽ không có điểm. Xác nhận nộp bài?`;
@@ -366,7 +367,7 @@ export default function ExamInterface({ params }) {
             // Chấm điểm cơ bản
             let totalPoints = 0;
             const alphabet = ["A", "B", "C", "D", "E", "F"];
-            
+
             ex.questions?.forEach(q => {
                 if (ans[q.id] !== undefined) {
                     const studentLetter = alphabet[ans[q.id]];
@@ -376,12 +377,17 @@ export default function ExamInterface({ params }) {
                     }
                 }
             });
-            
+
             const score = totalPoints; // Tính tổng điểm theo từng câu
 
             // Cập nhật Attempt
             await examAttemptService.submitExam(aId, ans, score);
-            
+
+            // Lưu câu sai vào Flashcards
+            if (currentUser?.uid) {
+                await flashcardService.saveMistakes(currentUser.uid, ex, ans).catch(console.error);
+            }
+
             toast.success("Nộp bài thành công!");
             router.push(`/student/exam/${ex.id}/result${isPracticeMode ? '?mode=practice' : ''}`);
         } catch (error) {
@@ -464,9 +470,9 @@ export default function ExamInterface({ params }) {
         }
 
         const utterance = new SpeechSynthesisUtterance(textToRead);
-        
+
         // Tự động nhận diện nếu có tiếng Anh
-        utterance.lang = exam.subject?.toLowerCase().includes("anh") ? "en-US" : "vi-VN"; 
+        utterance.lang = exam.subject?.toLowerCase().includes("anh") ? "en-US" : "vi-VN";
         utterance.rate = 0.9;
 
         utterance.onend = () => setIsSpeaking(false);
@@ -500,7 +506,7 @@ export default function ExamInterface({ params }) {
     const isMarked = currentQuestion && reviewMarks[currentQuestion.id];
 
     return (
-        <div 
+        <div
             className="fixed inset-0 z-[100] bg-background flex flex-col overflow-hidden select-none"
             onContextMenu={(e) => e.preventDefault()}
             onCopy={(e) => e.preventDefault()}
@@ -523,24 +529,22 @@ export default function ExamInterface({ params }) {
 
                 <div className="flex items-center justify-center w-1/3">
                     <div className="flex items-center gap-2">
-                        <div className={`flex items-center gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-black text-sm sm:text-lg tracking-wider border-2 transition-colors ${
-                            !isTimerEnabled 
+                        <div className={`flex items-center gap-2 px-3 sm:px-5 py-1.5 sm:py-2 rounded-full font-black text-sm sm:text-lg tracking-wider border-2 transition-colors ${!isTimerEnabled
                                 ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30'
                                 : timeLeft !== null && timeLeft <= 300 && timeLeft > 0
-                                    ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950/30' 
+                                    ? 'border-red-500 bg-red-50 text-red-600 dark:bg-red-950/30'
                                     : 'border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:border-blue-500'
-                        }`}>
+                            }`}>
                             <Clock className={`w-4 h-4 sm:w-5 sm:h-5 ${timeLeft !== null && timeLeft <= 300 && timeLeft > 0 && isTimerEnabled ? 'animate-pulse' : ''}`} />
                             {isTimerEnabled ? formatTime(timeLeft) : "Vô hạn"}
                         </div>
                         {isPracticeMode && (
                             <button
                                 onClick={() => setIsTimerEnabled(!isTimerEnabled)}
-                                className={`p-2 rounded-full border-2 transition-colors flex shrink-0 ${
-                                    isTimerEnabled 
-                                        ? "bg-background border-border text-muted-foreground hover:text-red-500 hover:border-red-200" 
+                                className={`p-2 rounded-full border-2 transition-colors flex shrink-0 ${isTimerEnabled
+                                        ? "bg-background border-border text-muted-foreground hover:text-red-500 hover:border-red-200"
                                         : "bg-indigo-100 border-indigo-200 text-indigo-600 dark:bg-indigo-900/50 dark:border-indigo-800 dark:text-indigo-400"
-                                }`}
+                                    }`}
                                 title={isTimerEnabled ? "Tắt đếm ngược" : "Bật đếm ngược"}
                             >
                                 {isTimerEnabled ? <TimerOff className="w-4 h-4" /> : <Timer className="w-4 h-4" />}
@@ -550,8 +554,8 @@ export default function ExamInterface({ params }) {
                 </div>
 
                 <div className="flex items-center justify-end w-1/3">
-                    <Button 
-                        onClick={handleSubmit} 
+                    <Button
+                        onClick={handleSubmit}
                         disabled={isSubmitting}
                         className={`${isPracticeMode ? "bg-indigo-600 hover:bg-indigo-700" : "bg-emerald-600 hover:bg-emerald-700"} text-white font-bold h-9 sm:h-10 rounded-xl px-4 sm:px-6 text-xs sm:text-sm shadow-sm`}
                     >
@@ -564,11 +568,10 @@ export default function ExamInterface({ params }) {
 
             {/* Main Layout */}
             <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
-                
                 {/* Body: Question Area */}
                 <div className="flex-1 overflow-y-auto bg-background p-4 sm:p-8 flex flex-col relative">
                     <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col">
-                        
+
                         {/* Question Header */}
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl sm:text-2xl font-black text-foreground">
@@ -577,14 +580,13 @@ export default function ExamInterface({ params }) {
                             </h2>
                             <div className="flex gap-2">
                                 {exam?.subject?.toLowerCase().includes("anh") && (
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className={`h-8 rounded-lg gap-2 font-bold text-xs border-2 transition-colors ${
-                                            isSpeaking 
-                                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800" 
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className={`h-8 rounded-lg gap-2 font-bold text-xs border-2 transition-colors ${isSpeaking
+                                                ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:border-blue-800"
                                                 : "border-border text-muted-foreground hover:bg-muted"
-                                        }`}
+                                            }`}
                                         onClick={() => handleReadAloud(currentQuestion)}
                                         title="Đọc câu hỏi và đáp án"
                                     >
@@ -592,14 +594,13 @@ export default function ExamInterface({ params }) {
                                         <span className="hidden sm:inline">{isSpeaking ? "Dừng đọc" : "Đọc đề"}</span>
                                     </Button>
                                 )}
-                                <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    className={`h-8 rounded-lg gap-2 font-bold text-xs border-2 transition-colors ${
-                                        isMarked 
-                                            ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950/30" 
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={`h-8 rounded-lg gap-2 font-bold text-xs border-2 transition-colors ${isMarked
+                                            ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950/30"
                                             : "border-border text-muted-foreground hover:bg-muted"
-                                    }`}
+                                        }`}
                                     onClick={() => handleToggleReview(currentQuestion.id)}
                                 >
                                     <Flag className={`w-3.5 h-3.5 ${isMarked ? "fill-amber-500" : ""}`} />
@@ -620,7 +621,7 @@ export default function ExamInterface({ params }) {
                                     while ((match = regex.exec(content)) !== null) {
                                         blanks.push(match[1]);
                                     }
-                                    
+
                                     return (
                                         <div className="inline-block leading-loose w-full">
                                             {parts.map((part, idx) => (
@@ -643,12 +644,12 @@ export default function ExamInterface({ params }) {
                             ) : (
                                 <LatexRenderer content={currentQuestion?.content || ""} inline={false} />
                             )}
-                            
+
                             {/* Render question images */}
                             {currentQuestion?.images && currentQuestion.images.length > 0 && (
                                 <div className="mt-6 space-y-4">
                                     {currentQuestion.images.map((img, i) => (
-                                        img ? <img key={i} src={img} alt={`Hình ảnh minh họa ${i+1}`} className="max-h-[400px] mx-auto rounded-xl border border-border object-contain shadow-sm" /> : null
+                                        img ? <img key={i} src={img} alt={`Hình ảnh minh họa ${i + 1}`} className="max-h-[400px] mx-auto rounded-xl border border-border object-contain shadow-sm" /> : null
                                     ))}
                                 </div>
                             )}
@@ -665,17 +666,15 @@ export default function ExamInterface({ params }) {
                                         <button
                                             key={originalIdx}
                                             onClick={() => handleSelectAnswer(currentQuestion.id, originalIdx)}
-                                            className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left group ${
-                                                isSelected 
-                                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
+                                            className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left group ${isSelected
+                                                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
                                                     : "border-border bg-card hover:border-blue-300 dark:hover:border-blue-700"
-                                            }`}
+                                                }`}
                                         >
-                                            <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm transition-colors ${
-                                                isSelected 
-                                                    ? "bg-blue-500 text-white shadow-sm" 
+                                            <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm transition-colors ${isSelected
+                                                    ? "bg-blue-500 text-white shadow-sm"
                                                     : "bg-muted text-muted-foreground group-hover:bg-blue-100 group-hover:text-blue-600 dark:group-hover:bg-blue-900 dark:group-hover:text-blue-300"
-                                            }`}>
+                                                }`}>
                                                 {alphabet[renderIdx]}
                                             </div>
                                             <div className={`mt-1 font-medium ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
@@ -711,21 +710,19 @@ export default function ExamInterface({ params }) {
                                             <div className="flex items-center gap-2 shrink-0">
                                                 <button
                                                     onClick={() => handleSelectTrueFalse(currentQuestion.id, idx, true)}
-                                                    className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${
-                                                        studentChoice === true 
-                                                            ? "bg-emerald-500 border-emerald-600 text-white" 
+                                                    className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${studentChoice === true
+                                                            ? "bg-emerald-500 border-emerald-600 text-white"
                                                             : "bg-background border-border text-muted-foreground hover:border-emerald-300"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     Đúng
                                                 </button>
                                                 <button
                                                     onClick={() => handleSelectTrueFalse(currentQuestion.id, idx, false)}
-                                                    className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${
-                                                        studentChoice === false 
-                                                            ? "bg-red-500 border-red-600 text-white" 
+                                                    className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${studentChoice === false
+                                                            ? "bg-red-500 border-red-600 text-white"
                                                             : "bg-background border-border text-muted-foreground hover:border-red-300"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     Sai
                                                 </button>
@@ -755,7 +752,7 @@ export default function ExamInterface({ params }) {
                                     <span className="text-sm font-bold text-indigo-800 dark:text-indigo-300">
                                         💡 Chế độ Luyện Tập: Bạn có thể kiểm tra đáp án ngay!
                                     </span>
-                                    <Button 
+                                    <Button
                                         onClick={() => handleCheckAnswer(currentQuestion.id)}
                                         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm shrink-0"
                                         disabled={!isAnswered || practiceResults[currentQuestion.id]?.checked}
@@ -767,9 +764,9 @@ export default function ExamInterface({ params }) {
                                     <div className="mt-5 pt-5 border-t-2 border-indigo-200/60 dark:border-indigo-900/60 animate-in fade-in slide-in-from-top-2 duration-300">
                                         <div className="font-black text-lg mb-3">
                                             {practiceResults[currentQuestion.id].isCorrect ? (
-                                                <span className="text-emerald-600 flex items-center gap-2"><CheckCircle2 className="w-6 h-6"/> Làm tốt lắm! Trả lời chính xác.</span>
+                                                <span className="text-emerald-600 flex items-center gap-2"><CheckCircle2 className="w-6 h-6" /> Làm tốt lắm! Trả lời chính xác.</span>
                                             ) : (
-                                                <span className="text-red-600 flex items-center gap-2"><XCircle className="w-6 h-6"/> Rất tiếc, câu trả lời chưa đúng hoặc chưa đủ!</span>
+                                                <span className="text-red-600 flex items-center gap-2"><XCircle className="w-6 h-6" /> Rất tiếc, câu trả lời chưa đúng hoặc chưa đủ!</span>
                                             )}
                                         </div>
                                         {currentQuestion.explanation && (
@@ -789,9 +786,9 @@ export default function ExamInterface({ params }) {
                                                             <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 px-2 py-0.5 rounded font-black text-xs">
                                                                 {currentQuestion.correct_answer}
                                                             </span>
-                                                            <LatexRenderer 
-                                                                content={currentQuestion.options[Math.max(0, ["A","B","C","D","E","F"].indexOf(currentQuestion.correct_answer))]} 
-                                                                inline={true} 
+                                                            <LatexRenderer
+                                                                content={currentQuestion.options[Math.max(0, ["A", "B", "C", "D", "E", "F"].indexOf(currentQuestion.correct_answer))]}
+                                                                inline={true}
                                                             />
                                                         </div>
                                                     ) : (
@@ -808,8 +805,8 @@ export default function ExamInterface({ params }) {
 
                     {/* Navigation Buttons */}
                     <div className="mt-auto pt-6 border-t border-border/40 flex justify-between items-center max-w-3xl mx-auto w-full sticky bottom-0 bg-background pb-2">
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             className="h-12 px-4 sm:px-6 rounded-xl font-bold border-2"
                             disabled={currentQuestionIdx === 0}
                             onClick={() => setCurrentQuestionIdx(prev => Math.max(0, prev - 1))}
@@ -817,8 +814,8 @@ export default function ExamInterface({ params }) {
                             <ChevronLeft className="w-5 h-5 sm:mr-2" />
                             <span className="hidden sm:inline">Câu trước</span>
                         </Button>
-                        
-                        <Button 
+
+                        <Button
                             className="h-12 px-4 sm:px-6 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                             disabled={currentQuestionIdx === (exam.questions?.length || 1) - 1}
                             onClick={() => setCurrentQuestionIdx(prev => Math.min((exam.questions?.length || 1) - 1, prev + 1))}
@@ -835,7 +832,7 @@ export default function ExamInterface({ params }) {
                         <LayoutGrid className="w-5 h-5 text-primary" />
                         <h3 className="font-bold text-sm">Bản đồ câu hỏi</h3>
                     </div>
-                    
+
                     <div className="flex-1 overflow-y-auto p-4">
                         <div className="grid grid-cols-5 md:grid-cols-4 lg:grid-cols-5 gap-2">
                             {exam.questions?.map((q, idx) => {
@@ -852,25 +849,23 @@ export default function ExamInterface({ params }) {
                                 } else {
                                     isAns = ans !== undefined;
                                 }
-                                
+
                                 const isRev = reviewMarks[q.id];
                                 const isCur = currentQuestionIdx === idx;
-                                
+
                                 return (
                                     <button
                                         key={q.id}
                                         onClick={() => setCurrentQuestionIdx(idx)}
-                                        className={`h-10 rounded-lg flex items-center justify-center text-xs font-bold border-2 transition-all relative ${
-                                            isCur 
-                                                ? "ring-2 ring-primary ring-offset-2 ring-offset-card" 
+                                        className={`h-10 rounded-lg flex items-center justify-center text-xs font-bold border-2 transition-all relative ${isCur
+                                                ? "ring-2 ring-primary ring-offset-2 ring-offset-card"
                                                 : "hover:scale-105"
-                                        } ${
-                                            isRev 
+                                            } ${isRev
                                                 ? "bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-950/50 dark:border-amber-600 dark:text-amber-400"
                                                 : isAns
                                                     ? "bg-blue-500 border-blue-600 text-white shadow-sm"
                                                     : "bg-background border-border text-muted-foreground hover:bg-muted"
-                                        }`}
+                                            }`}
                                     >
                                         {idx + 1}
                                         {isRev && <Flag className="w-2.5 h-2.5 absolute -top-1 -right-1 fill-amber-500 text-amber-500 drop-shadow-sm" />}
@@ -879,7 +874,7 @@ export default function ExamInterface({ params }) {
                             })}
                         </div>
                     </div>
-                    
+
                     {/* Legend */}
                     <div className="p-4 border-t border-border bg-muted/30 text-[11px] font-semibold text-muted-foreground space-y-2 shrink-0">
                         <div className="flex items-center gap-2">

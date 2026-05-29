@@ -2,7 +2,7 @@
 
 import { Trash2, RotateCcw, AlertCircle, Loader2, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRecycleBin } from "@/hooks/useRecycleBin";
+import { useRecycleBin } from "@/hooks/teacher/useRecycleBin";
 
 export default function RecycleBinPage() {
     const {

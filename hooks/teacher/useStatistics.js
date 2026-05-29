@@ -186,14 +186,14 @@ export function useStatistics() {
         }
     }, []);
 
-    let cumulativePercent = 0;
-    const donutSegments = difficultyStats.map((item) => {
+    const { segments: donutSegments } = difficultyStats.reduce((acc, item) => {
         const percent = item.percentage || 0;
         const dashArray = `${(percent / 100) * 251.2} 251.2`;
-        const startAngle = (cumulativePercent / 100) * 360;
-        cumulativePercent += percent;
-        return { ...item, percent, dashArray, startAngle };
-    });
+        const startAngle = (acc.cumulative / 100) * 360;
+        acc.segments.push({ ...item, percent, dashArray, startAngle });
+        acc.cumulative += percent;
+        return acc;
+    }, { segments: [], cumulative: 0 });
 
     return {
         currentUser, loading,

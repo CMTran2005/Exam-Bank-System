@@ -19,7 +19,7 @@ import { useAuth } from "@/context/AuthContext";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-const runWithTimeout = (promise: Promise<any>, ms = 1000): Promise<any> => {
+const runWithTimeout = (promise, ms = 1000) => {
     return Promise.race([
         promise,
         new Promise((_, reject) =>
@@ -64,21 +64,21 @@ const quickActions = [
 ];
 
 export default function Home() {
-    const { currentUser } = useAuth() as { currentUser: { uid: string; name: string } | null };
+    const { currentUser } = useAuth();
     const [stats, setStats] = useState([
         { label: "Tổng số câu hỏi", value: "0", change: "Hệ thống thời gian thực", color: "text-blue-500", bg: "bg-blue-500/10" },
         { label: "Đề thi đã lưu trữ", value: "0", change: "Hệ thống thời gian thực", color: "text-violet-500", bg: "bg-violet-500/10" },
         { label: "Môn học hoạt động", value: "0", change: "Hệ thống thời gian thực", color: "text-emerald-500", bg: "bg-emerald-500/10" },
         { label: "Tài khoản giáo viên", value: "0", change: "Hệ thống thời gian thực", color: "text-amber-500", bg: "bg-amber-500/10" },
     ]);
-    const [activities, setActivities] = useState<any[]>([]);
+    const [activities, setActivities] = useState([]);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             if (typeof window !== "undefined") {
                 let liveExamsCount = 0;
                 let teachersCount = 1;
-                let recentExams: any[] = [];
+                let recentExams = [];
                 let liveQCount = 0;
                 let subjectsCount = 0;
 
@@ -97,7 +97,7 @@ export default function Home() {
 
                     liveExamsCount = examsCountSnap.data().count;
                     teachersCount = usersCountSnap.data().count || 1;
-                    recentExams = recentExamsSnap.docs.map((doc: { data: () => any; }) => doc.data());
+                    recentExams = recentExamsSnap.docs.map((doc) => doc.data());
 
                     // Để có số lượng câu hỏi và môn học chính xác cần có logic thống kê riêng trên backend, 
                     // tạm thời lấy dữ liệu ước tính từ cache nếu không thể tính từ toàn bộ collection.
@@ -105,12 +105,12 @@ export default function Home() {
                     if (saved) {
                         try {
                             const cachedExams = JSON.parse(saved);
-                            liveQCount = cachedExams.reduce((sum: number, e: any) => sum + Number(e.total_questions || e.questions?.length || 0), 0);
-                            const uniqueSubjects = new Set(cachedExams.map((e: any) => e.subject).filter(Boolean));
+                            liveQCount = cachedExams.reduce((sum, e) => sum + Number(e.total_questions || e.questions?.length || 0), 0);
+                            const uniqueSubjects = new Set(cachedExams.map((e) => e.subject).filter(Boolean));
                             subjectsCount = uniqueSubjects.size || 0;
                         } catch (e) { }
                     }
-                } catch (e: any) {
+                } catch (e) {
                     console.warn("Lỗi tải dữ liệu Dashboard:", e.message);
                 }
 

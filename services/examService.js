@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, limit, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, limit, orderBy, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 const runWithTimeout = (promise, ms = 2000) => {
@@ -42,7 +42,18 @@ export const examService = {
             const docRef = doc(db, "exams", examId);
             const docSnap = await runWithTimeout(getDoc(docRef));
             if (docSnap.exists()) {
-                return { id: docSnap.id, ...docSnap.data() };
+                const data = docSnap.data();
+                // Tương thích ngược: Nếu không có mảng questions (cấu trúc mới), fetch từ collection questions
+                if (!data.questions || data.questions.length === 0) {
+                    try {
+                        const qSnap = await runWithTimeout(getDocs(query(collection(db, "questions"), where("examId", "==", examId))));
+                        data.questions = qSnap.docs.map(d => d.data()).sort((a, b) => (a.order || 0) - (b.order || 0));
+                    } catch (e) {
+                        console.warn("Lỗi khi fetch questions collection:", e);
+                        data.questions = [];
+                    }
+                }
+                return { id: docSnap.id, ...data };
             }
             return null;
         } catch (error) {
@@ -92,19 +103,45 @@ export const examService = {
             const originalData = docSnap.data();
             const newExamId = `exam_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
             
+            // Lấy questions (nếu là cấu trúc mới thì fetch)
+            let questionsToCopy = originalData.questions || [];
+            if (questionsToCopy.length === 0) {
+                const qSnap = await getDocs(query(collection(db, "questions"), where("examId", "==", examId)));
+                questionsToCopy = qSnap.docs.map(d => d.data()).sort((a, b) => (a.order || 0) - (b.order || 0));
+            }
+
             const forkedExam = {
                 ...originalData,
                 id: newExamId,
                 uid: newUid,
                 author: newAuthorName,
-                isPublic: false, // Bản copy mặc định là private
+                isPublic: false,
                 title: originalData.title + " (Bản sao)",
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 forkedFrom: examId
             };
             
-            await runWithTimeout(setDoc(doc(db, "exams", newExamId), forkedExam));
+            delete forkedExam.questions;
+            forkedExam.total_questions = questionsToCopy.length;
+
+            const batch = writeBatch(db);
+            const newExamRef = doc(db, "exams", newExamId);
+            batch.set(newExamRef, forkedExam);
+
+            questionsToCopy.forEach((q, index) => {
+                const newQId = Date.now() + Math.random();
+                const qRef = doc(db, "questions", String(newQId));
+                batch.set(qRef, {
+                    ...q,
+                    id: newQId,
+                    examId: newExamId,
+                    uid: newUid,
+                    order: index
+                });
+            });
+
+            await runWithTimeout(batch.commit());
             return newExamId;
         } catch (error) {
             console.warn("Lỗi forkExam:", error);
@@ -117,15 +154,33 @@ export const examService = {
      */
     async moveToTrash(examId, examData) {
         try {
+            // Backup questions
+            let questionsList = examData.questions || [];
+            if (questionsList.length === 0) {
+                const qSnap = await getDocs(query(collection(db, "questions"), where("examId", "==", examId)));
+                questionsList = qSnap.docs.map(d => d.data());
+            }
+
             const trashedExam = {
                 ...examData,
+                questions: questionsList,
                 deletedAt: new Date().toISOString()
             };
+            
+            const batch = writeBatch(db);
             const trashDocRef = doc(db, "trash_exams", examId);
-            await runWithTimeout(setDoc(trashDocRef, trashedExam));
+            batch.set(trashDocRef, trashedExam);
 
             const examDocRef = doc(db, "exams", examId);
-            await runWithTimeout(deleteDoc(examDocRef));
+            batch.delete(examDocRef);
+
+            // Xóa ở questions
+            if (!examData.questions || examData.questions.length === 0) {
+                const qSnap = await getDocs(query(collection(db, "questions"), where("examId", "==", examId)));
+                qSnap.docs.forEach(d => batch.delete(d.ref));
+            }
+
+            await runWithTimeout(batch.commit());
             return true;
         } catch (error) {
             console.warn("Lỗi moveToTrash:", error);
@@ -138,18 +193,26 @@ export const examService = {
      */
     async restoreFromTrash(examId, examData) {
         try {
-            // Remove deletedAt
-            const { deletedAt, ...restData } = examData;
+            const { deletedAt, questions, ...restData } = examData;
             const restoredExam = {
                 ...restData,
-                updatedAt: new Date().toISOString()
+                updatedAt: new Date().toISOString(),
+                total_questions: (questions || []).length
             };
 
+            const batch = writeBatch(db);
             const examDocRef = doc(db, "exams", examId);
-            await runWithTimeout(setDoc(examDocRef, restoredExam));
+            batch.set(examDocRef, restoredExam);
+
+            (questions || []).forEach((q, index) => {
+                const qRef = doc(db, "questions", String(q.id));
+                batch.set(qRef, { ...q, examId, uid: restoredExam.uid, order: index });
+            });
 
             const trashDocRef = doc(db, "trash_exams", examId);
-            await runWithTimeout(deleteDoc(trashDocRef));
+            batch.delete(trashDocRef);
+            
+            await runWithTimeout(batch.commit());
             return true;
         } catch (error) {
             console.warn("Lỗi restoreFromTrash:", error);

@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useState, useEffect } from "react";
 import { classService } from "@/services/classService";
-import useSubjects from "@/hooks/useSubjects";
+import useSubjects from "@/hooks/shared/useSubjects";
 import { useConfirm } from "@/context/ConfirmContext";
 import { toast } from "sonner";
 

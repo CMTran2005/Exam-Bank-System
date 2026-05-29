@@ -5,10 +5,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRef } from "react";
 
-export function AiAssistantCard({
-    showAIAssistant, setShowAIAssistant, aiPromptText, setAiPromptText,
-    aiGenType, setAiGenType, aiGenerating, handleAIGenerateQuestion, handleAIImageParse
-}) {
+import { useExamUIStore } from "@/store/useExamUIStore";
+import { useExamDataStore } from "@/store/useExamDataStore";
+import { useAIBuilder } from "@/hooks/teacher/create-exam/useAIBuilder";
+
+export function AiAssistantCard() {
+    const { showAIAssistant, setShowAIAssistant, aiPromptText, setAiPromptText, aiGenType, setAiGenType } = useExamUIStore();
+    const { setQuestionsList } = useExamDataStore();
+    
+    const { aiGenerating, handleAIGenerateQuestion, handleAIImageParse } = useAIBuilder({ 
+        setQuestionsList, 
+        setShowAIAssistant 
+    });
     const fileInputRef = useRef(null);
 
     const onFileChange = (e) => {
