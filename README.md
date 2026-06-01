@@ -200,10 +200,9 @@ npm run lint             # Kiểm tra code quality
 
 | Kênh | Liên hệ |
 |------|---------|
-| 📧 Email | [cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) |
-| 🐙 GitHub | [@CMTran2005](https://github.com/CMTran2005) |
-| 📋 Issues | [Báo cáo lỗi hoặc đề xuất tính năng](https://github.com/CMTran2005/Exam-Bank-System/issues) |
-| 💡 Discussions | [Thảo luận và câu hỏi](https://github.com/CMTran2005/Exam-Bank-System/discussions) |
+| Email | [cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) |
+| GitHub | [@CMTran2005](https://github.com/CMTran2005) |
+| Issues | [Báo cáo lỗi hoặc đề xuất tính năng](https://github.com/CMTran2005/Exam-Bank-System/issues) |
 
 ---
 
@@ -394,10 +393,9 @@ npm run lint             # Check code quality
 
 | Channel | Contact |
 |---------|---------|
-| 📧 Email | [cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) |
-| 🐙 GitHub | [@CMTran2005](https://github.com/CMTran2005) |
-| 📋 Issues | [Report bugs or suggest features](https://github.com/CMTran2005/Exam-Bank-System/issues) |
-| 💡 Discussions | [Ask questions and discuss](https://github.com/CMTran2005/Exam-Bank-System/discussions) |
+| Email | [cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) |
+| GitHub | [@CMTran2005](https://github.com/CMTran2005) |
+| Issues | [Report bugs or suggest features](https://github.com/CMTran2005/Exam-Bank-System/issues) |
 
 ---
 
