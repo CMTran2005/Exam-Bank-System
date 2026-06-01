@@ -4,6 +4,14 @@ import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "fireb
 import { db } from "@/lib/firebase";
 import { useConfirm } from "@/context/ConfirmContext";
 
+/**
+ * Chạy một Promise với thời gian giới hạn (timeout).
+ * Tránh trường hợp request bị treo vô hạn khi mạng yếu hoặc server phản hồi chậm.
+ * 
+ * @param {Promise} promise - Promise cần thực thi
+ * @param {number} ms - Thời gian chờ tối đa (mili-giây)
+ * @returns {Promise<any>} Kết quả của Promise hoặc ném lỗi nếu quá thời gian chờ
+ */
 const runWithTimeout = (promise, ms = 1000) => {
     return Promise.race([
         promise,
@@ -13,6 +21,13 @@ const runWithTimeout = (promise, ms = 1000) => {
     ]);
 };
 
+/**
+ * Hook quản lý toàn bộ dữ liệu Đề thi và Thư mục của Giáo viên
+ * Hỗ trợ các tính năng: lấy danh sách, xóa (chuyển vào thùng rác), di chuyển thư mục, thay đổi trạng thái chia sẻ
+ * 
+ * @param {Object} currentUser - Đối tượng chứa thông tin người dùng (Giáo viên) hiện tại
+ * @returns {Object} - Các state và hàm điều khiển (exams, folders, activeFolder, handleDeleteExam,...)
+ */
 export function useExams(currentUser) {
     const confirmDialog = useConfirm();
     const { data: exams = [], mutate: mutateExams } = useSWR(
@@ -75,6 +90,11 @@ export function useExams(currentUser) {
         localStorage.setItem("eb_exam_display_settings", JSON.stringify(updated));
     };
 
+    /**
+     * Chuyển đề thi vào Thùng rác (Recycle Bin) thay vì xóa vĩnh viễn
+     * @param {string} id - ID của đề thi cần xóa
+     * @param {Event} e - Sự kiện click (tùy chọn)
+     */
     const handleDeleteExam = async (id, e) => {
         if (e) e.preventDefault();
         if (!(await confirmDialog("Bạn có chắc chắn muốn xóa đề thi này không? Đề thi sẽ được chuyển vào Thùng rác.", "Xóa đề thi"))) return;
@@ -97,6 +117,12 @@ export function useExams(currentUser) {
         } catch (err) {}
     };
 
+    /**
+     * Xóa hàng loạt nhiều đề thi cùng lúc (Chuyển vào Thùng rác).
+     * Cập nhật danh sách hiện tại và lưu các đề thi đã xóa vào danh sách chờ khôi phục.
+     * Yêu cầu xác nhận từ người dùng trước khi xóa.
+     * @returns {Promise<void>}
+     */
     const handleBulkDelete = async () => {
         if (!selectedExams.length) return;
         if (!(await confirmDialog(`Bạn có chắc chắn muốn xóa ${selectedExams.length} đề thi đã chọn?`, "Xóa nhiều đề thi"))) return;
@@ -121,6 +147,11 @@ export function useExams(currentUser) {
         setSelectedExams([]);
     };
 
+    /**
+     * Di chuyển một hoặc nhiều đề thi vào một thư mục cụ thể
+     * @param {string} folderId - ID của thư mục đích (hoặc 'all' nếu muốn đưa ra ngoài)
+     * @param {Array<string>} targets - Danh sách ID các đề thi cần di chuyển
+     */
     const handleMoveToFolder = async (folderId, targets) => {
         let updatedExams = [...exams];
         updatedExams = updatedExams.map(ex => 
@@ -137,6 +168,11 @@ export function useExams(currentUser) {
         }
     };
 
+    /**
+     * Chuyển đổi trạng thái chia sẻ công khai (Public/Private) của đề thi
+     * @param {string} id - ID của đề thi
+     * @param {boolean} currentStatus - Trạng thái chia sẻ hiện tại
+     */
     const handleTogglePublic = async (id, currentStatus) => {
         const updatedExams = exams.map(ex => ex.id === id ? { ...ex, isPublic: !currentStatus } : ex);
         mutateExams(updatedExams, false);
@@ -149,6 +185,10 @@ export function useExams(currentUser) {
         }
     };
 
+    /**
+     * Tạo một thư mục mới để phân loại đề thi
+     * @param {string} newFolderName - Tên thư mục mới
+     */
     const handleCreateFolder = async (newFolderName) => {
         if (!newFolderName.trim()) return;
 
@@ -169,6 +209,10 @@ export function useExams(currentUser) {
         setActiveFolder(newFolder.id);
     };
 
+    /**
+     * Xóa một thư mục và đưa toàn bộ đề thi bên trong ra ngoài màn hình chính
+     * @param {string} folderId - ID của thư mục cần xóa
+     */
     const handleDeleteFolder = async (folderId) => {
         if (!(await confirmDialog("Bạn có chắc chắn muốn xóa thư mục này?", "Xóa thư mục"))) return;
 

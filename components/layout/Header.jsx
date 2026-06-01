@@ -6,6 +6,13 @@ import { BookOpen, Menu, User, LogOut, Settings2, ChevronDown } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
+/**
+ * Component Header
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  onMenuToggle  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function Header({ onMenuToggle }) {
     const { currentUser, logout } = useAuth();
     const [dropdownOpen, setDropdownOpen] = useState(false);

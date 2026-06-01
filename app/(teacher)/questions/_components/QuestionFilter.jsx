@@ -6,6 +6,13 @@ import useProvinces from "@/hooks/shared/useProvinces";
 import useSubjects from "@/hooks/shared/useSubjects";
 import { useQuestionFilterStore } from "@/store/useQuestionFilterStore";
 
+/**
+ * Component QuestionFilter
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  uniqueExamTitles - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function QuestionFilter({ uniqueExamTitles, uniqueTags }) {
     const {
         searchTerm, setSearchTerm, examTitleSearch, setExamTitleSearch,

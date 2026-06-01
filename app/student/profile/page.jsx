@@ -7,6 +7,12 @@ import { studentService } from "@/services/studentService";
 import { UserCircle, Copy } from "lucide-react";
 import { toast } from "sonner";
 
+/**
+ * Component ProfilePage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function ProfilePage() {
     const { currentUser } = useAuth();
     const [classes, setClasses] = useState([]);

@@ -1,6 +1,13 @@
 import React from "react";
 import { Clock, UserCheck } from "lucide-react";
 
+/**
+ * Component TeacherRecentActivities
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  activities  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function TeacherRecentActivities({ activities }) {
     return (
         <div className="lg:col-span-2 space-y-4">

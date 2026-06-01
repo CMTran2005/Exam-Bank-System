@@ -11,6 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Link from "next/link";
 import { toast } from "sonner";
 
+/**
+ * Component PracticePage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function PracticePage() {
     const { currentUser, loading: authLoading } = useAuth();
     const [exams, setExams] = useState([]);
@@ -19,7 +25,7 @@ export default function PracticePage() {
     const [filterSubject, setFilterSubject] = useState("all");
     const [filterGrade, setFilterGrade] = useState("all");
 
-    // Tính toán các bộ lọc khả dụng
+    // Bước 2: Khởi tạo danh sách các bộ lọc động (Môn học, Tỉnh thành, Năm học) dựa trên dữ liệu đề thi hiện có
     const uniqueSubjects = [...new Set(exams.map(e => e.subject).filter(Boolean))].sort();
     const uniqueGrades = [...new Set(exams.map(e => e.grade).filter(Boolean))].sort((a,b) => String(a).localeCompare(String(b)));
 
@@ -39,7 +45,7 @@ export default function PracticePage() {
             querySnapshot.forEach((doc) => {
                 list.push({ id: doc.id, ...doc.data() });
             });
-            // Sort client-side by date if no index
+            // Sắp xếp danh sách đề thi theo thời gian mới nhất ở phía Client (Trình duyệt)
             list.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
             setExams(list);
         } catch (error) {

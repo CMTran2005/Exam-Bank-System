@@ -10,7 +10,15 @@ import { examService } from "@/services/examService";
 import { examAttemptService } from "@/services/examAttemptService";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import ClassLeaderboard from "@/components/student/ClassLeaderboard";
 
+/**
+ * Component StudentClassPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  params  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function StudentClassPage({ params }) {
     const { classId } = use(params);
     const { currentUser } = useAuth();
@@ -114,62 +122,69 @@ export default function StudentClassPage({ params }) {
                 </div>
             </div>
 
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm mb-8">
-                <h2 className="text-lg font-bold flex items-center gap-2 mb-4">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Danh sách Bài kiểm tra
-                </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-6 shadow-sm">
+                    <h2 className="text-lg font-bold flex items-center gap-2 mb-4">
+                        <FileText className="w-5 h-5 text-primary" />
+                        Danh sách Bài kiểm tra
+                    </h2>
 
-                {exams.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
-                        <BookOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                        <h3 className="font-bold text-foreground">Chưa có bài kiểm tra nào</h3>
-                        <p className="text-sm text-muted-foreground mt-1">Giáo viên chưa giao bài tập cho lớp này.</p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {exams.map((exam) => {
-                            const statusInfo = getExamStatus(exam.id);
-                            
-                            return (
-                                <div key={exam.id} className="flex flex-col p-5 rounded-xl border border-border bg-background hover:border-primary/40 transition-all group">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-base leading-tight line-clamp-2">{exam.title || "Bài kiểm tra"}</h3>
-                                        <span className={`text-[10px] uppercase font-black px-2.5 py-1 rounded-full whitespace-nowrap ${statusInfo.color}`}>
-                                            {statusInfo.label}
-                                        </span>
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground mb-5 mt-auto pt-3">
-                                        <div className="flex items-center gap-1.5">
-                                            <Calendar className="w-3.5 h-3.5" />
-                                            {exam.createdAt ? new Date(exam.createdAt).toLocaleDateString("vi-VN") : "Đang cập nhật"}
+                    {exams.length === 0 ? (
+                        <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
+                            <BookOpen className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                            <h3 className="font-bold text-foreground">Chưa có bài kiểm tra nào</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Giáo viên chưa giao bài tập cho lớp này.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {exams.map((exam) => {
+                                const statusInfo = getExamStatus(exam.id);
+                                
+                                return (
+                                    <div key={exam.id} className="flex flex-col p-5 rounded-xl border border-border bg-background hover:border-primary/40 transition-all group">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-bold text-base leading-tight line-clamp-2">{exam.title || "Bài kiểm tra"}</h3>
+                                            <span className={`text-[10px] uppercase font-black px-2.5 py-1 rounded-full whitespace-nowrap ${statusInfo.color}`}>
+                                                {statusInfo.label}
+                                            </span>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Clock className="w-3.5 h-3.5" />
-                                            {exam.duration || 45} phút
+                                        
+                                        <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground mb-5 mt-auto pt-3">
+                                            <div className="flex items-center gap-1.5">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                {exam.createdAt ? new Date(exam.createdAt).toLocaleDateString("vi-VN") : "Đang cập nhật"}
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <Clock className="w-3.5 h-3.5" />
+                                                {exam.duration || 45} phút
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    {statusInfo.status === 'completed' ? (
-                                        <Link href={`/student/exam/${exam.id}/result`}>
-                                            <Button variant="outline" className="w-full text-xs font-bold rounded-xl border-primary text-primary hover:bg-primary hover:text-white">
-                                                Xem kết quả
-                                            </Button>
-                                        </Link>
-                                    ) : (
-                                        <Link href={`/student/exam/${exam.id}?classId=${classId}`}>
-                                            <Button className="w-full text-xs font-bold rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-opacity">
-                                                {statusInfo.status === 'in_progress' ? 'Tiếp tục làm bài' : 'Bắt đầu làm bài'}
-                                                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                                            </Button>
-                                        </Link>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                                        {statusInfo.status === 'completed' ? (
+                                            <Link href={`/student/exam/${exam.id}/result`}>
+                                                <Button variant="outline" className="w-full text-xs font-bold rounded-xl border-primary text-primary hover:bg-primary hover:text-white">
+                                                    Xem kết quả
+                                                </Button>
+                                            </Link>
+                                        ) : (
+                                            <Link href={`/student/exam/${exam.id}?classId=${classId}`}>
+                                                <Button className="w-full text-xs font-bold rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-opacity">
+                                                    {statusInfo.status === 'in_progress' ? 'Tiếp tục làm bài' : 'Bắt đầu làm bài'}
+                                                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                                                </Button>
+                                            </Link>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* Leaderboard Widget */}
+                <div className="lg:col-span-1 min-h-[500px]">
+                    <ClassLeaderboard classId={classId} currentUserUid={currentUser?.uid} />
+                </div>
             </div>
         </div>
     );

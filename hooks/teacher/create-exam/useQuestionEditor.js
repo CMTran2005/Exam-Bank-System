@@ -12,6 +12,13 @@ export const TYPE_CONFIG = {
     group_essay: { label: "Tự luận Nhóm", bg: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-700 dark:text-orange-300", border: "border-orange-300 dark:border-orange-700" },
 };
 
+/**
+ * Hàm mũi tên (Arrow Function) createDefaultQuestion
+ * Xử lý logic nghiệp vụ hoặc hiển thị.
+ *
+ * @param {any} type = "multiple_choice" - Tham số đầu vào
+ * @returns {any}
+ */
 export const createDefaultQuestion = (type = "multiple_choice") => {
     const isGroup = type.startsWith("group_");
     const baseType = isGroup ? type.replace("group_", "") : type;
@@ -45,6 +52,13 @@ export const createDefaultQuestion = (type = "multiple_choice") => {
     };
 };
 
+/**
+ * Hàm useQuestionEditor
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  setQuestionsList - Tham số đầu vào
+ * @returns {any}
+ */
 export function useQuestionEditor({ setQuestionsList, examId, isSyncingFromRemote, currentUser, setShowPicker }) {
     const addQuestion = (type) => {
         setQuestionsList((prev) => {
@@ -96,7 +110,7 @@ export function useQuestionEditor({ setQuestionsList, examId, isSyncingFromRemot
             return updated;
         });
         
-        // Auto-unlock sau 5 giây
+        // Tự động giải phóng quyền khóa chỉnh sửa (unlock) sau khoảng thời gian 5 giây để tránh kẹt trạng thái
         if (examId && currentUser?.uid) {
             clearTimeout(window[`lockTimer_${id}`]);
             window[`lockTimer_${id}`] = setTimeout(() => {

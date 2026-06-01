@@ -2,34 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { studentService } from "@/services/studentService";
-import { toast } from "sonner";
+import { useClasses } from "@/hooks/student/useClasses";
 import JoinClassForm from "@/components/student/JoinClassForm";
 import ClassGrid from "@/components/student/ClassGrid";
 
+/**
+ * Component StudentDashboard
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function StudentDashboard() {
     const { currentUser } = useAuth();
-    const [classes, setClasses] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (currentUser) {
-            loadClasses();
-        }
-    }, [currentUser]);
-
-    const loadClasses = async () => {
-        setLoading(true);
-        try {
-            const data = await studentService.getJoinedClasses(currentUser.uid);
-            setClasses(data);
-        } catch (error) {
-            console.error(error);
-            toast.error("Không thể tải danh sách lớp học.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { classes, loading, loadClasses } = useClasses(currentUser);
 
     return (
         <div className="space-y-8">

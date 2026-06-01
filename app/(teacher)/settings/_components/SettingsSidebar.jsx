@@ -1,5 +1,12 @@
 import { User, Sliders, Cpu, Paintbrush } from "lucide-react";
 
+/**
+ * Component SettingsSidebar
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  activeTab - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function SettingsSidebar({ activeTab, setActiveTab }) {
     return (
         <div className="md:col-span-1 bg-card border border-border shadow-sm rounded-2xl p-2 flex flex-row md:flex-col gap-1 overflow-x-auto">

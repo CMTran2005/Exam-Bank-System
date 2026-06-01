@@ -2,6 +2,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
+/**
+ * Hook phân tích và thống kê dữ liệu hệ thống tổng quan cho Giáo viên (Dashboard).
+ * Tính toán số lượng đề thi, câu hỏi, độ khó, tỷ lệ phát triển hàng tháng, và hiệu năng OCR.
+ * 
+ * @returns {Object} Dữ liệu thống kê đã được tính toán để render biểu đồ
+ */
 export function useStatistics() {
     const { currentUser, loading } = useAuth();
     const router = useRouter();
@@ -162,7 +168,7 @@ export function useStatistics() {
                 }
             }
 
-            // Defaults
+            // Thiết lập giá trị mặc định cho biểu đồ radar nếu không có dữ liệu để tránh lỗi render
             setTotalQuestions(0); setTotalExams(0); setGrowthPercent(0);
             setOcrRate(98.4); setAvgLatency(1.6);
             setSubjectCount(0); setSubjectsListStr("Chưa có môn học nào");

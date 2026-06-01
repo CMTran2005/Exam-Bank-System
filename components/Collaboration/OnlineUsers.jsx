@@ -1,5 +1,12 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+/**
+ * Component OnlineUsers
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  users = []  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function OnlineUsers({ users = [] }) {
     if (!users || users.length === 0) return null;
 

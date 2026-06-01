@@ -43,6 +43,13 @@ export const DIFFICULTY_CONFIG = {
 
 const isGroupType = (type) => type?.startsWith("group_");
 
+/**
+ * Component QuestionForm
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  question - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function QuestionForm({ question, onChangeData }) {
     const {
         loading, tagInput, setTagInput, aiTaggingLoading,

@@ -4,6 +4,12 @@ import { Trash2, RotateCcw, AlertCircle, Loader2, CalendarClock } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { useRecycleBin } from "@/hooks/teacher/useRecycleBin";
 
+/**
+ * Component RecycleBinPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function RecycleBinPage() {
     const {
         currentUser, loading, mounted,

@@ -3,6 +3,13 @@ import { Copy, QrCode, RefreshCw, Users, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+/**
+ * Component ClassGrid
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  filteredClasses - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function ClassGrid({ filteredClasses, handleDeleteClass, setQrModalCode, handleRefreshCode }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">

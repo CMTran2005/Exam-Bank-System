@@ -1,6 +1,14 @@
 import { Paintbrush, Laptop } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+/**
+ * Component DisplayTab
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} 
+    theme - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function DisplayTab({
     theme, setTheme, fontSize, setFontSize, latexMode, setLatexMode
 }) {

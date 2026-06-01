@@ -2,16 +2,25 @@ import { collection, getDocs, doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export const badgeService = {
+    /**
+     * Lấy toàn bộ danh sách huy hiệu từ hệ thống.
+     * Nếu chưa có huy hiệu nào (hoặc không đủ), hệ thống sẽ tự động khởi tạo dữ liệu mẫu (seed).
+     * @returns {Promise<Array>} - Danh sách các huy hiệu có sẵn
+     */
     async getBadges() {
         const badgesRef = collection(db, "badges");
         const snapshot = await getDocs(badgesRef);
-        // Tự động seed lại nếu danh sách ít hơn 58 huy hiệu (tổng số hiện tại)
+        // Tự động khởi tạo dữ liệu nếu danh sách huy hiệu chưa đầy đủ
         if (snapshot.empty || snapshot.docs.length < 58) {
             return await this.seedBadges();
         }
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     },
 
+    /**
+     * Khởi tạo bộ dữ liệu chuẩn gồm 58 huy hiệu mặc định của hệ thống
+     * @returns {Promise<Array>} - Danh sách huy hiệu vừa được khởi tạo
+     */
     async seedBadges() {
         const TIERS = {
             BRONZE: {
@@ -141,6 +150,13 @@ export const badgeService = {
         return initialBadges;
     },
 
+    /**
+     * Đánh giá xem học sinh có đủ điều kiện nhận một huy hiệu cụ thể hay không
+     * @param {Object} badge - Thông tin cấu hình của huy hiệu cần xét
+     * @param {Array} rawAttempts - Danh sách toàn bộ các bài thi học sinh đã làm
+     * @param {Array} classes - Danh sách các lớp học sinh đang tham gia
+     * @returns {boolean} - Trả về true nếu học sinh đạt điều kiện nhận huy hiệu
+     */
     evaluateCondition(badge, rawAttempts, classes) {
         if (!badge.rule) return false;
 
@@ -149,7 +165,7 @@ export const badgeService = {
             "vampire", "early_bird", "weekend_warrior", "active_days", "consecutive_days"
         ];
         
-        // Lọc attempt: Nếu rule không cho phép practice, loại bỏ các bài thi có classId === 'practice'
+        // Lọc bài thi: Nếu luật không áp dụng cho Luyện tập tự do, loại bỏ các bài thi có classId là 'practice'
         const attempts = allowPracticeRules.includes(badge.rule.type) 
             ? rawAttempts 
             : rawAttempts.filter(a => a.classId && a.classId !== "practice");

@@ -1,5 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 
+/**
+ * Hàm useRichTextToolbar
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} targetId - Tham số đầu vào
+ * @returns {any}
+ */
 export function useRichTextToolbar(targetId, value, onChange) {
     const [showLatex, setShowLatex] = useState(false);
     const [activeCategory, setActiveCategory] = useState("math");

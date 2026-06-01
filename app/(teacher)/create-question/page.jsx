@@ -6,6 +6,12 @@ import { useAuth } from "@/context/AuthContext";
 import { examCollaborationService } from "@/services/examCollaborationService";
 import { Loader2 } from "lucide-react";
 
+/**
+ * Component CreateQuestionRoot
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function CreateQuestionRoot() {
     const router = useRouter();
     const searchParams = useSearchParams();

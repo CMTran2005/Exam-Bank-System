@@ -8,6 +8,12 @@ import useSubjects from "@/hooks/shared/useSubjects";
 import { useConfirm } from "@/context/ConfirmContext";
 import { toast } from "sonner";
 
+/**
+ * Component SubjectsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function SubjectsPage() {
     const confirmDialog = useConfirm();
     const { gradeSubjectsMap, updateSubjects, loading } = useSubjects();

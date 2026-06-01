@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+/**
+ * Hàm useQuestionForm
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} question - Tham số đầu vào
+ * @returns {any}
+ */
 export function useQuestionForm(question, onChangeData) {
     const [loading, setLoading] = useState(false);
     const [tagInput, setTagInput] = useState("");

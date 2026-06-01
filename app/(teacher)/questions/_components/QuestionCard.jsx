@@ -16,6 +16,13 @@ const getDifficultyBadge = (difficulty) => {
     }
 };
 
+/**
+ * Component QuestionCard
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  q - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function QuestionCard({ q, toggleCollapse, handleDelete }) {
     const isGroup = q.type.startsWith("group_");
     return (

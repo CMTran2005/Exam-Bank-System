@@ -2,6 +2,14 @@ import { FileText, Clock, Shuffle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+/**
+ * Component ExamTab
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} 
+    defaultPoints - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function ExamTab({
     defaultPoints, setDefaultPoints, pointsStep, setPointsStep,
     duration, setDuration, headerTitle, setHeaderTitle,

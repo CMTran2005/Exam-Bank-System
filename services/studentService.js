@@ -12,7 +12,11 @@ const runWithTimeout = (promise, ms = 3000) => {
 
 export const studentService = {
     /**
-     * Tham gia lớp học bằng Mã lớp
+     * Tham gia vào một lớp học thông qua mã lớp (Class Code)
+     * @param {string} studentUid - ID của học sinh
+     * @param {string} studentName - Tên hiển thị của học sinh
+     * @param {string} classCode - Mã bảo mật của lớp học (6 ký tự)
+     * @returns {Promise<Object>} - Đối tượng chứa trạng thái thành công và dữ liệu lớp học
      */
     async joinClassByCode(studentUid, studentName, classCode) {
         if (!classCode || !studentUid) throw new Error("Thiếu mã lớp hoặc ID học sinh");
@@ -62,7 +66,9 @@ export const studentService = {
     },
 
     /**
-     * Lấy danh sách các lớp học mà học sinh đã tham gia
+     * Lấy danh sách toàn bộ các lớp học mà học sinh đang tham gia
+     * @param {string} studentUid - ID của học sinh
+     * @returns {Promise<Array>} - Danh sách các lớp học (kèm thời gian tham gia)
      */
     async getJoinedClasses(studentUid) {
         if (!studentUid) return [];
@@ -91,7 +97,9 @@ export const studentService = {
     },
 
     /**
-     * Lấy danh sách học sinh của một lớp (Dành cho Giáo viên)
+     * Lấy danh sách học sinh hiện đang tham gia trong một lớp học cụ thể
+     * @param {string} classId - ID của lớp học
+     * @returns {Promise<Array>} - Danh sách học sinh (dành cho Giáo viên)
      */
     async getClassMembers(classId) {
         if (!classId) return [];

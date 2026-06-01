@@ -13,6 +13,12 @@ import { ExamTab } from "./_components/ExamTab";
 import { AiTab } from "./_components/AiTab";
 import { DisplayTab } from "./_components/DisplayTab";
 
+/**
+ * Component SettingsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function SettingsPage() {
     const { currentUser, setCurrentUser, loading } = useAuth();
     const router = useRouter();

@@ -29,6 +29,13 @@ const slugify = (text) => {
         .replace(/-+/g, "-");
 };
 
+/**
+ * Hàm useExamSync
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  currentUser - Tham số đầu vào
+ * @returns {any}
+ */
 export function useExamSync({ currentUser, examId, confirmDialog }) {
     const router = useRouter();
     const [editId, setEditId] = useState(null);
@@ -41,7 +48,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
         lastSaved, setLastSaved
     } = useExamDataStore();
 
-    // Load Data
+    // Khởi tạo dữ liệu khi tải trang (Load Data)
     useEffect(() => {
         const loadExamData = async () => {
             if (typeof window !== "undefined") {
@@ -145,7 +152,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
         };
     }, [currentUser, examId]);
 
-    // Auto-save
+    // Cơ chế tự động lưu dữ liệu (Auto-save)
     useEffect(() => {
         if (!examInfo.title && questionsList.length === 0) return;
         const timer = setTimeout(async () => {
@@ -222,7 +229,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
         try {
             const batch = writeBatch(db);
 
-            // Xóa câu hỏi cũ không còn trong list (nếu là update)
+            // Thu hồi các câu hỏi cũ không còn tồn tại trong danh sách hiện tại (khi cập nhật)
             if (editId) {
                 const qSnap = await getDocs(query(collection(db, "questions"), where("examId", "==", finalId)));
                 const currentQuestionIds = questionsList.map(q => String(q.id));
@@ -231,7 +238,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
                 });
             }
 
-            // Ghi câu hỏi hiện tại
+            // Lưu trữ thông tin từng câu hỏi hiện tại vào bộ sưu tập câu hỏi (questions collection)
             questionsList.forEach((q, index) => {
                 const qDocRef = doc(db, "questions", String(q.id));
                 const { isCollapsed, ...rest } = q;
@@ -243,7 +250,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
                 }, { merge: true });
             });
 
-            // Ghi meta đề thi
+            // Ghi nhận cấu hình (Metadata) của đề thi vào bộ sưu tập đề thi (exams collection)
             const examDocRef = doc(db, "exams", finalId);
             batch.set(examDocRef, finalExamPayload, { merge: true });
 

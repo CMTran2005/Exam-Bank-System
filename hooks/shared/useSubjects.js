@@ -4,6 +4,12 @@ import useSWR from "swr";
 import { subjectService } from "@/services/subjectService";
 import { GRADE_SUBJECTS_MAP as DEFAULT_MAP } from "@/lib/constants";
 
+/**
+ * Hàm useSubjects
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {any}
+ */
 export default function useSubjects() {
     const fetcher = async () => {
         const map = await subjectService.getSubjectsMap();
@@ -27,7 +33,7 @@ export default function useSubjects() {
 
     const { data, error, isLoading, mutate } = useSWR("subjectsMap", fetcher, {
         fallbackData,
-        revalidateOnFocus: false, // Tránh refetch không cần thiết
+        revalidateOnFocus: false, // Vô hiệu hóa tính năng tự động gọi API khi chuyển tiêu điểm cửa sổ
     });
 
     const updateSubjects = async (newMap) => {
@@ -36,7 +42,7 @@ export default function useSubjects() {
             if (typeof window !== "undefined") {
                 localStorage.setItem("eb_subjects_cache", JSON.stringify(newMap));
             }
-            await mutate(newMap, false); // Cập nhật state cục bộ ngay lập tức
+            await mutate(newMap, false); // Cập nhật bộ nhớ đệm (cache) cục bộ không cần tải lại từ máy chủ
             return true;
         } catch (err) {
             throw err;

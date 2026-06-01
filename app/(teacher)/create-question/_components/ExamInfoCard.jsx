@@ -11,6 +11,13 @@ import { useExamDataStore } from "@/store/useExamDataStore";
 
 const ACADEMIC_YEARS = getDynamicAcademicYears();
 
+/**
+ * Component ExamInfoCard
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  handleTitleChange - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeChange }) {
     const { provinces } = useProvinces();
     const { gradeSubjectsMap } = useSubjects();

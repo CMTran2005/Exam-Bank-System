@@ -2,6 +2,13 @@
 
 import { ImagePlus, X } from "lucide-react";
 
+/**
+ * Component QuestionMedia
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  label - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function QuestionMedia({ label, images = [], targetField, handleImageChange, removeImage }) {
     return (
         <div className="space-y-1.5">

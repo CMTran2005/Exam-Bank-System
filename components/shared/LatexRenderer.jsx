@@ -12,6 +12,13 @@ const decodeHtmlEntities = (str) => {
         .replace(/&#39;/g, "'");
 };
 
+/**
+ * Component LatexRenderer
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  text = "" - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function LatexRenderer({ text = "", content = "", className = "" }) {
     const actualText = text || content || "";
     const [mounted, setMounted] = useState(false);

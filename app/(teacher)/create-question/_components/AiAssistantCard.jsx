@@ -9,6 +9,12 @@ import { useExamUIStore } from "@/store/useExamUIStore";
 import { useExamDataStore } from "@/store/useExamDataStore";
 import { useAIBuilder } from "@/hooks/teacher/create-exam/useAIBuilder";
 
+/**
+ * Component AiAssistantCard
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @returns {JSX.Element}
+ */
 export function AiAssistantCard() {
     const { showAIAssistant, setShowAIAssistant, aiPromptText, setAiPromptText, aiGenType, setAiGenType } = useExamUIStore();
     const { setQuestionsList } = useExamDataStore();

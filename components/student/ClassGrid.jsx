@@ -3,6 +3,13 @@ import Link from "next/link";
 import { BookOpen, BookMarked, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Component ClassGrid
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  classes - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function ClassGrid({ classes, loading }) {
     return (
         <div className="space-y-4">

@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
+/**
+ * Component JoinClassForm
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  onJoinSuccess  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function JoinClassForm({ onJoinSuccess }) {
     const { currentUser } = useAuth();
     const [codeValues, setCodeValues] = useState(["", "", "", "", "", ""]);

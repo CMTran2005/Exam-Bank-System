@@ -13,6 +13,12 @@ import OnlineUsers from "@/components/collaboration/OnlineUsers"; // Force recom
 import { useExamUIStore } from "@/store/useExamUIStore";
 import { useExamDataStore } from "@/store/useExamDataStore";
 
+/**
+ * Component CreateExamSessionPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function CreateExamSessionPage() {
     const params = useParams();
     const examId = params?.examId;

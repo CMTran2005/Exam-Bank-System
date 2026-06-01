@@ -2,6 +2,13 @@ import React from "react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Cell } from "recharts";
 import { Target, TrendingUp } from "lucide-react";
 
+/**
+ * Component StudentCharts
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  radarData - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function StudentCharts({ radarData, trendData }) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">

@@ -3,6 +3,13 @@ import { toast } from "sonner";
 import { useExamUIStore } from "@/store/useExamUIStore";
 import { useExamDataStore } from "@/store/useExamDataStore";
 
+/**
+ * Hàm useAIBuilder
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  setQuestionsList - Tham số đầu vào
+ * @returns {any}
+ */
 export function useAIBuilder({ setQuestionsList, setShowAIAssistant }) {
     const { aiPromptText, setAiPromptText, aiGenType, setAiGenType } = useExamUIStore();
     const [aiGenerating, setAiGenerating] = useState(false);

@@ -2,6 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Component CustomDatePicker
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  value - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function CustomDatePicker({ value, onChange, isOpen, onToggle }) {
     const [currentMonth, setCurrentMonth] = useState(value ? new Date(value) : new Date());
 
@@ -103,6 +110,13 @@ export function CustomDatePicker({ value, onChange, isOpen, onToggle }) {
     );
 }
 
+/**
+ * Component CustomTimePicker
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  value - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function CustomTimePicker({ value, onChange, isOpen, onToggle }) {
     const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
     const minutes = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];

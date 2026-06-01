@@ -3,6 +3,14 @@
 import { useId, useState, useRef, useEffect } from "react";
 import RichTextToolbar from "./RichTextToolbar";
 
+/**
+ * Component RichInput
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object} 
+    id - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function RichInput({
     id,
     value = "",

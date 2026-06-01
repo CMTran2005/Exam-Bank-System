@@ -10,6 +10,12 @@ import { QuestionCard } from "./_components/QuestionCard";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
+/**
+ * Component QuestionsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function QuestionsPage() {
     const {
         currentUser, loading,

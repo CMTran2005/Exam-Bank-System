@@ -7,6 +7,12 @@ import { collection, query, where, getDocs, deleteDoc, doc, updateDoc, increment
 import { db } from "@/lib/firebase";
 import { useQuestionFilterStore } from "@/store/useQuestionFilterStore";
 
+/**
+ * Hàm useQuestions
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @returns {any}
+ */
 export function useQuestions() {
     const confirmDialog = useConfirm();
     const { currentUser, loading } = useAuth();
@@ -28,7 +34,7 @@ export function useQuestions() {
     const { data: questions = [], mutate: mutateQuestions, isValidating: isQuestionsLoading } = useSWR(
         currentUser ? `questions_${currentUser.uid}` : null,
         async () => {
-            // Fetch user's exams to get metadata like examTitle, grade, subject, province
+            // Truy xuất danh sách đề thi của người dùng để lấy các siêu dữ liệu (metadata) như tiêu đề, khối lớp, môn học
             const examsQuery = query(collection(db, "exams"), where("uid", "==", currentUser.uid));
             const examsSnap = await getDocs(examsQuery);
             const examMeta = {};
@@ -42,7 +48,7 @@ export function useQuestions() {
                 };
             });
 
-            // Lấy từ collection questions (mới)
+            // Thu thập dữ liệu từ bộ sưu tập câu hỏi độc lập (kiến trúc mới)
             const qQuery = query(collection(db, "questions"), where("uid", "==", currentUser.uid));
             const qSnap = await getDocs(qQuery);
             
@@ -70,12 +76,12 @@ export function useQuestions() {
                 });
             });
 
-            // Load từ legacy exams (nếu chưa migrate)
+            // Hỗ trợ tương thích ngược: Tải dữ liệu từ cấu trúc đề thi cũ (nếu chưa được di chuyển)
             examsSnap.docs.forEach(examDoc => {
                 const data = examDoc.data();
                 if (data.questions && data.questions.length > 0) {
                     data.questions.forEach(q => {
-                        // Bỏ qua nếu đã có trong collection
+                        // Bỏ qua quá trình lấy dữ liệu cũ nếu câu hỏi đã được đồng bộ sang cấu trúc mới
                         if (allQuestions.find(existing => existing.id === q.id)) return;
                         allQuestions.push({
                             ...q,
@@ -133,11 +139,11 @@ export function useQuestions() {
     const handleDelete = async (id, examId) => {
         if (await confirmDialog("Bạn có chắc chắn muốn xóa câu hỏi này khỏi ngân hàng câu hỏi và đề thi tương ứng?", "Xóa câu hỏi")) {
             try {
-                // Xóa ở Firestore questions
+                // Tiến hành xóa câu hỏi trực tiếp trên cơ sở dữ liệu (Firestore)
                 const qRef = doc(db, "questions", String(id));
                 await deleteDoc(qRef);
 
-                // Giảm total_questions của exam
+                // Cập nhật giảm bộ đếm tổng số câu hỏi của đề thi tương ứng
                 if (examId) {
                     const examRef = doc(db, "exams", examId);
                     await updateDoc(examRef, {

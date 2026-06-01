@@ -3,6 +3,12 @@ import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Component AIAssistantBanner
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function AIAssistantBanner() {
     return (
         <div className="space-y-4">

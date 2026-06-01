@@ -4,6 +4,13 @@ import { useEffect } from "react";
 import { Info } from "lucide-react";
 import LatexRenderer from "@/components/shared/LatexRenderer";
 
+/**
+ * Component FillBlankForm
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  questionData - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function FillBlankForm({ questionData, setQuestionData }) {
     // Tìm tất cả các đoạn text nằm trong dấu ngoặc kép [[ ]]
     const extractBlanks = (text) => {

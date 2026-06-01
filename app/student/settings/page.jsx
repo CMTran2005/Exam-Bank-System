@@ -12,6 +12,12 @@ import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { GRADE_SUBJECTS_MAP } from "@/lib/constants";
 
+/**
+ * Component StudentSettingsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function StudentSettingsPage() {
     const { currentUser, setCurrentUser, loading } = useAuth();
     const router = useRouter();

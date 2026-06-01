@@ -15,6 +15,12 @@ import { ExamList } from "./_components/ExamList";
 import { ExamModals } from "./_components/ExamModals";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+/**
+ * Component MyExamsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function MyExamsPage() {
     const { currentUser, loading } = useAuth();
     const router = useRouter();

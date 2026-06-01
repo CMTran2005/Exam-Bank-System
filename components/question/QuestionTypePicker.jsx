@@ -93,6 +93,13 @@ const TYPES = [
     }
 ];
 
+/**
+ * Component QuestionTypePicker
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  onSelect - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function QuestionTypePicker({ onSelect, onCancel }) {
     return (
         <div className="border border-dashed border-blue-300 dark:border-blue-800 rounded-xl p-4 bg-blue-50/40 dark:bg-blue-950/10 animate-in fade-in duration-200">

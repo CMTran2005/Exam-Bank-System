@@ -3,6 +3,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
+/**
+ * Component TeacherQuickActions
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  quickActions  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function TeacherQuickActions({ quickActions }) {
     return (
         <div className="space-y-4">

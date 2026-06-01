@@ -14,6 +14,13 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
     };
 }
 
+/**
+ * Component ThemeProvider
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  children - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function ThemeProvider({ children, ...props }) {
     return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }

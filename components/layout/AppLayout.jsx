@@ -8,6 +8,13 @@ import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import Footer from "@/components/layout/Footer";
 
+/**
+ * Component AppLayout
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  children  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function AppLayout({ children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);

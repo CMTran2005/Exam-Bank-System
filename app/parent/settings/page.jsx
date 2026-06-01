@@ -9,6 +9,12 @@ import { User, Mail, Save, Loader2, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+/**
+ * Component ParentSettings
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function ParentSettings() {
     const { currentUser } = useAuth();
     const [name, setName] = useState("");

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { useChildren } from "@/hooks/parent/useChildren";
 import { db } from "@/lib/firebase";
 import { Loader2, Plus, UserPlus, GraduationCap, Clock, Award, Activity, Search, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,117 +11,24 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
+/**
+ * Component ParentDashboard
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function ParentDashboard() {
     const { currentUser } = useAuth();
     const router = useRouter();
-    const [childrenData, setChildrenData] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-    const [studentEmailOrId, setStudentEmailOrId] = useState("");
-    const [linking, setLinking] = useState(false);
-
-    const fetchChildren = async () => {
-        if (!currentUser?.children || currentUser.children.length === 0) {
-            setChildrenData([]);
-            setLoading(false);
-            return;
-        }
-
-        try {
-            const data = [];
-            for (const childId of currentUser.children) {
-                const childSnap = await getDoc(doc(db, "users", childId));
-                if (childSnap.exists()) {
-                    // Fetch thêm dữ liệu học tập của học sinh này (ví dụ: điểm trung bình, số bài đã làm)
-                    const attemptQuery = query(collection(db, "exam_attempts"), where("studentId", "==", childId));
-                    const attemptSnap = await getDocs(attemptQuery);
-                    
-                    let totalScore = 0;
-                    let examsTaken = attemptSnap.size;
-                    
-                    attemptSnap.docs.forEach(d => {
-                        totalScore += Number(d.data().score || 0);
-                    });
-
-                    data.push({
-                        ...childSnap.data(),
-                        id: childSnap.id,
-                        examsTaken,
-                        avgScore: examsTaken > 0 ? (totalScore / examsTaken).toFixed(1) : 0
-                    });
-                }
-            }
-            setChildrenData(data);
-        } catch (error) {
-            console.error("Lỗi khi tải thông tin con cái:", error);
-            toast.error("Không thể tải thông tin con cái.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (currentUser) {
-            fetchChildren();
-        }
-    }, [currentUser]);
+    const { childrenData, loading, linkStudent } = useChildren(currentUser);
 
     const handleLinkStudent = async () => {
-        if (!studentEmailOrId.trim()) {
-            toast.error("Vui lòng nhập Email hoặc Mã học sinh (ID).");
-            return;
-        }
-
         setLinking(true);
-        try {
-            // Tìm học sinh theo email hoặc ID
-            const usersRef = collection(db, "users");
-            let studentDoc = null;
-            
-            // 1. Tìm theo ID
-            const directSnap = await getDoc(doc(db, "users", studentEmailOrId.trim()));
-            if (directSnap.exists() && directSnap.data().role === "student") {
-                studentDoc = { id: directSnap.id, ...directSnap.data() };
-            } else {
-                // 2. Tìm theo Email
-                const q = query(usersRef, where("email", "==", studentEmailOrId.trim().toLowerCase()), where("role", "==", "student"));
-                const querySnap = await getDocs(q);
-                if (!querySnap.empty) {
-                    studentDoc = { id: querySnap.docs[0].id, ...querySnap.docs[0].data() };
-                }
-            }
-
-            if (!studentDoc) {
-                toast.error("Không tìm thấy học sinh với thông tin này!");
-                setLinking(false);
-                return;
-            }
-
-            // Liên kết: Cập nhật tài khoản Parent
-            const parentRef = doc(db, "users", currentUser.uid);
-            await updateDoc(parentRef, {
-                children: arrayUnion(studentDoc.id)
-            });
-
-            // Cập nhật tài khoản Student
-            const studentRef = doc(db, "users", studentDoc.id);
-            await updateDoc(studentRef, {
-                linkedParents: arrayUnion(currentUser.uid)
-            });
-
-            // Cập nhật state nội bộ
-            currentUser.children = [...(currentUser.children || []), studentDoc.id];
-            
-            toast.success(`Đã liên kết thành công với học sinh: ${studentDoc.name}`);
+        const success = await linkStudent(studentEmailOrId);
+        setLinking(false);
+        if (success) {
             setIsLinkModalOpen(false);
             setStudentEmailOrId("");
-            fetchChildren();
-        } catch (error) {
-            console.error("Lỗi liên kết:", error);
-            toast.error("Có lỗi xảy ra khi liên kết tài khoản.");
-        } finally {
-            setLinking(false);
         }
     };
 

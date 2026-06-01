@@ -6,6 +6,13 @@ import { useExamUIStore } from "@/store/useExamUIStore";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+/**
+ * Hàm useCreateExam
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} examId = null - Tham số đầu vào
+ * @returns {any}
+ */
 export function useCreateExam(examId = null) {
     const confirmDialog = useConfirm();
     const { currentUser, loading } = useAuth();
@@ -36,7 +43,7 @@ export function useCreateExam(examId = null) {
     } = useQuestionEditor({ setQuestionsList, examId, isSyncingFromRemote, currentUser, setShowPicker });
 
 
-    // Keyboard Shortcuts
+    // Xử lý các tổ hợp phím tắt hỗ trợ thao tác nhanh (Keyboard Shortcuts)
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.ctrlKey && e.key === 's') {
@@ -59,7 +66,7 @@ export function useCreateExam(examId = null) {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, [examInfo, questionsList, currentUser, editId]);
 
-    // toggleZenMode is now in Zustand store
+    // Trạng thái bật/tắt chế độ tập trung (Zen Mode) đã được chuyển sang quản lý bởi Zustand store
     return {
         currentUser, loading,
         examInfo, setExamInfo, handleTitleChange, handleCodeChange, handleGradeChange,

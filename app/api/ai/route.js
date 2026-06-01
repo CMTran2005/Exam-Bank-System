@@ -1,6 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
+/**
+ * Component POST
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} request - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export async function POST(request) {
     try {
         const { action, ...params } = await request.json();
@@ -193,7 +200,7 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             responseMimeType: "application/json",
         };
 
-        // Danh sách các model active trong năm 2026 của Google Gemini (Loại bỏ các model 1.5 đã bị đóng cửa)
+        // Danh sách các mô hình ngôn ngữ lớn (LLM) khả dụng của Google Gemini (Đã loại bỏ các mô hình cũ đã ngừng hỗ trợ)
         const modelsToTry = [
             "gemini-2.5-flash",
             "gemini-2.0-flash",
@@ -232,7 +239,7 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             throw new Error(`Tất cả các model AI trong chuỗi fallback đều thất bại. Lỗi cuối cùng: ${lastError?.message}`);
         }
 
-        // Trích xuất JSON an toàn bằng Regex
+        // Sử dụng Biểu thức chính quy (Regex) để trích xuất dữ liệu JSON an toàn từ chuỗi văn bản
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error("Không tìm thấy định dạng JSON hợp lệ trong phản hồi của AI. Phản hồi gốc: " + responseText);
@@ -246,10 +253,10 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             
             let sanitized = jsonMatch[0];
             
-            // 1. Trốn các ký tự xuống dòng nằm trong các chuỗi giá trị JSON
+            // Bước 1: Xử lý các ký tự xuống dòng (newline) nằm bên trong các chuỗi giá trị để đảm bảo chuẩn JSON
             sanitized = sanitized.replace(/\n/g, "\\n").replace(/\r/g, "\\r");
             
-            // 2. Khôi phục lại các dòng thực của cấu trúc JSON để có thể phân tích cú pháp
+            // Bước 2: Khôi phục cấu trúc phân cấp gốc của JSON để tiến hành phân tích cú pháp (parsing)
             sanitized = sanitized
                 .replace(/\\n\s*"/g, '\n"')
                 .replace(/\\n\s*\}/g, '\n}')

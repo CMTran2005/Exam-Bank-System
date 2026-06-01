@@ -1,6 +1,13 @@
 import React from "react";
 import { Target, BookOpen, Calendar } from "lucide-react";
 
+/**
+ * Component StudentExamHistory
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  attempts - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function StudentExamHistory({ attempts, classes }) {
     const officialAttempts = attempts.filter(a => a.classId !== "practice");
     const practiceAttempts = attempts.filter(a => a.classId === "practice");

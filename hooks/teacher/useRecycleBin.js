@@ -14,6 +14,12 @@ const runWithTimeout = (promise, ms = 1000) => {
     ]);
 };
 
+/**
+ * Hàm useRecycleBin
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @returns {any}
+ */
 export function useRecycleBin() {
     const confirmDialog = useConfirm();
     const { currentUser, loading } = useAuth();
@@ -55,7 +61,7 @@ export function useRecycleBin() {
                     localStorage.setItem("eb_trash", JSON.stringify(list));
                 }
 
-                // Tự động dọn dẹp các mục cũ hơn 30 ngày
+                // Tự động giải phóng dung lượng: Xóa vĩnh viễn các mục đã nằm trong thùng rác quá 30 ngày
                 const now = new Date();
                 const validList = list.filter(ex => {
                     const deletedDate = ex.deletedAt ? new Date(ex.deletedAt) : new Date(ex.updatedAt);

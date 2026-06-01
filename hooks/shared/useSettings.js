@@ -13,6 +13,13 @@ const runWithTimeout = (promise, ms = 1000) => {
     ]);
 };
 
+/**
+ * Hàm useSettings
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} currentUser - Tham số đầu vào
+ * @returns {any}
+ */
 export function useSettings(currentUser, setCurrentUser) {
     const { theme: activeTheme, setTheme: setActiveTheme } = useTheme();
 

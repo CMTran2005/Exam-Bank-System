@@ -1,5 +1,12 @@
 import { Award, HelpCircle, TrendingUp, BarChart3, PieChart, Calendar, ArrowUpRight } from "lucide-react";
 
+/**
+ * Component OverviewCards
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  subjectCount - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function OverviewCards({ subjectCount, subjectsListStr, totalQuestions, growthPercent, ocrRate, avgLatency }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -41,6 +48,13 @@ export function OverviewCards({ subjectCount, subjectsListStr, totalQuestions, g
     );
 }
 
+/**
+ * Component SubjectCoverageCard
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  subjectStats  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function SubjectCoverageCard({ subjectStats }) {
     return (
         <div className="bg-card border border-border shadow-sm rounded-2xl p-5 sm:p-6 space-y-4">
@@ -75,6 +89,13 @@ export function SubjectCoverageCard({ subjectStats }) {
     );
 }
 
+/**
+ * Component DifficultyChartCard
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  totalQuestions - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function DifficultyChartCard({ totalQuestions, difficultyStats, donutSegments }) {
     return (
         <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4 flex flex-col justify-between lg:col-span-2">
@@ -126,6 +147,13 @@ export function DifficultyChartCard({ totalQuestions, difficultyStats, donutSegm
     );
 }
 
+/**
+ * Component QuestionTypeCard
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  typeStats  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function QuestionTypeCard({ typeStats }) {
     return (
         <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4 lg:col-span-2">
@@ -151,6 +179,13 @@ export function QuestionTypeCard({ typeStats }) {
     );
 }
 
+/**
+ * Component GrowthChartCard
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  monthlyGrowth - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function GrowthChartCard({ monthlyGrowth, totalQuestions }) {
     return (
         <div className="bg-card border border-border shadow-sm rounded-2xl p-5 sm:p-6 space-y-6 lg:col-span-2">

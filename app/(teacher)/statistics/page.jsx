@@ -11,6 +11,12 @@ import {
     GrowthChartCard 
 } from "./_components/ChartCards";
 
+/**
+ * Component StatisticsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function StatisticsPage() {
     const {
         currentUser, loading,

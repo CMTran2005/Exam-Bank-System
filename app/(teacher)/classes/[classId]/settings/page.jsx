@@ -8,6 +8,13 @@ import { Input } from "@/components/ui/input";
 import { CustomDatePicker, CustomTimePicker } from "@/components/ui/date-time-picker";
 import { useClassSettings } from "@/hooks/teacher/useClassSettings";
 
+/**
+ * Component ClassSettingsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  params  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function ClassSettingsPage({ params }) {
     const { classId } = use(params);
     const {

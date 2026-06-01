@@ -5,6 +5,13 @@ import useSubjects from "@/hooks/shared/useSubjects";
 import { useConfirm } from "@/context/ConfirmContext";
 import { toast } from "sonner";
 
+/**
+ * Hook quản lý danh sách và trạng thái của các Lớp thi do Giáo viên tạo.
+ * Cung cấp chức năng xem, thêm, sửa, xóa, lấy mã QR và đặt lịch thi.
+ * 
+ * @param {Object} currentUser - Thông tin người dùng hiện tại (Giáo viên)
+ * @returns {Object} Các hàm và state cần thiết để render giao diện quản lý lớp
+ */
 export function useClasses(currentUser) {
     const confirmDialog = useConfirm();
     const { gradeSubjectsMap, loading: subjectsLoading } = useSubjects();
@@ -12,7 +19,7 @@ export function useClasses(currentUser) {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeDropdown, setActiveDropdown] = useState(null);
 
-    // Create modal state
+    // State quản lý hiển thị cửa sổ giao diện tạo lớp học mới
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newClassName, setNewClassName] = useState("");
     const [newSchoolYear, setNewSchoolYear] = useState("2025-2026");
@@ -25,6 +32,10 @@ export function useClasses(currentUser) {
 
     const [qrModalCode, setQrModalCode] = useState(null);
 
+    /**
+     * Bật/tắt menu tùy chọn (dropdown) của một lớp thi cụ thể
+     * @param {string} name - ID của lớp cần thao tác
+     */
     const toggleDropdown = (name) => {
         setActiveDropdown(activeDropdown === name ? null : name);
     };
@@ -55,6 +66,10 @@ export function useClasses(currentUser) {
 
     const loading = classesLoading || subjectsLoading;
 
+    /**
+     * Khởi tạo một lớp thi mới dựa trên form thông tin người dùng đã nhập
+     * @param {Event} e - Sự kiện submit form
+     */
     const handleCreateClass = async (e) => {
         if (e) e.preventDefault();
         if (!newClassName.trim() || !currentUser) return;
@@ -85,7 +100,7 @@ export function useClasses(currentUser) {
             };
             
             const newClass = await classService.createClass(classData);
-            mutate([...classes, newClass], false); // Cập nhật cache cục bộ không cần tải lại
+            mutate([...classes, newClass], false); // Đồng bộ hóa dữ liệu cục bộ ngay lập tức (không đợi máy chủ)
             setIsCreateModalOpen(false);
             setNewClassName("");
         } catch (error) {
@@ -95,6 +110,10 @@ export function useClasses(currentUser) {
         }
     };
 
+    /**
+     * Xóa vĩnh viễn một lớp thi cùng toàn bộ dữ liệu đi kèm sau khi xác nhận
+     * @param {string} classId - ID của lớp thi cần xóa
+     */
     const handleDeleteClass = async (classId) => {
         if (await confirmDialog("Bạn có chắc chắn muốn xóa lớp thi này không? Toàn bộ dữ liệu sẽ bị xóa!", "Xóa lớp thi")) {
             try {
@@ -107,6 +126,10 @@ export function useClasses(currentUser) {
         }
     };
 
+    /**
+     * Tạo mã tham gia lớp (Class Code) mới để ngăn chặn truy cập trái phép bằng mã cũ
+     * @param {string} classId - ID của lớp thi cần làm mới mã
+     */
     const handleRefreshCode = async (classId) => {
         if (await confirmDialog("Làm mới mã lớp sẽ khiến các thí sinh dùng mã cũ không thể truy cập. Bạn có chắc chắn không?", "Làm mới mã lớp")) {
             try {

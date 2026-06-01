@@ -17,6 +17,14 @@ const SUBJECT_OPTIONS = [
     "Ngoại thương - Kinh tế đối ngoại"
 ];
 
+/**
+ * Component ProfileTab
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} 
+    name - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function ProfileTab({
     name, setName, email, school, setSchool, phone, setPhone, degree, setDegree, mainSubject, setMainSubject,
     avatarUrl, setAvatarUrl, birthDate, setBirthDate, graduationYear, setGraduationYear, graduationGrade, setGraduationGrade, uploadingAvatar, handleAvatarChange,

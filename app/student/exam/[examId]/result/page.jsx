@@ -19,6 +19,13 @@ import { badgeService } from "@/services/badgeService";
 import confetti from "canvas-confetti";
 import { getShuffleMap } from "@/lib/shuffleUtils";
 
+/**
+ * Component ExamResultPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  params  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function ExamResultPage({ params }) {
     const { examId } = use(params);
     const { currentUser } = useAuth();
@@ -42,7 +49,7 @@ export default function ExamResultPage({ params }) {
 
     const loadResultData = async () => {
         try {
-            // 1. Lấy thông tin bài thi
+            // Bước 1: Tải dữ liệu cấu trúc của đề thi
             const examData = await examService.getExamDetails(examId);
             if (!examData) {
                 toast.error("Không tìm thấy đề thi!");
@@ -54,7 +61,7 @@ export default function ExamResultPage({ params }) {
             }
             setExam(examData);
 
-            // 2. Lấy kết quả làm bài
+            // Bước 2: Tải kết quả bài làm thực tế của học sinh (Attempt)
             const attempts = await examAttemptService.getStudentAttempts(currentUser.uid);
             const currentAttempt = attempts.find(a => a.examId === examId);
             
@@ -78,7 +85,7 @@ export default function ExamResultPage({ params }) {
 
             setAttempt(currentAttempt);
             
-            // Generate shuffleMap to keep options exactly like they were during the exam
+            // Bước 3: Phục hồi trạng thái xáo trộn đáp án (Shuffle Map) để hiển thị trùng khớp với lúc làm bài
             setShuffleMap(getShuffleMap(currentAttempt.id, examData.questions));
             
             return true;
@@ -118,14 +125,14 @@ export default function ExamResultPage({ params }) {
                 
                 setTimeout(() => {
                     setShowBadgeModal(true);
-                    // Bắn pháo hoa
+                    // Kích hoạt hiệu ứng pháo hoa chúc mừng thành tích (Confetti)
                     confetti({
                         particleCount: 150,
                         spread: 80,
                         origin: { y: 0.6 },
                         colors: ['#FFD700', '#FFA500', '#FF6347', '#00FA9A', '#00BFFF', '#9370DB']
                     });
-                }, 800); // Chờ giao diện điểm số render xong 1 tí rồi hẵng nhảy popup
+                }, 800); // Tạo độ trễ nhỏ để đảm bảo giao diện được kết xuất hoàn toàn trước khi hiển thị hộp thoại huy hiệu
             }
         } catch (error) {
             console.error("Lỗi khi kiểm tra huy hiệu mới:", error);
@@ -220,7 +227,7 @@ export default function ExamResultPage({ params }) {
                     correctCount++;
                     totalPointsEarned += qPoints;
                 } else {
-                    wrongCount++; // Hoặc chờ chấm
+                    wrongCount++; // Đánh dấu là câu trả lời sai (hoặc chưa được hệ thống chấm)
                 }
             }
         } else {
@@ -237,10 +244,10 @@ export default function ExamResultPage({ params }) {
     });
 
     const totalQuestions = exam.questions.length;
-    // Điểm số bằng tổng điểm đã kiếm được
+    // Tính toán điểm số tổng hợp dựa trên dữ liệu từ bản ghi Attempt
     const score = totalPointsEarned.toFixed(2);
     
-    // Tính thời gian làm bài
+    // Tính toán tổng thời lượng học sinh đã sử dụng để hoàn thành bài thi
     const startTime = new Date(attempt.startTime).getTime();
     const submitTime = attempt.submitTime ? new Date(attempt.submitTime).getTime() : new Date().getTime();
     const timeSpentSeconds = Math.floor((submitTime - startTime) / 1000);

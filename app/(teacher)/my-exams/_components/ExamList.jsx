@@ -2,6 +2,14 @@ import Link from "next/link";
 import { Edit3, ArrowRightLeft, Trash2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Component ExamList
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  
+    displayedExams - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function ExamList({ 
     displayedExams, selectedExams, displaySettings, 
     toggleSelectAll, toggleSelectExam, 

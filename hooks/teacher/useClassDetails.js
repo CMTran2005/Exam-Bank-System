@@ -3,6 +3,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { classService } from "@/services/classService";
 
+/**
+ * Hàm useClassDetails
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} classId - Tham số đầu vào
+ * @returns {any}
+ */
 export function useClassDetails(classId) {
     const { currentUser, loading: authLoading } = useAuth();
     const router = useRouter();
@@ -30,7 +37,7 @@ export function useClassDetails(classId) {
                             setClassDetails(data);
                             
                             if (data.students) {
-                                // Duy trì trạng thái điểm danh hiện tại nếu có, hoặc set mặc định là pending
+                                // Duy trì trạng thái điểm danh hiện tại nếu có, hoặc thiết lập mặc định là "chưa điểm danh" (pending)
                                 setStudents(prevStudents => {
                                     const prevStatusMap = {};
                                     prevStudents.forEach(s => prevStatusMap[s.id] = s.attendance);

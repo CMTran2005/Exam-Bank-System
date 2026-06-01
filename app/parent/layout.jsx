@@ -8,6 +8,13 @@ import { LogOut, User, Bell, Home, BookOpen, GraduationCap, Settings } from "luc
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
 
+/**
+ * Component ParentLayout
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  children  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function ParentLayout({ children }) {
     const { currentUser, logout, loading } = useAuth();
     const router = useRouter();

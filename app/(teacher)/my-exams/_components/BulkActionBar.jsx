@@ -1,6 +1,13 @@
 import { ArrowRightLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Component BulkActionBar
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  selectedExams - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function BulkActionBar({ selectedExams, handleBulkDelete, onMove }) {
     if (selectedExams.length === 0) return null;
 

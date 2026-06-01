@@ -1,6 +1,13 @@
 import React from "react";
 import { Cpu, CheckCircle2 } from "lucide-react";
 
+/**
+ * Component TeacherStatsCards
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  stats  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function TeacherStatsCards({ stats }) {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

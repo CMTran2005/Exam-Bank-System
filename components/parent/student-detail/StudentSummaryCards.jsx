@@ -1,5 +1,12 @@
 import React from "react";
 
+/**
+ * Component StudentSummaryCards
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  avgScore - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function StudentSummaryCards({ avgScore, attempts }) {
     const officialAttempts = attempts.filter(a => a.classId !== "practice").length;
     const practiceAttempts = attempts.filter(a => a.classId === "practice").length;

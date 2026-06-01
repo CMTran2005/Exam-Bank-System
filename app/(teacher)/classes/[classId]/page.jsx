@@ -10,6 +10,13 @@ import { useClassDetails } from "@/hooks/teacher/useClassDetails";
 import { classService } from "@/services/classService";
 import { toast } from "sonner";
 
+/**
+ * Component ClassDetailsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  params  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function ClassDetailsPage({ params }) {
     const { classId } = use(params);
     const {

@@ -6,6 +6,13 @@ import { examAttemptService } from "@/services/examAttemptService";
 import { Flame, Trophy, Target, TrendingUp, CalendarDays } from "lucide-react";
 import { classService } from "@/services/classService";
 
+/**
+ * Component StudentStatistics
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  studentUid - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function StudentStatistics({ studentUid, classes = [] }) {
     const [attempts, setAttempts] = useState([]);
     const [loading, setLoading] = useState(true);

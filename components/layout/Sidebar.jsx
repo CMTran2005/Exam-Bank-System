@@ -55,6 +55,13 @@ const navGroups = [
     },
 ];
 
+/**
+ * Component Sidebar
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  isOpen - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function Sidebar({ isOpen, isMobile = false }) {
     const pathname = usePathname();
     const { currentUser } = useAuth();

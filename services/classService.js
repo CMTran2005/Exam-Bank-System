@@ -12,7 +12,9 @@ const runWithTimeout = (promise, ms = 2000) => {
 
 export const classService = {
     /**
-     * Lấy danh sách lớp học của một giáo viên
+     * Lấy danh sách toàn bộ lớp học do một giáo viên quản lý
+     * @param {string} teacherUid - ID của giáo viên
+     * @returns {Promise<Array>} - Danh sách các lớp học
      */
     async getTeacherClasses(teacherUid) {
         if (!teacherUid) return [];
@@ -31,7 +33,9 @@ export const classService = {
     },
 
     /**
-     * Lấy chi tiết lớp học
+     * Lấy thông tin chi tiết của một lớp học cụ thể
+     * @param {string} classId - Mã định danh của lớp học
+     * @returns {Promise<Object|null>} - Dữ liệu lớp học hoặc null nếu không tìm thấy
      */
     async getClassDetails(classId) {
         try {
@@ -48,7 +52,10 @@ export const classService = {
     },
 
     /**
-     * Cập nhật thông tin lớp học
+     * Cập nhật thông tin của lớp học
+     * @param {string} classId - Mã định danh của lớp học cần cập nhật
+     * @param {Object} data - Dữ liệu mới cần ghi đè/cập nhật
+     * @returns {Promise<boolean>} - Trả về true nếu thành công
      */
     async updateClass(classId, data) {
         try {
@@ -62,7 +69,9 @@ export const classService = {
     },
 
     /**
-     * Tạo lớp học mới
+     * Khởi tạo một lớp học mới trong hệ thống
+     * @param {Object} classData - Thông tin cấu hình ban đầu của lớp
+     * @returns {Promise<Object>} - Thông tin lớp học vừa được tạo (bao gồm cả ID mới)
      */
     async createClass(classData) {
         try {
@@ -83,7 +92,9 @@ export const classService = {
     },
 
     /**
-     * Xóa lớp học
+     * Xóa hoàn toàn một lớp học khỏi hệ thống
+     * @param {string} classId - Mã định danh của lớp học cần xóa
+     * @returns {Promise<boolean>} - Trả về true nếu xóa thành công
      */
     async deleteClass(classId) {
         try {

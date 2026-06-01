@@ -3,6 +3,13 @@ import Link from "next/link";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Component TeacherHeroSection
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  currentUser  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function TeacherHeroSection({ currentUser }) {
     return (
         <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-slate-900 via-violet-950 to-indigo-950 text-white p-6 sm:p-8 md:p-10 shadow-2xl border border-white/10">

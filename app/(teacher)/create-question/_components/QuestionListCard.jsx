@@ -18,6 +18,14 @@ import { Lock } from "lucide-react";
 import { useExamUIStore } from "@/store/useExamUIStore";
 import { useExamDataStore } from "@/store/useExamDataStore";
 
+/**
+ * Component QuestionListCard
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} 
+    updateQuestionData - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function QuestionListCard({
     updateQuestionData, duplicateQuestion, toggleCollapse, removeQuestion,
     addQuestion, currentUser

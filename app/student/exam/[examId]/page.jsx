@@ -15,6 +15,13 @@ import LatexRenderer from "@/components/shared/LatexRenderer";
 import { useConfirm } from "@/context/ConfirmContext";
 import { getShuffleMap } from "@/lib/shuffleUtils";
 
+/**
+ * Component ExamInterface
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  params  - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function ExamInterface({ params }) {
     const { examId } = use(params);
     const searchParams = useSearchParams();
@@ -33,7 +40,7 @@ export default function ExamInterface({ params }) {
     const [reviewMarks, setReviewMarks] = useState({});
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
 
-    // Practice Mode State
+    // Quản lý trạng thái (State) của chế độ Luyện tập tự do
     const isPracticeMode = searchParams.get("mode") === "practice";
     const [practiceResults, setPracticeResults] = useState({});
     const [isTimerEnabled, setIsTimerEnabled] = useState(true);
@@ -49,20 +56,20 @@ export default function ExamInterface({ params }) {
 
     const loadExamData = useCallback(async () => {
         try {
-            // 1. Tải đề thi
+            // Bước 1: Tải cấu trúc đề thi
             const examData = await examService.getExamDetails(examId);
             if (!examData) {
                 toast.error("Không tìm thấy đề thi!");
                 router.push("/student");
                 return;
             }
-            // Sort questions if needed (ensure order)
+            // Đảm bảo thứ tự câu hỏi chính xác theo trường 'order'
             if (examData.questions && Array.isArray(examData.questions)) {
                 examData.questions = examData.questions.sort((a, b) => (a.order || 0) - (b.order || 0));
             }
             setExam(examData);
 
-            // 0. Kiểm tra thời gian bắt đầu của lớp
+            // Bước 0: Xác thực thời gian bắt đầu đối với các đề thi có gắn với lớp học
             let durationMins = examData.duration || 45;
             let classData = null;
             if (classId) {
@@ -86,38 +93,38 @@ export default function ExamInterface({ params }) {
                 }
             }
 
-            // 2. Tải hoặc Khởi tạo Attempt
+            // Bước 2: Truy xuất hoặc Khởi tạo phiên làm bài (Attempt)
             const attempts = await examAttemptService.getStudentAttempts(currentUser.uid);
 
-            // Đếm số lần đã làm ở chế độ practice
+            // Thống kê số lần học sinh đã làm đề này ở chế độ luyện tập
             const previousCompleted = attempts.filter(a => a.examId === examId && a.classId === "practice" && a.status === "completed");
             setPastAttemptsCount(previousCompleted.length);
 
-            // Tìm attempt chưa hoàn thành
+            // Tìm kiếm các phiên làm bài còn dang dở (chưa được nộp)
             let currentAttempt = attempts.find(a => a.examId === examId && a.classId === (classId || "practice") && a.status !== "completed");
 
-            // Nếu không có attempt dở dang, kiểm tra xem đã thi xong chưa
+            // Đánh giá tình trạng hoàn thành bài thi
             if (!currentAttempt) {
                 const completedAttempt = previousCompleted.length > 0 ? previousCompleted[0] : attempts.find(a => a.examId === examId && a.classId === (classId || "practice") && a.status === "completed");
 
-                // Nếu là thi thật (có classId cụ thể) và đã hoàn thành -> Không cho thi lại
+                // Cơ chế bảo vệ: Không cho phép thi lại nếu là bài thi chính thức (có classId)
                 if (completedAttempt && classId && classId !== "practice") {
                     toast.info("Bạn đã hoàn thành bài thi này rồi.");
                     router.push(`/student/exam/${examId}/result`);
                     return;
                 }
 
-                // Nếu là luyện tập (hoặc chưa từng thi), tạo attempt mới
+                // Khởi tạo phiên làm bài mới nếu là chế độ luyện tập hoặc chưa từng tham gia thi
                 currentAttempt = await examAttemptService.startExam(currentUser.uid, currentUser.name, examId, classId || "practice");
             }
 
             setAttempt(currentAttempt);
             if (currentAttempt.answers) setAnswers(currentAttempt.answers);
 
-            // Xáo trộn đáp án
+            // Khởi tạo thuật toán xáo trộn câu trả lời (Shuffle Map)
             setShuffleMap(getShuffleMap(currentAttempt.id, examData.questions));
 
-            // 3. Tính toán thời gian còn lại
+            // Bước 3: Tính toán và đồng bộ thời gian làm bài còn lại
             const startTime = new Date(currentAttempt.startTime).getTime();
             const durationMs = durationMins * 60 * 1000;
             const endTime = startTime + durationMs;
@@ -126,7 +133,7 @@ export default function ExamInterface({ params }) {
             let remainingSeconds = Math.floor((endTime - now) / 1000);
             if (remainingSeconds <= 0) {
                 remainingSeconds = 0;
-                // Nếu là thi thật thì auto-submit ngay, nếu là luyện thi thì bỏ qua để học sinh tự nộp
+                // Tự động nộp bài (Auto-submit) đối với bài thi chính thức khi hết giờ, bỏ qua nếu đang luyện tập
                 if (!isPracticeMode || (isPracticeMode && isTimerEnabled && false)) {
                     handleAutoSubmit(currentAttempt.id, currentAttempt.answers || {}, examData);
                 }
@@ -147,14 +154,14 @@ export default function ExamInterface({ params }) {
         }
     }, [currentUser, examId, classId, isPracticeMode, loadExamData]);
 
-    // Đếm ngược thời gian
+    // Cập nhật bộ đếm ngược thời gian (Countdown Timer)
     useEffect(() => {
         if (timeLeft !== null && timeLeft > 0 && !isSubmitting && isTimerEnabled) {
             timerRef.current = setInterval(() => {
                 setTimeLeft(prev => {
                     if (prev <= 1) {
                         clearInterval(timerRef.current);
-                        // Hết giờ
+                        // Xử lý sự kiện hết giờ
                         if (attempt && exam) {
                             if (!isPracticeMode) {
                                 handleAutoSubmit(attempt.id, answers, exam);
@@ -171,7 +178,7 @@ export default function ExamInterface({ params }) {
         return () => clearInterval(timerRef.current);
     }, [timeLeft, isSubmitting, attempt, answers, exam, isTimerEnabled, isPracticeMode]);
 
-    // Auto-save định kỳ (Chỉ lưu khi có thay đổi để tiết kiệm query Firebase)
+    // Cơ chế tự động lưu nháp (Auto-save) định kỳ: Tối ưu hóa bằng cách chỉ ghi lên Firebase khi phát hiện sự thay đổi
     useEffect(() => {
         if (attempt && !isSubmitting) {
             autoSaveTimerRef.current = setInterval(() => {
@@ -183,47 +190,47 @@ export default function ExamInterface({ params }) {
                         lastSavedAnswersRef.current = answers;
                     }).catch(err => console.error("Auto-save failed", err));
                 }
-            }, 30000); // Kiểm tra mỗi 30 giây
+            }, 30000); // Tần suất kiểm tra: 30 giây một lần
         }
         return () => clearInterval(autoSaveTimerRef.current);
     }, [attempt, answers, isSubmitting]);
 
-    // Anti-cheat Nâng cao
+    // HỆ THỐNG GIÁM SÁT VÀ CHỐNG GIAN LẬN (Anti-cheat)
     useEffect(() => {
         if (isSubmitting || timeLeft <= 0 || !attempt) return;
 
-        // 1. Phát hiện chuyển Tab (Visibility)
+        // Cơ chế 1: Phát hiện hành vi chuyển tab trình duyệt (Visibility API)
         const handleVisibilityChange = () => {
             if (document.visibilityState === "hidden") {
                 examAttemptService.logCheat(attempt.id, "Chuyển Tab (Ẩn trình duyệt)");
             }
         };
 
-        // 2. Phát hiện mất Focus (Chuyển sang phần mềm khác / Màn hình khác)
+        // Cơ chế 2: Phát hiện hành vi mất tiêu điểm (Chuyển cửa sổ hoặc ứng dụng khác)
         const handleBlur = () => {
             examAttemptService.logCheat(attempt.id, "Mất Focus (Mở ứng dụng khác)");
         };
 
-        // 3. Chặn các hành vi sao chép và xem mã nguồn
+        // Cơ chế 3: Vô hiệu hóa các phím tắt sao chép và xem mã nguồn
         const handleContextMenu = (e) => e.preventDefault();
         const handleCopyPaste = (e) => e.preventDefault();
 
         const handleKeyDown = (e) => {
-            // Chặn F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (Xem nguồn / Inspect)
+            // Vô hiệu hóa các công cụ dành cho nhà phát triển (DevTools)
             if (
                 e.key === "F12" ||
                 (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) ||
                 (e.ctrlKey && e.key === "U") ||
-                (e.ctrlKey && e.key === "P") || // In ấn
-                (e.ctrlKey && e.key === "C") || // Copy
-                (e.ctrlKey && e.key === "V")    // Paste
+                (e.ctrlKey && e.key === "P") || // Vô hiệu hóa tính năng In ấn
+                (e.ctrlKey && e.key === "C") || // Vô hiệu hóa tính năng Sao chép
+                (e.ctrlKey && e.key === "V")    // Vô hiệu hóa tính năng Dán
             ) {
                 e.preventDefault();
                 examAttemptService.logCheat(attempt.id, "Cố tình dùng phím tắt cấm");
             }
         };
 
-        // 4. Phát hiện Extension can thiệp vào DOM (Sider, Grammarly, v.v.)
+        // Cơ chế 4: Giám sát DOM để phát hiện các tiện ích mở rộng can thiệp (Extension Detect)
         const observer = new MutationObserver((mutations) => {
             let suspiciousInjected = false;
             for (let mutation of mutations) {
@@ -233,8 +240,8 @@ export default function ExamInterface({ params }) {
                         const id = node.id ? node.id.toLowerCase() : "";
                         const cls = (typeof node.className === 'string') ? node.className.toLowerCase() : "";
 
-                        // Web Components (thẻ có dấu gạch ngang là dấu hiệu của Extension)
-                        // Bỏ qua các class hợp lệ của Tailwind như "text-"
+                        // Phát hiện các Web Components lạ lọt vào (thường chứa dấu gạch ngang)
+                        // Loại trừ các class hệ thống hợp lệ của TailwindCSS
                         if (
                             tag === "iframe" ||
                             (tag.includes("-") && !tag.includes("lucide")) ||
@@ -244,7 +251,7 @@ export default function ExamInterface({ params }) {
                             cls.includes("extension-")
                         ) {
                             suspiciousInjected = true;
-                            // Ẩn luôn thẻ đó để vô hiệu hóa extension
+                            // Ẩn phần tử bị can thiệp để vô hiệu hóa tiện ích mở rộng
                             node.style.display = 'none';
                         }
                     }
@@ -255,7 +262,7 @@ export default function ExamInterface({ params }) {
             }
         });
 
-        // Bật các Listener
+        // Kích hoạt toàn bộ trình lắng nghe sự kiện (Event Listeners)
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
         document.addEventListener("contextmenu", handleContextMenu);
@@ -264,11 +271,11 @@ export default function ExamInterface({ params }) {
         document.addEventListener("paste", handleCopyPaste);
         document.addEventListener("keydown", handleKeyDown);
 
-        // Theo dõi sự thay đổi của DOM để phát hiện Extension
+        // Kích hoạt giám sát biến đổi DOM (MutationObserver)
         observer.observe(document.body, { childList: true, subtree: true });
 
         return () => {
-            // Dọn dẹp Listener khi component unmount hoặc khi nộp bài
+            // Giải phóng tài nguyên và các trình lắng nghe khi component bị gỡ (unmount)
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
             document.removeEventListener("contextmenu", handleContextMenu);
@@ -364,26 +371,10 @@ export default function ExamInterface({ params }) {
         clearInterval(autoSaveTimerRef.current);
 
         try {
-            // Chấm điểm cơ bản
-            let totalPoints = 0;
-            const alphabet = ["A", "B", "C", "D", "E", "F"];
+            // Securely process grading via server-side API
+            await examAttemptService.submitExam(aId, ex.id, currentUser.uid, ans);
 
-            ex.questions?.forEach(q => {
-                if (ans[q.id] !== undefined) {
-                    const studentLetter = alphabet[ans[q.id]];
-                    if (studentLetter === q.correct_answer) {
-                        const qPoints = parseFloat(q.points || "1");
-                        totalPoints += qPoints;
-                    }
-                }
-            });
-
-            const score = totalPoints; // Tính tổng điểm theo từng câu
-
-            // Cập nhật Attempt
-            await examAttemptService.submitExam(aId, ans, score);
-
-            // Lưu câu sai vào Flashcards
+            // Automatically log incorrect answers as flashcards for future practice
             if (currentUser?.uid) {
                 await flashcardService.saveMistakes(currentUser.uid, ex, ans).catch(console.error);
             }

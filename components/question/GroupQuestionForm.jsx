@@ -246,6 +246,13 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
     );
 }
 
+/**
+ * Component GroupQuestionForm
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  groupQuestion - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function GroupQuestionForm({ groupQuestion, onChangeData }) {
     const baseType = groupQuestion.type.replace("group_", "");
     const typeLabel = BASE_TYPE_LABELS[baseType] || baseType;

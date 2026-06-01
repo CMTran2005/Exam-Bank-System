@@ -4,6 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles, X } from "lucide-react";
 
+/**
+ * Component QuestionTags
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  
+    tags = [] - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function QuestionTags({ 
     tags = [], 
     tagInput, 

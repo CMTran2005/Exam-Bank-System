@@ -1,5 +1,12 @@
 import { Eye, Check } from "lucide-react";
 
+/**
+ * Component DisplaySettings
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  displaySettings - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function DisplaySettings({ displaySettings, toggleSetting }) {
     return (
         <div className="p-4 bg-muted/40 dark:bg-muted/10 border border-border rounded-2xl animate-in slide-in-from-top-3 duration-250 space-y-3">

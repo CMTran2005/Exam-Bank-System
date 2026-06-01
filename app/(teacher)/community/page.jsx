@@ -12,6 +12,12 @@ import { useRouter } from "next/navigation";
 import { useConfirm } from "@/context/ConfirmContext";
 import useSubjects from "@/hooks/shared/useSubjects";
 
+/**
+ * Component CommunityPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function CommunityPage() {
     const { currentUser, loading: authLoading } = useAuth();
     const router = useRouter();

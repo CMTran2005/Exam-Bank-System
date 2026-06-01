@@ -2,9 +2,16 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebaseAdmin";
 
+/**
+ * Component POST
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} request - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export async function POST(request) {
     try {
-        // 1. Xác thực bảo mật với Firebase Admin
+        // Bước 1: Xác thực bảo mật với Firebase Admin để đảm bảo quyền truy cập hợp lệ
         const authHeader = request.headers.get("Authorization");
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return NextResponse.json({ error: "Unauthorized: Missing token." }, { status: 401 });
@@ -56,7 +63,7 @@ export async function POST(request) {
 
         let responseText = "";
 
-        // 1. Cố gắng sử dụng mô hình mới nhất gemini-2.5-flash (nhẹ, nhanh, miễn phí)
+        // Khởi tạo tiến trình thử nghiệm nhiều mô hình: Ưu tiên sử dụng mô hình mới nhất gemini-2.5-flash (nhẹ, nhanh, tối ưu chi phí)
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
             const result = await model.generateContent([prompt, imagePart]);
@@ -64,20 +71,20 @@ export async function POST(request) {
         } catch (err1) {
             console.warn("Thử gemini-2.5-flash thất bại, chuyển sang gemini-1.5-flash...", err1.message);
             try {
-                // 2. Thử mô hình gemini-1.5-flash
+                // Phương án dự phòng 1: Chuyển sang mô hình gemini-1.5-flash nếu mô hình mặc định gặp sự cố
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                 const result = await model.generateContent([prompt, imagePart]);
                 responseText = result.response.text().trim();
             } catch (err2) {
                 console.warn("Thử gemini-1.5-flash thất bại, chuyển sang gemini-1.5-pro...", err2.message);
                 try {
-                    // 3. Thử mô hình cao cấp gemini-1.5-pro
+                    // Phương án dự phòng 2: Chuyển sang mô hình cao cấp gemini-1.5-pro
                     const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
                     const result = await model.generateContent([prompt, imagePart]);
                     responseText = result.response.text().trim();
                 } catch (err3) {
                     console.warn("Thử gemini-1.5-pro thất bại, chuyển sang gemini-2.5-pro làm phương án cuối...", err3.message);
-                    // 4. Phương án cuối cùng
+                    // Phương án dự phòng cuối cùng: Dùng mô hình gemini-1.0-pro đời cũ
                     const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
                     const result = await model.generateContent([prompt, imagePart]);
                     responseText = result.response.text().trim();
@@ -85,7 +92,7 @@ export async function POST(request) {
             }
         }
 
-        // Tối ưu bóc tách JSON bằng Regex
+        // Tối ưu hóa quá trình bóc tách dữ liệu JSON từ chuỗi phản hồi bằng Biểu thức chính quy (Regex)
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error("Không tìm thấy định dạng JSON hợp lệ trong phản hồi của AI.");

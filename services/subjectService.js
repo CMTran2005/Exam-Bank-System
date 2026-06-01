@@ -4,8 +4,9 @@ import { GRADE_SUBJECTS_MAP as DEFAULT_MAP } from "@/lib/constants";
 
 export const subjectService = {
     /**
-     * Lấy danh sách bản đồ môn học từ Firebase
-     * Nếu chưa có sẽ tự động khởi tạo bằng dữ liệu mặc định
+     * Lấy danh sách ánh xạ (Map) các môn học theo từng khối lớp từ hệ thống.
+     * Nếu chưa có dữ liệu, hệ thống sẽ tự động khởi tạo bằng dữ liệu cấu hình mặc định.
+     * @returns {Promise<Object>} - Đối tượng chứa thông tin môn học của từng khối
      */
     async getSubjectsMap() {
         try {
@@ -25,7 +26,9 @@ export const subjectService = {
     },
 
     /**
-     * Cập nhật bản đồ môn học
+     * Cập nhật danh sách ánh xạ các môn học vào hệ thống
+     * @param {Object} newMap - Đối tượng ánh xạ mới cần cập nhật
+     * @returns {Promise<boolean>} - Trả về true nếu cập nhật thành công
      */
     async updateSubjectsMap(newMap) {
         try {

@@ -8,6 +8,12 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+/**
+ * Component LoginPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function LoginPage() {
     const { login, loginWithGoogle, currentUser, loading: authLoading } = useAuth();
     const router = useRouter();

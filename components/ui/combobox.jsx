@@ -15,6 +15,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
+/**
+ * Component Combobox
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} 
+  options = [] - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function Combobox({
   options = [],
   value,

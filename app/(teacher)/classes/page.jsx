@@ -10,6 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ClassGrid } from "./_components/ClassGrid";
 import { ClassModals } from "./_components/ClassModals";
 
+/**
+ * Component ClassesPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function ClassesPage() {
     const { currentUser } = useAuth();
     

@@ -3,6 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CustomDatePicker, CustomTimePicker } from "@/components/ui/date-time-picker";
 
+/**
+ * Component ClassModals
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} 
+    isCreateModalOpen - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function ClassModals({
     isCreateModalOpen, setIsCreateModalOpen, handleCreateClass, isCreating,
     newClassName, setNewClassName,

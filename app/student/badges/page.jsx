@@ -13,6 +13,12 @@ import { db } from "@/lib/firebase";
 // Global cache để giữ dữ liệu khi chuyển trang (SWR pattern)
 let badgesCache = null;
 
+/**
+ * Component BadgesPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function BadgesPage() {
     const { currentUser } = useAuth();
     const [allBadges, setAllBadges] = useState([]);

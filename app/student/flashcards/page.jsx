@@ -7,6 +7,12 @@ import { Loader2, Brain, CheckCircle2, XCircle, RotateCw, BookOpen, AlertCircle,
 import LatexRenderer from "@/components/shared/LatexRenderer";
 import { Button } from "@/components/ui/button";
 
+/**
+ * Component FlashcardsPage
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function FlashcardsPage() {
     const { currentUser, loading } = useAuth();
     const [flashcards, setFlashcards] = useState([]);
@@ -21,11 +27,11 @@ export default function FlashcardsPage() {
         const loadCards = async () => {
             const cards = await flashcardService.getUserFlashcards(currentUser.uid);
             
-            // Lọc ra các thẻ đến hạn ôn tập (nextReviewDate <= hôm nay)
+            // Bước 1: Lọc danh sách các thẻ Flashcard đã đến hạn ôn tập dựa trên thuật toán Spaced Repetition
             const now = new Date();
             const dueCards = cards.filter(c => new Date(c.nextReviewDate) <= now);
             
-            // Xáo trộn mảng
+            // Xáo trộn ngẫu nhiên thứ tự các thẻ để tăng hiệu quả ghi nhớ
             setFlashcards(dueCards.sort(() => Math.random() - 0.5));
             setIsFetching(false);
         };
@@ -91,26 +97,26 @@ export default function FlashcardsPage() {
     const alphabet = ["A", "B", "C", "D", "E", "F"];
 
     const handleRate = async (quality) => {
-        // Cập nhật lên db
+        // Bước 2: Đồng bộ kết quả đánh giá chất lượng ghi nhớ lên cơ sở dữ liệu (Firestore)
         await flashcardService.updateFlashcardReview(card, quality);
         
-        // Nếu chọn "Khó" (quality === 1), đưa thẻ xuống cuối để ôn lại ngay hôm nay
+        // Cơ chế vòng lặp: Nếu học sinh đánh giá "Khó" (chưa nhớ), thẻ sẽ được nạp lại vào hàng đợi để ôn ngay lập tức
         if (quality === 1) {
             setFlashcards(prev => [...prev, card]);
         }
         
-        // Chuyển sang thẻ tiếp theo
+        // Chuyển tiêu điểm sang thẻ Flashcard tiếp theo trong hàng đợi
         if (currentIndex < flashcards.length - 1 || quality === 1) {
             setCurrentIndex(prev => prev + 1);
             setIsFlipped(false);
         } else {
-            // Hết bài
+            // Kết thúc phiên ôn tập khi hàng đợi trống
             setFlashcards([]);
             setStudyMode(false);
         }
     };
 
-    // Tính toán số ngày lặp lại dự kiến để hiển thị lên nút bấm
+    // Tiên đoán số ngày lặp lại tiếp theo của thuật toán SM-2 để hiển thị trực quan cho người dùng
     const getNextIntervalText = (quality) => {
         if (!card) return "";
         let { interval = 1, easeFactor = 2.5, repetitions = 0 } = card;

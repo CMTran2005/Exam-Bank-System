@@ -1,0 +1,86 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------
+    // HÀM TIỆN ÍCH (FUNCTIONS)
+    // ---------------------------------------------------------
+    
+    // Kiểm tra người dùng đã đăng nhập chưa
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Kiểm tra xem dữ liệu cập nhật có thay đổi một trường cụ thể không
+    function isUnmodified(field) {
+      return !(field in request.resource.data) || 
+             request.resource.data[field] == resource.data[field];
+    }
+    
+    // Lấy thông tin role của người dùng hiện tại từ bảng users
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // ---------------------------------------------------------
+    // QUY TẮC BẢO MẬT THEO TỪNG BẢNG (COLLECTIONS)
+    // ---------------------------------------------------------
+
+    // 1. BẢNG USERS (Người dùng)
+    match /users/{userId} {
+      // Ai cũng có thể đọc thông tin cơ bản (cần thiết cho class, leaderboard)
+      allow read: if isAuthenticated();
+      // Chỉ user đó mới được sửa thông tin của mình
+      allow create, update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if false; // Không cho phép xóa user trực tiếp từ client
+    }
+
+    // 2. BẢNG EXAMS (Đề thi)
+    match /exams/{examId} {
+      // Học sinh và phụ huynh được phép ĐỌC đề thi
+      allow read: if isAuthenticated();
+      // CHỈ GIÁO VIÊN mới được tạo, sửa, xóa đề thi của chính mình
+      allow create: if isAuthenticated() && getUserRole() == "teacher" && request.resource.data.teacherId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && getUserRole() == "teacher" && resource.data.teacherId == request.auth.uid;
+    }
+
+    // 3. BẢNG EXAM_ATTEMPTS (Lượt thi / Bài làm)
+    match /exam_attempts/{attemptId} {
+      // Giáo viên có thể đọc toàn bộ bài làm của học sinh
+      // Học sinh/Phụ huynh chỉ được đọc bài làm của học sinh đó
+      allow read: if isAuthenticated();
+
+      // HỌC SINH TẠO BÀI THI MỚI
+      allow create: if isAuthenticated() 
+                    && getUserRole() == "student" 
+                    && request.resource.data.studentId == request.auth.uid;
+
+      // HỌC SINH CẬP NHẬT BÀI THI (NỘP BÀI)
+      allow update: if isAuthenticated() 
+                    && getUserRole() == "student" 
+                    && resource.data.studentId == request.auth.uid
+                    // CHỐNG GIAN LẬN: Không được phép sửa lại thời gian bắt đầu
+                    && isUnmodified('startTime');
+                    
+      // Lưu ý: Để thực sự chặn học sinh tự sửa 'score' (điểm số), 
+      // lý tưởng nhất là quá trình chấm điểm phải chuyển sang chạy trên Server (API Route) dùng Firebase Admin SDK.
+      // Nếu hiện tại vẫn đang chấm điểm ở Client (Frontend), ta tạm thời phải cho phép update score.
+      
+      allow delete: if false; // Chống học sinh tự xóa bài làm điểm thấp
+    }
+
+    // 4. BẢNG CLASSES (Lớp học)
+    match /classes/{classId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && getUserRole() == "teacher";
+      allow update, delete: if isAuthenticated() && getUserRole() == "teacher" && resource.data.teacherId == request.auth.uid;
+    }
+
+    // 5. BẢNG FLASHCARDS
+    match /flashcards/{flashcardId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated() && getUserRole() == "teacher" && resource.data.teacherId == request.auth.uid;
+    }
+  }
+}

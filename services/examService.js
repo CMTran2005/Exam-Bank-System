@@ -12,9 +12,9 @@ const runWithTimeout = (promise, ms = 2000) => {
 
 export const examService = {
     /**
-     * Lấy danh sách đề thi của một người dùng
-     * @param {string} uid User ID
-     * @returns Array of exams
+     * Lấy danh sách toàn bộ đề thi do một người dùng (Giáo viên) tạo ra
+     * @param {string} uid - ID của người dùng
+     * @returns {Promise<Array>} - Danh sách các đề thi
      */
     async getUserExams(uid) {
         if (!uid) return [];
@@ -33,8 +33,9 @@ export const examService = {
     },
 
     /**
-     * Lấy chi tiết một đề thi
-     * @param {string} examId ID của đề thi
+     * Lấy thông tin chi tiết của một đề thi bao gồm cả danh sách câu hỏi
+     * @param {string} examId - ID của đề thi
+     * @returns {Promise<Object|null>} - Chi tiết đề thi hoặc null nếu không tồn tại
      */
     async getExamDetails(examId) {
         if (!examId) return null;
@@ -63,9 +64,10 @@ export const examService = {
     },
 
     /**
-     * Lấy danh sách đề thi chia sẻ (Công khai)
-     * @param {string} currentUid ID của người dùng hiện tại (để loại trừ)
-     * @param {number} maxLimit Số lượng tối đa
+     * Lấy danh sách các đề thi được chia sẻ công khai trên Cộng đồng
+     * @param {string} currentUid - ID của người dùng hiện tại (để loại trừ đề của chính mình)
+     * @param {number} maxLimit - Giới hạn số lượng đề thi tải về
+     * @returns {Promise<Array>} - Danh sách các đề thi công khai
      */
     async getSharedExams(currentUid, maxLimit = 50) {
         try {
@@ -86,10 +88,11 @@ export const examService = {
     },
 
     /**
-     * Nhân bản đề thi từ Cộng đồng về tài khoản của mình
-     * @param {string} examId ID của đề thi gốc
-     * @param {string} newUid ID của người dùng (giáo viên) mới
-     * @param {string} newAuthorName Tên tác giả mới
+     * Sao chép (Fork) một đề thi từ Cộng đồng về tài khoản cá nhân
+     * @param {string} examId - ID của đề thi gốc cần sao chép
+     * @param {string} newUid - ID của người dùng sẽ nhận bản sao
+     * @param {string} newAuthorName - Tên hiển thị của người dùng (Giáo viên) mới
+     * @returns {Promise<string>} - Trả về ID của đề thi mới được tạo
      */
     async forkExam(examId, newUid, newAuthorName) {
         try {

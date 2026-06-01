@@ -3,7 +3,11 @@ import { db } from "@/lib/firebase";
 
 export const flashcardService = {
     /**
-     * Lưu danh sách các câu làm sai vào kho Flashcard
+     * Tự động trích xuất và lưu trữ các câu hỏi học sinh làm sai vào kho Flashcard cá nhân
+     * @param {string} uid - ID của học sinh
+     * @param {Object} exam - Đối tượng đề thi chứa danh sách câu hỏi
+     * @param {Object} answers - Bộ câu trả lời của học sinh
+     * @returns {Promise<void>}
      */
     async saveMistakes(uid, exam, answers) {
         if (!uid || !exam || !answers) return;
@@ -76,7 +80,9 @@ export const flashcardService = {
     },
 
     /**
-     * Lấy danh sách flashcards của học sinh
+     * Lấy danh sách toàn bộ Flashcards (câu hỏi ôn tập) của một học sinh
+     * @param {string} uid - ID của học sinh
+     * @returns {Promise<Array>} - Danh sách các Flashcards
      */
     async getUserFlashcards(uid) {
         if (!uid) return [];
@@ -95,15 +101,16 @@ export const flashcardService = {
     },
 
     /**
-     * Cập nhật thẻ khi học sinh ôn tập (Tính toán Spaced Repetition SM-2)
-     * @param {string} flashcardId 
-     * @param {number} quality Chất lượng câu trả lời (0-5)
-     * 0: Hoàn toàn không nhớ
-     * 1: Nhớ sai
-     * 2: Có nhớ mang máng nhưng sai
-     * 3: Nhớ đúng nhưng mất nhiều thời gian
-     * 4: Nhớ đúng sau một chút do dự
-     * 5: Nhớ đúng ngay lập tức (Perfect)
+     * Cập nhật trạng thái của Flashcard sau khi học sinh ôn tập dựa trên thuật toán Spaced Repetition (SM-2)
+     * @param {Object} flashcard - Đối tượng Flashcard hiện tại
+     * @param {number} quality - Điểm chất lượng của câu trả lời (từ 0 đến 5)
+     *        0: Hoàn toàn không nhớ
+     *        1: Nhớ sai
+     *        2: Có nhớ mang máng nhưng sai
+     *        3: Nhớ đúng nhưng mất nhiều thời gian
+     *        4: Nhớ đúng sau một chút do dự
+     *        5: Nhớ đúng ngay lập tức (Perfect)
+     * @returns {Promise<Object>} - Đối tượng chứa thông số SM-2 mới được cập nhật
      */
     async updateFlashcardReview(flashcard, quality) {
         let { interval, easeFactor, repetitions } = flashcard;

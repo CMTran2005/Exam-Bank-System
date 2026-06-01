@@ -2,6 +2,14 @@ import { Cpu, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+/**
+ * Component AiTab
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} 
+    geminiKey - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function AiTab({
     geminiKey, setGeminiKey, showKey, setShowKey,
     aiModel, setAiModel, ocrConfidence, setOcrConfidence,

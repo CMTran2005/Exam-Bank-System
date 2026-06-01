@@ -62,6 +62,12 @@ const quickActions = [
     }
 ];
 
+/**
+ * Component Home
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function Home() {
     const { currentUser, loading } = useAuth();
     const router = useRouter();

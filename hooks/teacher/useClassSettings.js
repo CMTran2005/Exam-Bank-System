@@ -6,6 +6,13 @@ import useSubjects from "@/hooks/shared/useSubjects";
 import { useConfirm } from "@/context/ConfirmContext";
 import { toast } from "sonner";
 
+/**
+ * Hàm useClassSettings
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} classId - Tham số đầu vào
+ * @returns {any}
+ */
 export function useClassSettings(classId) {
     const confirmDialog = useConfirm();
     const { gradeSubjectsMap, loading: subjectsLoading } = useSubjects();

@@ -1,5 +1,12 @@
 import { Folder, FolderOpen, FolderPlus, Trash2, Check } from "lucide-react";
 
+/**
+ * Component FolderTabs
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any}  folders - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function FolderTabs({ folders, activeFolder, setActiveFolder, handleDeleteFolder, setIsCreateFolderModalOpen, examsLength }) {
     return (
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">

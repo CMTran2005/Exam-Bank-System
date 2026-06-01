@@ -87,6 +87,13 @@ const FORMULA_CATEGORIES = {
     }
 };
 
+/**
+ * Component RichTextToolbar
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @param {Object}  targetId - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export default function RichTextToolbar({ targetId, value, onChange }) {
     const {
         showLatex, setShowLatex,

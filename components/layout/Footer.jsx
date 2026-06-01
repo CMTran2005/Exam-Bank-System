@@ -1,5 +1,11 @@
 import { BookOpen, ExternalLink, Mail, MessageSquareText } from "lucide-react";
 
+/**
+ * Component Footer
+ * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
+ *
+ * @returns {JSX.Element}
+ */
 export default function Footer() {
     const year = new Date().getFullYear();
 

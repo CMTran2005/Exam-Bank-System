@@ -2,6 +2,14 @@ import { X, Folder, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+/**
+ * Component ExamModals
+ * Xử lý logic và chức năng liên quan.
+ *
+ * @param {any} 
+    isCreateFolderModalOpen - Tham số đầu vào
+ * @returns {JSX.Element}
+ */
 export function ExamModals({
     isCreateFolderModalOpen, setIsCreateFolderModalOpen,
     newFolderName, setNewFolderName, handleCreateFolder,
