@@ -19,21 +19,21 @@
 
 ### Giới Thiệu
 
-**Exam Bank System** là nền tảng web hiện đại được thiết kế toàn diện cho hệ sinh thái giáo dục bao gồm Giáo viên, Học sinh và Phụ huynh. Hệ thống giúp quản lý, sáng tạo, tổ chức thi cử và theo dõi tiến độ học tập một cách thông minh, bảo mật.
+**Exam Bank System** là nền tảng web hiện đại được thiết kế toàn diện cho hệ sinh thái giáo dục bao gồm Giáo viên, Học sinh và Phụ huynh. Hệ thống giúp quản lý bài kiểm tra và câu hỏi một cách thông minh, từ việc tạo đề thi đến chấm bài tự động.
 
-Ứng dụng không chỉ là nơi lưu trữ câu hỏi, mà còn tích hợp các công nghệ tiên tiến nhất: AI (Gemini Vision) và OCR thông minh để tự động số hóa đề thi, thuật toán học tập ngắt quãng Spaced Repetition (Flashcards), hệ thống Gamification (Huy hiệu & Bảng xếp hạng), cùng hệ thống Server-Side Grading và Anti-Cheat tiên tiến để đảm bảo tính công bằng tuyệt đối trong mọi kỳ thi.
+Ứng dụng không chỉ là nơi lưu trữ câu hỏi, mà còn tích hợp các công nghệ tiên tiến nhất: AI (Gemini Vision) và OCR thông minh để tự động số hóa đề thi, hệ thống Flashcards với thuật toán Spaced Repetition, Gamification để tăng tính hứng thú học tập, và hệ thống Anti-Cheat bảo mật tuyệt đối.
 
 ### Tính Năng Nổi Bật
 
 #### 1. Cổng Giáo Viên (Teacher Portal) & Trình Soạn Thảo Đề Thi
-- **Soạn thảo Thời gian thực (Real-time Collaboration)**: Hỗ trợ nhiều giáo viên cùng lúc tham gia biên soạn chung một đề thi, hiển thị trạng thái trực tuyến của các thành viên trong phòng soạn thảo.
-- **Quản lý Câu hỏi Đa Dạng**: Hỗ trợ Trắc nghiệm (Multiple Choice A/B/C/D), Đúng/Sai (True/False với mệnh đề động), Điền khuyết (Fill in the blanks), và Tự luận (Essay). Hỗ trợ cả câu hỏi đơn và câu hỏi nhóm (Group Questions).
+- **Soạn thảo Thời gian thực (Real-time Collaboration)**: Hỗ trợ nhiều giáo viên cùng lúc tham gia biên soạn chung một đề thi, hiển thị trạng thái trực tuyến của thành viên.
+- **Quản lý Câu hỏi Đa Dạng**: Hỗ trợ Trắc nghiệm (Multiple Choice A/B/C/D), Đúng/Sai (True/False với mệnh đề động), Điền khuyết (Fill in the blanks), và Tự luận (Essay). Gồm các câu hỏi đơn lẻ và Grouped Questions.
 - **AI Tự Động Hóa (AI Builder & OCR)**: 
   - *AI Prompt*: Khởi tạo câu hỏi tự động từ yêu cầu văn bản của giáo viên.
   - *AI OCR*: Dán hình ảnh trực tiếp -> Gemini 2.5 Flash phân tích cấu trúc -> Tự động bóc tách thành nhiều câu hỏi và điền vào form.
 - **Toán Học Trực Quan**: Tích hợp MathLive để gõ công thức như Word và KaTeX để hiển thị chuẩn xác (Rendering).
 - **Thư Viện & Thùng Rác**: Phân loại theo thư mục, lưu trữ an toàn với cơ chế Soft Delete (Xóa mềm có thể khôi phục) hoặc Hard Delete (Xóa vĩnh viễn).
-- **Cộng Đồng Chia Sẻ (Community)**: Chia sẻ đề thi công khai lên thư viện chung. Giáo viên khác có thể tìm kiếm, lọc theo khối lớp/môn học và Nhân bản (Clone/Fork) về tài khoản của mình chỉ với 1 cú click.
+- **Cộng Đồng Chia Sẻ (Community)**: Chia sẻ đề thi công khai lên thư viện chung. Giáo viên khác có thể tìm kiếm, lọc theo khối lớp/môn học và Nhân bản (Clone) vào tài khoản của mình chỉ với một lần nhấp.
 
 #### 2. Cổng Học Sinh (Student Portal) & Thi Trực Tuyến
 - **Hệ Thống Anti-Cheat Tiên Tiến (Chống Gian Lận)**: 
@@ -41,7 +41,7 @@
   - Vô hiệu hóa phím tắt hệ thống: F12, Sao chép (Ctrl+C), Dán (Ctrl+V), In ấn (Ctrl+P), Xem mã nguồn (Ctrl+U).
   - Sử dụng MutationObserver để tự động phát hiện và ẩn/vô hiệu hóa các tiện ích mở rộng (Extensions) cố tình can thiệp vào DOM (như Sider, Grammarly, v.v.).
 - **Luyện Tập Tự Do (Practice Mode)**: Cho phép học sinh làm lại các đề thi không giới hạn số lần để rèn luyện kỹ năng, có lưu lại số lần đã thử (Attempts).
-- **Gamification (Trò chơi hóa)**: Học sinh kiếm điểm kinh nghiệm, nhận huy hiệu thành tích (Đồng, Bạc, Vàng, Kim Cương...) và đua top trên Bảng xếp hạng (Leaderboard) của lớp. Hiệu ứng pháo hoa (Confetti) chúc mừng khi nhận huy hiệu mới.
+- **Gamification (Trò chơi hóa)**: Học sinh kiếm điểm kinh nghiệm, nhận huy hiệu thành tích (Đồng, Bạc, Vàng, Kim Cương...) và đua top trên Bảng xếp hạng (Leaderboard). Bao gồm các hiệu ứng Confetti khi đạt được huy hiệu.
 
 #### 3. Hệ Thống Học Tập Flashcards (Spaced Repetition)
 - Tự động trích xuất các câu hỏi học sinh làm sai trong quá trình thi để chuyển thành Flashcards.
@@ -49,7 +49,7 @@
 
 #### 4. Cổng Phụ Huynh (Parent Portal)
 - **Theo Dõi Con Em**: Phụ huynh có thể nhập Mã học sinh hoặc Email để liên kết tài khoản con em vào bảng điều khiển.
-- **Báo Cáo Học Tập (Analytics)**: Biểu đồ Radar đa chiều đánh giá năng lực của học sinh theo từng môn học và mức độ nhận thức (Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao).
+- **Báo Cáo Học Tập (Analytics)**: Biểu đồ Radar đa chiều đánh giá năng lực của học sinh theo từng môn học và mức độ nhận thức (Nhận biết, Thông hiểu, Áp dụng, Tư duy cấp cao).
 
 #### 5. Bảng Điều Khiển (Dashboard) & Thống Kê
 - Theo dõi sự tăng trưởng số lượng câu hỏi và đề thi theo từng tháng.
@@ -57,8 +57,8 @@
 - Đo lường hiệu suất của hệ thống AI (Tỷ lệ chính xác OCR Confidence Rate, Độ trễ Latency).
 
 #### 6. Kiến Trúc Bảo Mật & Hệ Thống
-- **Server-Side Grading**: Toàn bộ logic chấm điểm, đối chiếu đáp án được chuyển từ trình duyệt của học sinh lên Server API (`/api/exams/submit`). Sử dụng **Firebase Admin SDK** để ghi điểm số với quyền cao nhất, ngăn chặn tuyệt đối học sinh sửa đổi điểm.
-- **Firestore Security Rules**: Áp dụng các quy tắc bảo mật nghiêm ngặt (`firestore.rules`), chỉ cho phép User đọc dữ liệu thuộc quyền sở hữu của mình, chặn ghi dữ liệu nhạy cảm từ Client.
+- **Server-Side Grading**: Toàn bộ logic chấm điểm, đối chiếu đáp án được chuyển từ trình duyệt của học sinh lên Server API (`/api/exams/submit`). Sử dụng **Firebase Admin SDK** để ghi kết quả chấm điểm an toàn.
+- **Firestore Security Rules**: Áp dụng các quy tắc bảo mật nghiêm ngặt (`firestore.rules`), chỉ cho phép User đọc dữ liệu thuộc quyền sở hữu của mình, chặn ghi dữ liệu từ phía client.
 - **Đồng Bộ Dữ Liệu**: Tự động đồng bộ hóa thông tin hồ sơ chuyên sâu (Học vị, Môn giảng dạy) giữa Local Storage và Firestore.
 
 ### Tech Stack
@@ -192,15 +192,18 @@ npm run lint             # Kiểm tra code quality
 
 - **Tách biệt Logic (Separation of Concerns)**: Custom Hooks được chia nhỏ và đóng gói business logic riêng biệt cho từng loại người dùng (Teacher, Student, Parent).
 - **Bảo mật (Security)**: Xử lý điểm số thông qua Server Actions / API Route kết hợp với Firebase Admin SDK và Firestore Security Rules.
-- **Tài liệu hóa (Documentation)**: Áp dụng chuẩn ghi chú JSDoc (`/** */`) trên toàn bộ tầng `services/` và `hooks/` để tạo Intellisense cho IDE. Inline comments (`//`) để mô tả luồng logic phức tạp bên trong hàm.
+- **Tài liệu hóa (Documentation)**: Áp dụng chuẩn ghi chú JSDoc (`/** */`) trên toàn bộ tầng `services/` và `hooks/` để tạo Intellisense cho IDE. Inline comments (`//`) đi kèm để giải thích các luồng logic phức tạp.
 - **Hiệu suất (Performance)**: Tận dụng cơ chế Caching của `SWR`, xử lý hình ảnh tối ưu, loại bỏ re-render thừa trong React.
 - **Khả năng tiếp cận (Accessibility)**: Tuân thủ tiêu chuẩn ARIA của Radix UI cho các modals, dropdowns, forms.
 
 ### Hỗ Trợ & Liên Hệ
 
-- Email: cmtran2005@gmail.com
-- GitHub: https://github.com/CMTran2005
-- Issues: https://github.com/CMTran2005/Exam-Bank-System/issues
+| Kênh | Liên hệ |
+|------|---------|
+| 📧 Email | [cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) |
+| 🐙 GitHub | [@CMTran2005](https://github.com/CMTran2005) |
+| 📋 Issues | [Báo cáo lỗi hoặc đề xuất tính năng](https://github.com/CMTran2005/Exam-Bank-System/issues) |
+| 💡 Discussions | [Thảo luận và câu hỏi](https://github.com/CMTran2005/Exam-Bank-System/discussions) |
 
 ---
 
@@ -210,15 +213,15 @@ npm run lint             # Kiểm tra code quality
 
 ### Overview
 
-**Exam Bank System** is a modern, comprehensive web platform designed for the educational ecosystem including Teachers, Students, and Parents. The system enables seamless management, creation, exam administration, and intelligent, secure learning progress tracking.
+**Exam Bank System** is a modern, comprehensive web platform designed for the educational ecosystem including Teachers, Students, and Parents. The system enables seamless management, creation, execution, and grading of exams with intelligent question management.
 
-The application goes beyond simple question storage by integrating cutting-edge technologies: AI (Gemini Vision) and intelligent OCR for automated exam digitization, Spaced Repetition algorithm (Flashcards), Gamification system (Badges & Leaderboards), and an advanced Server-Side Grading and Anti-Cheat system to guarantee absolute fairness in all examinations.
+The application goes beyond simple question storage by integrating cutting-edge technologies: AI (Gemini Vision) and intelligent OCR for automated exam digitization, Spaced Repetition algorithms for enhanced learning, Gamification features to boost engagement, and advanced Anti-Cheat mechanisms for secure assessment.
 
 ### Key Features
 
 #### 1. Teacher Portal & Advanced Exam Editor
 - **Real-time Collaboration**: Allows multiple educators to co-edit an exam simultaneously with live online presence tracking.
-- **Diverse Question Management**: Supports Multiple Choice (A/B/C/D), True/False (with dynamic statements), Fill in the blanks (Short answer), and Essay questions. Includes both standalone and Group Questions.
+- **Diverse Question Management**: Supports Multiple Choice (A/B/C/D), True/False (with dynamic statements), Fill in the blanks (Short answer), and Essay questions. Includes both standalone and Grouped Questions.
 - **AI Automation (AI Builder & OCR)**: 
   - *AI Prompt*: Automatically generate questions from text prompts.
   - *AI OCR*: Paste images directly -> Gemini 2.5 Flash analyzes structure -> Automatically extracts and fills multiple questions into the form.
@@ -232,7 +235,7 @@ The application goes beyond simple question storage by integrating cutting-edge 
   - Disables system shortcuts: F12, Copy (Ctrl+C), Paste (Ctrl+V), Print (Ctrl+P), View Source (Ctrl+U).
   - Employs MutationObserver to automatically detect and hide/disable DOM-manipulating extensions (e.g., Sider, Grammarly).
 - **Practice Mode**: Allows students to retake exams infinitely to hone their skills, logging the number of attempts.
-- **Gamification**: Students earn experience points, unlock achievement badges (Bronze, Silver, Gold, Diamond), and compete on real-time class Leaderboards. Includes Confetti effects upon unlocking new badges.
+- **Gamification**: Students earn experience points, unlock achievement badges (Bronze, Silver, Gold, Diamond), and compete on real-time class Leaderboards. Includes Confetti effects upon unlocking badges.
 
 #### 3. Flashcards Learning System (Spaced Repetition)
 - Automatically extracts incorrectly answered questions from exams to generate Flashcards.
@@ -248,7 +251,7 @@ The application goes beyond simple question storage by integrating cutting-edge 
 - AI System performance metrics (OCR Confidence Rate, Latency).
 
 #### 6. Security Architecture & System
-- **Server-Side Grading**: All grading and answer verification logic is moved from the student's browser to a Server API (`/api/exams/submit`). Uses **Firebase Admin SDK** to securely write scores with elevated privileges, completely preventing client-side score tampering.
+- **Server-Side Grading**: All grading and answer verification logic is moved from the student's browser to a Server API (`/api/exams/submit`). Uses **Firebase Admin SDK** to securely write scores.
 - **Firestore Security Rules**: Strict security rules (`firestore.rules`) implemented to restrict data reads to owners only and block sensitive writes from the client.
 - **Data Synchronization**: Automatic syncing of in-depth profile information (Academic Degree, Teaching Subjects) between Local Storage and Firestore.
 
@@ -389,9 +392,12 @@ npm run lint             # Check code quality
 
 ### Support & Contact
 
-- Email: cmtran2005@gmail.com
-- GitHub: https://github.com/CMTran2005
-- Issues: https://github.com/CMTran2005/Exam-Bank-System/issues
+| Channel | Contact |
+|---------|---------|
+| 📧 Email | [cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) |
+| 🐙 GitHub | [@CMTran2005](https://github.com/CMTran2005) |
+| 📋 Issues | [Report bugs or suggest features](https://github.com/CMTran2005/Exam-Bank-System/issues) |
+| 💡 Discussions | [Ask questions and discuss](https://github.com/CMTran2005/Exam-Bank-System/discussions) |
 
 ---
 
@@ -399,6 +405,6 @@ npm run lint             # Check code quality
 
 **Made with love by CMTran2005**
 
-https://github.com/CMTran2005 | cmtran2005@gmail.com | https://github.com/CMTran2005/Exam-Bank-System
+[GitHub](https://github.com/CMTran2005) | [Email](mailto:cmtran2005@gmail.com) | [Repository](https://github.com/CMTran2005/Exam-Bank-System)
 
 </div>
