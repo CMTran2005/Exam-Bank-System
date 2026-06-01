@@ -3,7 +3,6 @@
 <div align="center">
 
 ![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
 ![Language](https://img.shields.io/badge/JavaScript-94.4%25-yellow)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5%25-blue)
 
@@ -21,7 +20,7 @@
 
 **Exam Bank System** là nền tảng web hiện đại được thiết kế cho các giáo viên, nhà giáo dục để quản lý, sáng tạo và chia sẻ ngân hàng câu hỏi. 
 
-Ứng dụng tích hợp công nghệ AI (Gemini Vision), OCR thông minh để tự động số hóa đề thi từ hình ảnh, hỗ trợ soạn thảo công thức toán học trực quan, cùng bộ công cụ quản lý lớp học và thống kê chi tiết.
+Ứng dụng tích hợp công nghệ AI (Gemini Vision), OCR thông minh để tự động số hóa đề thi từ hình ảnh, hỗ trợ soạn thảo công thức toán học trực quan, cùng hệ thống quản lý câu hỏi thông minh với các tính năng như Dark Mode, Dashboard thống kê, Thùng Rác và nhiều hơn nữa.
 
 ### Tính Năng Nổi Bật
 
@@ -207,7 +206,7 @@ npm start                # Chạy production server
 npm run lint             # Kiểm tra code quality
 ```
 
-### Tính Năng Nhân Đạo
+### Best Practices
 
 - Tách biệt Logic: Custom Hooks riêng cho từng feature
 - Bảo mật: Firebase Auth + Firestore security rules
@@ -231,7 +230,7 @@ npm run lint             # Kiểm tra code quality
 
 **Exam Bank System** is a modern web platform designed for educators and teachers to manage, create, and share question banks. 
 
-The application integrates AI technology (Gemini Vision) and intelligent OCR to automatically digitize exams from images, supports visual mathematical formula editing, along with class management tools and detailed analytics.
+The application integrates AI technology (Gemini Vision) and intelligent OCR to automatically digitize exams from images, supports visual mathematical formula editing, along with an intelligent question management system featuring Dark Mode, analytics dashboard, recycle bin, and much more.
 
 ### Key Features
 
@@ -435,7 +434,7 @@ npm run lint             # Check code quality
 
 <div align="center">
 
-Made with love by CMTran2005
+**Made with love by CMTran2005**
 
 https://github.com/CMTran2005 | cmtran2005@gmail.com | https://github.com/CMTran2005/Exam-Bank-System
 
