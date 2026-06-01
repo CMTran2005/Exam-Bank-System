@@ -2,9 +2,10 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.1.0-purple)
-![Language](https://img.shields.io/badge/JavaScript-94.4%25-blue)
-![TypeScript](https://img.shields.io/badge/TypeScript-5%25-green)
+![Version](https://img.shields.io/badge/version-0.1.0-gray)
+![Language](https://img.shields.io/badge/JavaScript-94.9%25-fff2b2)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.5%25-bbf7d0)
+![CSS](https://img.shields.io/badge/CSS-0.6%25-e9d5ff)
 
 **[Tiếng Việt](#vietnamese) | [English](#english)**
 
