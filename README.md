@@ -2,9 +2,9 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
-![Language](https://img.shields.io/badge/JavaScript-94.4%25-yellow)
-![TypeScript](https://img.shields.io/badge/TypeScript-5%25-blue)
+![Version](https://img.shields.io/badge/version-0.1.0-purple)
+![Language](https://img.shields.io/badge/JavaScript-94.4%25-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5%25-green)
 
 **[Tiếng Việt](#vietnamese) | [English](#english)**
 
@@ -18,121 +18,102 @@
 
 ### Giới Thiệu
 
-**Exam Bank System** là nền tảng web hiện đại được thiết kế cho các giáo viên, nhà giáo dục để quản lý, sáng tạo và chia sẻ ngân hàng câu hỏi. 
+**Exam Bank System** là nền tảng web hiện đại được thiết kế toàn diện cho hệ sinh thái giáo dục bao gồm Giáo viên, Học sinh và Phụ huynh. Hệ thống giúp quản lý, sáng tạo, tổ chức thi cử và theo dõi tiến độ học tập một cách thông minh, bảo mật.
 
-Ứng dụng tích hợp công nghệ AI (Gemini Vision), OCR thông minh để tự động số hóa đề thi từ hình ảnh, hỗ trợ soạn thảo công thức toán học trực quan, cùng hệ thống quản lý câu hỏi thông minh với các tính năng như Dark Mode, Dashboard thống kê, Thùng Rác và nhiều hơn nữa.
+Ứng dụng không chỉ là nơi lưu trữ câu hỏi, mà còn tích hợp các công nghệ tiên tiến nhất: AI (Gemini Vision) và OCR thông minh để tự động số hóa đề thi, thuật toán học tập ngắt quãng Spaced Repetition (Flashcards), hệ thống Gamification (Huy hiệu & Bảng xếp hạng), cùng hệ thống Server-Side Grading và Anti-Cheat tiên tiến để đảm bảo tính công bằng tuyệt đối trong mọi kỳ thi.
 
 ### Tính Năng Nổi Bật
 
-#### 1. Xác Thực & Quản Lý Hồ Sơ
+#### 1. Cổng Giáo Viên (Teacher Portal) & Trình Soạn Thảo Đề Thi
+- **Soạn thảo Thời gian thực (Real-time Collaboration)**: Hỗ trợ nhiều giáo viên cùng lúc tham gia biên soạn chung một đề thi, hiển thị trạng thái trực tuyến của các thành viên trong phòng soạn thảo.
+- **Quản lý Câu hỏi Đa Dạng**: Hỗ trợ Trắc nghiệm (Multiple Choice A/B/C/D), Đúng/Sai (True/False với mệnh đề động), Điền khuyết (Fill in the blanks), và Tự luận (Essay). Hỗ trợ cả câu hỏi đơn và câu hỏi nhóm (Group Questions).
+- **AI Tự Động Hóa (AI Builder & OCR)**: 
+  - *AI Prompt*: Khởi tạo câu hỏi tự động từ yêu cầu văn bản của giáo viên.
+  - *AI OCR*: Dán hình ảnh trực tiếp -> Gemini 2.5 Flash phân tích cấu trúc -> Tự động bóc tách thành nhiều câu hỏi và điền vào form.
+- **Toán Học Trực Quan**: Tích hợp MathLive để gõ công thức như Word và KaTeX để hiển thị chuẩn xác (Rendering).
+- **Thư Viện & Thùng Rác**: Phân loại theo thư mục, lưu trữ an toàn với cơ chế Soft Delete (Xóa mềm có thể khôi phục) hoặc Hard Delete (Xóa vĩnh viễn).
+- **Cộng Đồng Chia Sẻ (Community)**: Chia sẻ đề thi công khai lên thư viện chung. Giáo viên khác có thể tìm kiếm, lọc theo khối lớp/môn học và Nhân bản (Clone/Fork) về tài khoản của mình chỉ với 1 cú click.
 
-- Đăng nhập / Đăng ký qua Firebase Authentication
-- Lưu trữ thông tin hồ sơ chuyên sâu (Học vị, Môn giảng dạy)
-- Đồng bộ tự động giữa Local Storage và Firestore
+#### 2. Cổng Học Sinh (Student Portal) & Thi Trực Tuyến
+- **Hệ Thống Anti-Cheat Tiên Tiến (Chống Gian Lận)**: 
+  - Phát hiện hành vi chuyển Tab (Visibility API) hoặc mất Focus cửa sổ.
+  - Vô hiệu hóa phím tắt hệ thống: F12, Sao chép (Ctrl+C), Dán (Ctrl+V), In ấn (Ctrl+P), Xem mã nguồn (Ctrl+U).
+  - Sử dụng MutationObserver để tự động phát hiện và ẩn/vô hiệu hóa các tiện ích mở rộng (Extensions) cố tình can thiệp vào DOM (như Sider, Grammarly, v.v.).
+- **Luyện Tập Tự Do (Practice Mode)**: Cho phép học sinh làm lại các đề thi không giới hạn số lần để rèn luyện kỹ năng, có lưu lại số lần đã thử (Attempts).
+- **Gamification (Trò chơi hóa)**: Học sinh kiếm điểm kinh nghiệm, nhận huy hiệu thành tích (Đồng, Bạc, Vàng, Kim Cương...) và đua top trên Bảng xếp hạng (Leaderboard) của lớp. Hiệu ứng pháo hoa (Confetti) chúc mừng khi nhận huy hiệu mới.
 
-#### 2. Trình Soạn Thảo Đề Thi (Exam Editor)
+#### 3. Hệ Thống Học Tập Flashcards (Spaced Repetition)
+- Tự động trích xuất các câu hỏi học sinh làm sai trong quá trình thi để chuyển thành Flashcards.
+- Tích hợp **Thuật toán SM-2 (SuperMemo-2)**: Điều chỉnh thời gian ôn tập lại (Interval) dựa trên đánh giá độ khó của người học, giúp tối ưu hóa trí nhớ dài hạn.
 
-- Hỗ trợ 3 loại câu hỏi chính:
-  - Trắc nghiệm (Multiple Choice A/B/C/D)
-  - Đúng/Sai (True/False với các mệnh đề động)
-  - Tự luận (Essay questions)
-- Câu hỏi đơn và câu hỏi nhóm (Group Questions)
-- AI OCR: Dán ảnh → Gemini 2.5 Flash phân tích → Tự động điền văn bản
-- Hỗ trợ Toán học: MathLive (gõ công thức) + KaTeX (hiển thị chuẩn)
-- Đính kèm hình ảnh minh họa cho từng đáp án/mệnh đề
+#### 4. Cổng Phụ Huynh (Parent Portal)
+- **Theo Dõi Con Em**: Phụ huynh có thể nhập Mã học sinh hoặc Email để liên kết tài khoản con em vào bảng điều khiển.
+- **Báo Cáo Học Tập (Analytics)**: Biểu đồ Radar đa chiều đánh giá năng lực của học sinh theo từng môn học và mức độ nhận thức (Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao).
 
-#### 3. Bảng Điều Khiển & Thống Kê (Dashboard)
+#### 5. Bảng Điều Khiển (Dashboard) & Thống Kê
+- Theo dõi sự tăng trưởng số lượng câu hỏi và đề thi theo từng tháng.
+- Biểu đồ Donut Chart phân bố các loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận).
+- Đo lường hiệu suất của hệ thống AI (Tỷ lệ chính xác OCR Confidence Rate, Độ trễ Latency).
 
-- Theo dõi tăng trưởng câu hỏi/đề thi theo tháng
-- Biểu đồ phân bố loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận)
-- Phân tích độ khó: Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao
-- Đo lường hiệu suất AI (OCR Confidence Rate, Latency)
-
-#### 4. Quản Lý Lớp Học & Học Sinh
-
-- Tạo và quản lý nhiều lớp học
-- Theo dõi danh sách học sinh
-- Cài đặt tùy chỉnh theo từng lớp
-
-#### 5. Ngân Hàng Câu Hỏi & Tìm Kiếm
-
-- Bộ lọc đa chiều: khối lớp, môn học, độ khó
-- Tìm kiếm nhanh theo từ khóa
-- Đánh dấu/lưu câu hỏi yêu thích
-
-#### 6. Thùng Rác & Khôi Phục
-
-- Soft Delete: Xóa mềm với khả năng phục hồi
-- Khôi phục (Restore) hoặc xóa vĩnh viễn (Hard Delete)
-- Lịch sử xóa chi tiết
-
-#### 7. Giao Diện Hiện Đại
-
-- Hỗ trợ Dark Mode / Light Mode toàn bộ
-- Responsive design trên tất cả thiết bị
-- UI Premium với component tùy chỉnh
-- Hiệu suất tối ưu
+#### 6. Kiến Trúc Bảo Mật & Hệ Thống
+- **Server-Side Grading**: Toàn bộ logic chấm điểm, đối chiếu đáp án được chuyển từ trình duyệt của học sinh lên Server API (`/api/exams/submit`). Sử dụng **Firebase Admin SDK** để ghi điểm số với quyền cao nhất, ngăn chặn tuyệt đối học sinh sửa đổi điểm.
+- **Firestore Security Rules**: Áp dụng các quy tắc bảo mật nghiêm ngặt (`firestore.rules`), chỉ cho phép User đọc dữ liệu thuộc quyền sở hữu của mình, chặn ghi dữ liệu nhạy cảm từ Client.
+- **Đồng Bộ Dữ Liệu**: Tự động đồng bộ hóa thông tin hồ sơ chuyên sâu (Học vị, Môn giảng dạy) giữa Local Storage và Firestore.
 
 ### Tech Stack
 
-| Lớp | Công Nghệ | Phiên Bản |
-|---|---|---|
-| Framework | Next.js (App Router) | 16.2.6 |
-| UI Library | shadcn/ui + Radix UI | Latest |
-| Styling | TailwindCSS | v4 |
-| Database | Firebase Firestore | Latest |
-| Authentication | Firebase Auth | v12.13 |
-| AI / OCR | Google Gemini 2.5 Flash | Latest |
-| Math Rendering | KaTeX | v0.16.47 |
-| Math Editing | MathLive | Integrated |
-| State Management | Zustand | v5.0 |
-| Icons | Lucide React | v1.16 |
-| Charts | Recharts | v3.8 |
-| Notifications | Sonner | v2.0 |
-| Language | JavaScript/TypeScript | 94.4% / 5% |
+| Lớp | Công Nghệ | Phiên Bản | Ghi chú |
+|---|---|---|---|
+| Framework | Next.js (App Router) | 16.2.6 | Full-stack framework |
+| UI Library | shadcn/ui + Radix UI | Latest | ARIA-compliant Components |
+| Styling | TailwindCSS | v4 | Utility-first CSS |
+| Database | Firebase Firestore | Latest | NoSQL Database |
+| Authentication | Firebase Auth | v12.13 | JWT Security |
+| AI / OCR | Google Gemini 2.5 Flash | Latest | Vision Analysis |
+| Backend API | Firebase Admin SDK | Latest | Server-side Operations |
+| Math Rendering | KaTeX | v0.16.47 | High-performance Math |
+| Math Editing | MathLive | Integrated | Virtual Math Keyboard |
+| State Management | Zustand + SWR | v5.0 | Global State & Data Fetching |
+| Icons | Lucide React | v1.16 | SVG Icons |
+| Charts | Recharts | v3.8 | Data Visualization |
+| Notifications | Sonner | v2.0 | Toast Notifications |
+| Documentation | JSDoc | Standard | Code consistency |
 
 ### Cấu Trúc Dự Án
 
 ```text
 exam-bank-system/
 ├── app/                          # Next.js 15 App Router
-│   ├── api/ocr/                 # API Route: Gọi Gemini AI
-│   ├── classes/                 # Quản lý lớp học
-│   ├── create-question/         # Trình soạn thảo đề thi
-│   ├── login/                   # Trang đăng nhập
-│   ├── register/                # Trang đăng ký
-│   ├── my-exams/                # Quản lý đề thi cá nhân
-│   ├── questions/               # Ngân hàng câu hỏi
-│   ├── recycle-bin/             # Thùng rác
-│   ├── settings/                # Cài đặt hồ sơ
-│   ├── statistics/              # Dashboard thống kê
-│   └── layout.tsx               # Root layout
+│   ├── api/                      # Server API Routes (Grading, AI OCR)
+│   ├── (teacher)/                # Teacher Portal: dashboard, create-exam, my-exams...
+│   ├── student/                  # Student Portal: exam, practice, flashcards, classes...
+│   ├── parent/                   # Parent Portal: children, report...
+│   ├── login/                    # Authentication
+│   └── layout.jsx                # Root layout
 │
-├── components/                  # React Components
-│   ├── layout/                  # Header, Sidebar, Footer
-│   ├── question/                # Form câu hỏi
-│   ├── shared/                  # Provider, utilities
-│   └── ui/                      # shadcn/ui components
+├── components/                   # React Components
+│   ├── layout/                   # Header, Sidebar (Teacher/Student/Parent), Footer
+│   ├── question/                 # Form câu hỏi, Math editor
+│   ├── shared/                   # Custom UI, Providers
+│   └── ui/                       # shadcn/ui components
 │
-├── context/
-│   └── AuthContext.jsx          # Global auth state
+├── hooks/                        # Custom Hooks (Chia theo Role)
+│   ├── teacher/                  # useExams, useCreateExam, useStatistics...
+│   ├── student/                  # useClasses, useExam...
+│   ├── parent/                   # useChildren, useStudentReport...
+│   └── shared/                   # useProvinces, useSubjects, useSettings...
 │
-├── hooks/                       # Custom Hooks (Business Logic)
-│   ├── useClasses.js
-│   ├── useCreateExam.js
-│   ├── useQuestionForm.js
-│   ├── useStatistics.js
-│   └── ...
+├── services/                     # Data Access Layer (JSDoc Standard)
+│   ├── classService.js           # Lớp học
+│   ├── examService.js            # Đề thi
+│   ├── examAttemptService.js     # Lịch sử thi & Chống gian lận
+│   ├── flashcardService.js       # Thuật toán Spaced Repetition (SM-2)
+│   └── badgeService.js           # Gamification / Huy hiệu
 │
-├── services/                    # Data Access Layer
-│   ├── classService.js
-│   ├── examService.js
-│   └── teacherService.js
-│
-├── store/                       # Zustand state stores
-├── lib/                         # Utility functions
-├── public/                      # Static assets
-└── config/                      # Configuration files
+├── store/                        # Zustand state stores
+├── lib/                          # Utility functions & Constants
+├── public/                       # Static assets
+└── config/                       # Configuration files
 ```
 
 ### Cài Đặt & Chạy
@@ -152,7 +133,7 @@ npm install
 
 #### 3. Tạo File Environment
 
-Tạo file `.env.local` tại thư mục gốc:
+Tạo file `.env.local` tại thư mục gốc và điền các khóa API (API Keys):
 
 ```env
 # Google Gemini AI
@@ -165,6 +146,10 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Firebase Admin SDK (For Server-Side Actions)
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
+FIREBASE_PRIVATE_KEY="your_firebase_private_key"
 ```
 
 #### 4. Chạy Development Server
@@ -175,13 +160,6 @@ npm run dev
 
 Truy cập: http://localhost:3000
 
-#### 5. Build Production
-
-```bash
-npm run build
-npm start
-```
-
 ### Lộ Trình Phát Triển
 
 | Phase | Nội Dung | Trạng Thái |
@@ -190,7 +168,10 @@ npm start
 | 2 - Core Editor | Trình soạn thảo + Gemini OCR + MathLive | Hoàn thành |
 | 3 - Architecture | Custom Hooks, Services, Classes, Recycle Bin | Hoàn thành |
 | 4 - Analytics | Firebase Auth, Profile Sync, Dashboard | Hoàn thành |
-| 5 - Collaboration | Zen Mode, Auto-save, Shared Workspace | Đang phát triển |
+| 5 - Collaboration | Zen Mode, Auto-save, Shared Workspace | Hoàn thành |
+| 6 - Student Portal| Gamification, Leaderboard, Spaced Repetition (Flashcards) | Hoàn thành |
+| 7 - Security | Server-Side Grading, Anti-Cheat, Parent Portal, Firestore Rules | Hoàn thành |
+| 8 - Documentation| JSDoc Standardization, Code Cleanup, UI Polish | Hoàn thành |
 
 ### Các Lệnh Có Sẵn
 
@@ -206,13 +187,13 @@ npm start                # Chạy production server
 npm run lint             # Kiểm tra code quality
 ```
 
-### Best Practices
+### Best Practices (Tiêu Chuẩn Dự Án)
 
-- Tách biệt Logic: Custom Hooks riêng cho từng feature
-- Bảo mật: Firebase Auth + Firestore security rules
-- Hiệu suất: SSR, Image optimization, Code splitting
-- Responsive: Mobile-first design
-- Accessibility: Radix UI components (ARIA compliant)
+- **Tách biệt Logic (Separation of Concerns)**: Custom Hooks được chia nhỏ và đóng gói business logic riêng biệt cho từng loại người dùng (Teacher, Student, Parent).
+- **Bảo mật (Security)**: Xử lý điểm số thông qua Server Actions / API Route kết hợp với Firebase Admin SDK và Firestore Security Rules.
+- **Tài liệu hóa (Documentation)**: Áp dụng chuẩn ghi chú JSDoc (`/** */`) trên toàn bộ tầng `services/` và `hooks/` để tạo Intellisense cho IDE. Inline comments (`//`) để mô tả luồng logic phức tạp bên trong hàm.
+- **Hiệu suất (Performance)**: Tận dụng cơ chế Caching của `SWR`, xử lý hình ảnh tối ưu, loại bỏ re-render thừa trong React.
+- **Khả năng tiếp cận (Accessibility)**: Tuân thủ tiêu chuẩn ARIA của Radix UI cho các modals, dropdowns, forms.
 
 ### Hỗ Trợ & Liên Hệ
 
@@ -228,121 +209,102 @@ npm run lint             # Kiểm tra code quality
 
 ### Overview
 
-**Exam Bank System** is a modern web platform designed for educators and teachers to manage, create, and share question banks. 
+**Exam Bank System** is a modern, comprehensive web platform designed for the educational ecosystem including Teachers, Students, and Parents. The system enables seamless management, creation, exam administration, and intelligent, secure learning progress tracking.
 
-The application integrates AI technology (Gemini Vision) and intelligent OCR to automatically digitize exams from images, supports visual mathematical formula editing, along with an intelligent question management system featuring Dark Mode, analytics dashboard, recycle bin, and much more.
+The application goes beyond simple question storage by integrating cutting-edge technologies: AI (Gemini Vision) and intelligent OCR for automated exam digitization, Spaced Repetition algorithm (Flashcards), Gamification system (Badges & Leaderboards), and an advanced Server-Side Grading and Anti-Cheat system to guarantee absolute fairness in all examinations.
 
 ### Key Features
 
-#### 1. Authentication & Profile Management
+#### 1. Teacher Portal & Advanced Exam Editor
+- **Real-time Collaboration**: Allows multiple educators to co-edit an exam simultaneously with live online presence tracking.
+- **Diverse Question Management**: Supports Multiple Choice (A/B/C/D), True/False (with dynamic statements), Fill in the blanks (Short answer), and Essay questions. Includes both standalone and Group Questions.
+- **AI Automation (AI Builder & OCR)**: 
+  - *AI Prompt*: Automatically generate questions from text prompts.
+  - *AI OCR*: Paste images directly -> Gemini 2.5 Flash analyzes structure -> Automatically extracts and fills multiple questions into the form.
+- **Visual Mathematics**: Integrates MathLive for Word-like formula typing and KaTeX for precise rendering.
+- **Library & Recycle Bin**: Categorization via folders, secure storage with Soft Delete (restorable) or Hard Delete capabilities.
+- **Exam Community**: Share exams publicly to a shared library. Other educators can search, filter by grade/subject, and Clone/Fork exams into their own accounts with a single click.
 
-- Login / Registration via Firebase Authentication
-- Store detailed profile information (Academic Degree, Teaching Subject)
-- Auto-sync between Local Storage and Firestore
+#### 2. Student Portal & Online Exams
+- **Advanced Anti-Cheat System**: 
+  - Detects Tab switching (Visibility API) and window focus loss.
+  - Disables system shortcuts: F12, Copy (Ctrl+C), Paste (Ctrl+V), Print (Ctrl+P), View Source (Ctrl+U).
+  - Employs MutationObserver to automatically detect and hide/disable DOM-manipulating extensions (e.g., Sider, Grammarly).
+- **Practice Mode**: Allows students to retake exams infinitely to hone their skills, logging the number of attempts.
+- **Gamification**: Students earn experience points, unlock achievement badges (Bronze, Silver, Gold, Diamond), and compete on real-time class Leaderboards. Includes Confetti effects upon unlocking new badges.
 
-#### 2. Advanced Exam Editor
+#### 3. Flashcards Learning System (Spaced Repetition)
+- Automatically extracts incorrectly answered questions from exams to generate Flashcards.
+- Integrates the **SM-2 (SuperMemo-2) Algorithm**: Dynamically adjusts the review interval based on the learner's difficulty rating, optimizing long-term memory retention.
 
-- Support for 3 main question types:
-  - Multiple Choice (A/B/C/D options)
-  - True/False (Dynamic statements)
-  - Essay (Open-ended questions)
-- Single and Group Questions support
-- AI OCR: Paste image → Gemini 2.5 Flash analyzes → Auto-fill text
-- Math Support: MathLive (visual editor) + KaTeX (precise rendering)
-- Image attachments for each option/statement
+#### 4. Parent Portal
+- **Child Monitoring**: Parents can input a Student ID or Email to link their child's account to the dashboard.
+- **Learning Analytics**: Multi-dimensional Radar charts evaluate student competencies across different subjects and cognitive levels (Remembering, Understanding, Applying, High-Order Thinking).
 
-#### 3. Dashboard & Analytics
+#### 5. Dashboard & Statistics
+- Track monthly growth of questions and exams.
+- Donut Charts visualizing the distribution of question types.
+- AI System performance metrics (OCR Confidence Rate, Latency).
 
-- Monthly growth tracking (questions and exams)
-- Question type distribution charts
-- Difficulty level analysis (Remembering, Understanding, Applying, High-Order)
-- AI Performance metrics (OCR Confidence, Latency)
-
-#### 4. Class Management
-
-- Create and manage multiple classes
-- Track student enrollment
-- Class-specific customization
-
-#### 5. Question Bank & Search
-
-- Multi-dimensional filters (grade, subject, difficulty)
-- Fast keyword search
-- Favorite marking system
-
-#### 6. Recycle Bin & Recovery
-
-- Soft Delete: Safe removal with restore capability
-- Full restore or permanent deletion
-- Detailed deletion history
-
-#### 7. Modern UI
-
-- Dark Mode / Light Mode support
-- Fully responsive design
-- Premium custom components
-- Optimized performance
+#### 6. Security Architecture & System
+- **Server-Side Grading**: All grading and answer verification logic is moved from the student's browser to a Server API (`/api/exams/submit`). Uses **Firebase Admin SDK** to securely write scores with elevated privileges, completely preventing client-side score tampering.
+- **Firestore Security Rules**: Strict security rules (`firestore.rules`) implemented to restrict data reads to owners only and block sensitive writes from the client.
+- **Data Synchronization**: Automatic syncing of in-depth profile information (Academic Degree, Teaching Subjects) between Local Storage and Firestore.
 
 ### Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Framework | Next.js (App Router) | 16.2.6 |
-| UI Library | shadcn/ui + Radix UI | Latest |
-| Styling | TailwindCSS | v4 |
-| Database | Firebase Firestore | Latest |
-| Authentication | Firebase Auth | v12.13 |
-| AI / OCR | Google Gemini 2.5 Flash | Latest |
-| Math Rendering | KaTeX | v0.16.47 |
-| Math Editing | MathLive | Integrated |
-| State Management | Zustand | v5.0 |
-| Icons | Lucide React | v1.16 |
-| Charts | Recharts | v3.8 |
-| Notifications | Sonner | v2.0 |
-| Language | JavaScript/TypeScript | 94.4% / 5% |
+| Layer | Technology | Version | Notes |
+|-------|-----------|---------|-------|
+| Framework | Next.js (App Router) | 16.2.6 | Full-stack framework |
+| UI Library | shadcn/ui + Radix UI | Latest | ARIA-compliant Components |
+| Styling | TailwindCSS | v4 | Utility-first CSS |
+| Database | Firebase Firestore | Latest | NoSQL Database |
+| Authentication | Firebase Auth | v12.13 | JWT Security |
+| AI / OCR | Google Gemini 2.5 Flash | Latest | Vision Analysis |
+| Backend API | Firebase Admin SDK | Latest | Server-side Operations |
+| Math Rendering | KaTeX | v0.16.47 | High-performance Math |
+| Math Editing | MathLive | Integrated | Virtual Math Keyboard |
+| State Management | Zustand + SWR | v5.0 | Global State & Data Fetching |
+| Icons | Lucide React | v1.16 | SVG Icons |
+| Charts | Recharts | v3.8 | Data Visualization |
+| Notifications | Sonner | v2.0 | Toast Notifications |
+| Documentation | JSDoc | Standard | Code consistency |
 
 ### Project Structure
 
 ```text
 exam-bank-system/
-├── app/                         # Next.js 15 App Router
-│   ├── api/ocr/                # API Route: Gemini AI integration
-│   ├── classes/                # Class management
-│   ├── create-question/        # Exam editor
-│   ├── login/                  # Login page
-│   ├── register/               # Registration page
-│   ├── my-exams/               # Personal exam management
-│   ├── questions/              # Question bank
-│   ├── recycle-bin/            # Trash/recovery
-│   ├── settings/               # Profile settings
-│   ├── statistics/             # Analytics dashboard
-│   └── layout.tsx              # Root layout
+├── app/                          # Next.js 15 App Router
+│   ├── api/                      # Server API Routes (Grading, AI OCR)
+│   ├── (teacher)/                # Teacher Portal: dashboard, create-exam, my-exams...
+│   ├── student/                  # Student Portal: exam, practice, flashcards, classes...
+│   ├── parent/                   # Parent Portal: children, report...
+│   ├── login/                    # Authentication
+│   └── layout.jsx                # Root layout
 │
-├── components/                 # React Components
-│   ├── layout/                 # Header, Sidebar, Footer
-│   ├── question/               # Question forms
-│   ├── shared/                 # Providers, utilities
-│   └── ui/                     # shadcn/ui components
+├── components/                   # React Components
+│   ├── layout/                   # Header, Sidebar (Teacher/Student/Parent), Footer
+│   ├── question/                 # Form components, Math editor
+│   ├── shared/                   # Custom UI, Providers
+│   └── ui/                       # shadcn/ui components
 │
-├── context/
-│   └── AuthContext.jsx         # Global auth state
+├── hooks/                        # Custom Hooks (Segregated by Role)
+│   ├── teacher/                  # useExams, useCreateExam, useStatistics...
+│   ├── student/                  # useClasses, useExam...
+│   ├── parent/                   # useChildren, useStudentReport...
+│   └── shared/                   # useProvinces, useSubjects, useSettings...
 │
-├── hooks/                      # Custom Hooks (Business Logic)
-│   ├── useClasses.js
-│   ├── useCreateExam.js
-│   ├── useQuestionForm.js
-│   ├── useStatistics.js
-│   └── ...
+├── services/                     # Data Access Layer (JSDoc Standard)
+│   ├── classService.js           # Class management
+│   ├── examService.js            # Exam management
+│   ├── examAttemptService.js     # Exam history & Anti-cheat logging
+│   ├── flashcardService.js       # Spaced Repetition Algorithm (SM-2)
+│   └── badgeService.js           # Gamification / Badges
 │
-├── services/                   # Data Access Layer
-│   ├── classService.js
-│   ├── examService.js
-│   └── teacherService.js
-│
-├── store/                      # Zustand state stores
-├── lib/                        # Utility functions
-├── public/                     # Static assets
-└── config/                     # Configuration files
+├── store/                        # Zustand state stores
+├── lib/                          # Utility functions & Constants
+├── public/                       # Static assets
+└── config/                       # Configuration files
 ```
 
 ### Installation & Setup
@@ -362,7 +324,7 @@ npm install
 
 #### 3. Create Environment File
 
-Create `.env.local` in the root directory:
+Create `.env.local` in the root directory and fill in the API Keys:
 
 ```env
 # Google Gemini AI
@@ -375,6 +337,10 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Firebase Admin SDK (For Server-Side Actions)
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
+FIREBASE_PRIVATE_KEY="your_firebase_private_key"
 ```
 
 #### 4. Run Development Server
@@ -385,13 +351,6 @@ npm run dev
 
 Access: http://localhost:3000
 
-#### 5. Build for Production
-
-```bash
-npm run build
-npm start
-```
-
 ### Development Roadmap
 
 | Phase | Description | Status |
@@ -400,7 +359,10 @@ npm start
 | 2 - Core Editor | Advanced forms + Gemini OCR + MathLive | Done |
 | 3 - Architecture | Custom Hooks, Services, Classes, Recycle Bin | Done |
 | 4 - Analytics | Firebase Auth, Profile Sync, Dashboard | Done |
-| 5 - Collaboration | Zen Mode, Auto-save, Shared Workspace | In Progress |
+| 5 - Collaboration | Zen Mode, Auto-save, Shared Workspace | Done |
+| 6 - Student Portal| Gamification, Leaderboard, Flashcards (SM-2) | Done |
+| 7 - Security | Server-Side Grading, Anti-Cheat, Parent Portal, Firestore Rules | Done |
+| 8 - Documentation| JSDoc Standardization, Code Cleanup, UI Polish | Done |
 
 ### Available Commands
 
@@ -418,11 +380,11 @@ npm run lint             # Check code quality
 
 ### Best Practices
 
-- Separation of Concerns: Custom Hooks isolate business logic
-- Security: Firebase Auth + Firestore security rules
-- Performance: SSR, Image optimization, Code splitting
-- Responsive: Mobile-first approach
-- Accessibility: Radix UI components (ARIA-compliant)
+- **Separation of Concerns**: Custom Hooks are modularized to encapsulate business logic specifically for each user role (Teacher, Student, Parent).
+- **Security**: Score processing is handled via Server Actions / API Routes paired with the Firebase Admin SDK and Firestore Security Rules.
+- **Documentation**: JSDoc standard (`/** */`) is applied across the `services/` and `hooks/` layers to provide IDE Intellisense. Inline comments (`//`) describe complex logical flows.
+- **Performance**: Leverages `SWR` caching, optimized image handling, and eliminates unnecessary React re-renders.
+- **Accessibility**: Adheres to Radix UI's ARIA standards for modals, dropdowns, and forms.
 
 ### Support & Contact
 
