@@ -4,7 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 import StudentStatistics from "@/components/student/StudentStatistics";
 import { studentService } from "@/services/studentService";
-import { UserCircle } from "lucide-react";
+import { UserCircle, Copy } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
     const { currentUser } = useAuth();
@@ -45,6 +46,26 @@ export default function ProfilePage() {
                             Theo dõi quá trình rèn luyện và thành tích của bạn
                         </p>
                     </div>
+                </div>
+                <div className="flex items-center gap-4 bg-muted/30 border border-border p-3 rounded-xl shadow-sm mt-4 md:mt-0">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">
+                            Mã liên kết phụ huynh
+                        </span>
+                        <span className="text-sm sm:text-base font-mono font-black text-foreground">
+                            {currentUser.email || currentUser.uid}
+                        </span>
+                    </div>
+                    <button 
+                        onClick={() => {
+                            navigator.clipboard.writeText(currentUser.email || currentUser.uid);
+                            toast.success("Đã sao chép mã liên kết!");
+                        }}
+                        className="p-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border rounded-lg transition-colors shrink-0"
+                        title="Sao chép mã"
+                    >
+                        <Copy className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
 

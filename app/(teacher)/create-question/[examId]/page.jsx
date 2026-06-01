@@ -9,7 +9,7 @@ import { AiAssistantCard } from "../_components/AiAssistantCard";
 import { QuestionListCard } from "../_components/QuestionListCard";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
-import OnlineUsers from "@/components/collaboration/OnlineUsers";
+import OnlineUsers from "@/components/collaboration/OnlineUsers"; // Force recompile
 import { useExamUIStore } from "@/store/useExamUIStore";
 import { useExamDataStore } from "@/store/useExamDataStore";
 

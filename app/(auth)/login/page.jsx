@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookOpen, Mail, Lock, Loader2, ArrowRight } from "lucide-react";
@@ -9,8 +9,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
-    const { login, loginWithGoogle } = useAuth();
+    const { login, loginWithGoogle, currentUser, loading: authLoading } = useAuth();
     const router = useRouter();
+
+    useEffect(() => {
+        if (!authLoading && currentUser) {
+            if (currentUser.role === "student") {
+                router.push("/student");
+            } else if (currentUser.role === "parent") {
+                router.push("/parent");
+            } else {
+                router.push("/");
+            }
+        }
+    }, [currentUser, authLoading, router]);
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -26,6 +38,8 @@ export default function LoginPage() {
             const userData = await login(email, password);
             if (userData?.role === "student") {
                 router.push("/student");
+            } else if (userData?.role === "parent") {
+                router.push("/parent");
             } else {
                 router.push("/");
             }
@@ -42,6 +56,8 @@ export default function LoginPage() {
             const userData = await loginWithGoogle();
             if (userData?.role === "student") {
                 router.push("/student");
+            } else if (userData?.role === "parent") {
+                router.push("/parent");
             } else {
                 router.push("/");
             }

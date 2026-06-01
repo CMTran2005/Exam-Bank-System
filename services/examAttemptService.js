@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc, arrayUnion, increment } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 const runWithTimeout = (promise, ms = 3000) => {

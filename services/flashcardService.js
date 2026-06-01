@@ -10,7 +10,6 @@ export const flashcardService = {
 
         try {
             const alphabet = ["A", "B", "C", "D", "E", "F"];
-            const flashcardsRef = collection(db, "flashcards");
 
             for (const q of exam.questions) {
                 let isWrong = false;

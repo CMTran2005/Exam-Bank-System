@@ -1,4 +1,4 @@
-import { doc, setDoc, updateDoc, onSnapshot, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
+import { doc, setDoc, updateDoc, onSnapshot, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export const examCollaborationService = {
@@ -133,7 +133,7 @@ export const examCollaborationService = {
         
         const updatedQuestions = questions.map(q => {
             if (q.id === questionId && q.lockedBy === uid) {
-                const { lockedBy, ...rest } = q;
+                const { lockedBy: _lockedBy, ...rest } = q;
                 return rest;
             }
             return q;

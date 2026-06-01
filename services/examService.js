@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, limit, orderBy, writeBatch } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, limit, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 const runWithTimeout = (promise, ms = 2000) => {
@@ -193,7 +193,7 @@ export const examService = {
      */
     async restoreFromTrash(examId, examData) {
         try {
-            const { deletedAt, questions, ...restData } = examData;
+            const { deletedAt: _deletedAt, questions, ...restData } = examData;
             const restoredExam = {
                 ...restData,
                 updatedAt: new Date().toISOString(),

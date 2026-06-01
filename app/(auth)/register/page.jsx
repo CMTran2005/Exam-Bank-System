@@ -35,6 +35,8 @@ export default function RegisterPage() {
             await register(name, email, password, role);
             if (role === "student") {
                 router.push("/student");
+            } else if (role === "parent") {
+                router.push("/parent");
             } else {
                 router.push("/");
             }
@@ -51,6 +53,8 @@ export default function RegisterPage() {
             await loginWithGoogle(role);
             if (role === "student") {
                 router.push("/student");
+            } else if (role === "parent") {
+                router.push("/parent");
             } else {
                 router.push("/");
             }
@@ -82,7 +86,7 @@ export default function RegisterPage() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2 mb-1">
+                    <div className="grid grid-cols-3 gap-2 mb-1">
                         <button
                             type="button"
                             onClick={() => setRole("student")}
@@ -104,6 +108,17 @@ export default function RegisterPage() {
                         >
                             <User className="h-3.5 w-3.5" />
                             <span className="text-[11px] font-bold">Giáo viên</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setRole("parent")}
+                            className={`flex items-center justify-center gap-1.5 h-9 rounded-lg border-2 transition-all ${role === "parent"
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border bg-card text-muted-foreground hover:bg-muted/50"
+                                }`}
+                        >
+                            <User className="h-3.5 w-3.5" />
+                            <span className="text-[11px] font-bold">Phụ huynh</span>
                         </button>
                     </div>
 
