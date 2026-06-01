@@ -1,9 +1,13 @@
+# Exam Bank System — Hệ Thống Ngân Hàng Câu Hỏi Thông Minh
+
 <div align="center">
 
-# Exam Bank System — Hệ Thống Ngân Hàng Câu Hỏi
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Language](https://img.shields.io/badge/JavaScript-94.4%25-yellow)
+![TypeScript](https://img.shields.io/badge/TypeScript-5%25-blue)
 
-**Language / Ngôn Ngữ:** 
-[Tiếng Việt](#vietnamese) | [English](#english)
+**[Tiếng Việt](#vietnamese) | [English](#english)**
 
 </div>
 
@@ -13,112 +17,150 @@
 
 ## Tiếng Việt
 
-> Ứng dụng web Full-stack chuyên nghiệp giúp quản lý ngân hàng câu hỏi, lớp học và tự động hóa quy trình số hóa đề thi. Tích hợp AI nhận diện ảnh (OCR) và trình soạn thảo Toán học chuyên sâu.
+### Giới Thiệu
 
-### Công Nghệ Sử Dụng
+**Exam Bank System** là nền tảng web hiện đại được thiết kế cho các giáo viên, nhà giáo dục để quản lý, sáng tạo và chia sẻ ngân hàng câu hỏi. 
 
-| Lớp | Công nghệ |
-|---|---|
-| **Framework** | Next.js 15+ (App Router) — Full-stack với API Routes |
-| **UI / Styling** | TailwindCSS v4 + shadcn/ui (Radix UI) |
-| **Database & Caching** | Firebase Firestore + Local Storage Sync |
-| **Auth** | Firebase Authentication |
-| **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
-| **Rich Text & Math** | MathLive + KaTeX |
+Ứng dụng tích hợp công nghệ AI (Gemini Vision), OCR thông minh để tự động số hóa đề thi từ hình ảnh, hỗ trợ soạn thảo công thức toán học trực quan, cùng bộ công cụ quản lý lớp học và thống kê chi tiết.
 
-### Cấu Trúc Thư Mục Mới (Feature-based Architecture)
+### Tính Năng Nổi Bật
 
-Hệ thống đã được tái cấu trúc (refactoring) theo hướng module hóa bằng Custom Hooks để tách biệt Business Logic và UI.
+#### 1. Xác Thực & Quản Lý Hồ Sơ
+
+- Đăng nhập / Đăng ký qua Firebase Authentication
+- Lưu trữ thông tin hồ sơ chuyên sâu (Học vị, Môn giảng dạy)
+- Đồng bộ tự động giữa Local Storage và Firestore
+
+#### 2. Trình Soạn Thảo Đề Thi (Exam Editor)
+
+- Hỗ trợ 3 loại câu hỏi chính:
+  - Trắc nghiệm (Multiple Choice A/B/C/D)
+  - Đúng/Sai (True/False với các mệnh đề động)
+  - Tự luận (Essay questions)
+- Câu hỏi đơn và câu hỏi nhóm (Group Questions)
+- AI OCR: Dán ảnh → Gemini 2.5 Flash phân tích → Tự động điền văn bản
+- Hỗ trợ Toán học: MathLive (gõ công thức) + KaTeX (hiển thị chuẩn)
+- Đính kèm hình ảnh minh họa cho từng đáp án/mệnh đề
+
+#### 3. Bảng Điều Khiển & Thống Kê (Dashboard)
+
+- Theo dõi tăng trưởng câu hỏi/đề thi theo tháng
+- Biểu đồ phân bố loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận)
+- Phân tích độ khó: Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao
+- Đo lường hiệu suất AI (OCR Confidence Rate, Latency)
+
+#### 4. Quản Lý Lớp Học & Học Sinh
+
+- Tạo và quản lý nhiều lớp học
+- Theo dõi danh sách học sinh
+- Cài đặt tùy chỉnh theo từng lớp
+
+#### 5. Ngân Hàng Câu Hỏi & Tìm Kiếm
+
+- Bộ lọc đa chiều: khối lớp, môn học, độ khó
+- Tìm kiếm nhanh theo từ khóa
+- Đánh dấu/lưu câu hỏi yêu thích
+
+#### 6. Thùng Rác & Khôi Phục
+
+- Soft Delete: Xóa mềm với khả năng phục hồi
+- Khôi phục (Restore) hoặc xóa vĩnh viễn (Hard Delete)
+- Lịch sử xóa chi tiết
+
+#### 7. Giao Diện Hiện Đại
+
+- Hỗ trợ Dark Mode / Light Mode toàn bộ
+- Responsive design trên tất cả thiết bị
+- UI Premium với component tùy chỉnh
+- Hiệu suất tối ưu
+
+### Tech Stack
+
+| Lớp | Công Nghệ | Phiên Bản |
+|---|---|---|
+| Framework | Next.js (App Router) | 16.2.6 |
+| UI Library | shadcn/ui + Radix UI | Latest |
+| Styling | TailwindCSS | v4 |
+| Database | Firebase Firestore | Latest |
+| Authentication | Firebase Auth | v12.13 |
+| AI / OCR | Google Gemini 2.5 Flash | Latest |
+| Math Rendering | KaTeX | v0.16.47 |
+| Math Editing | MathLive | Integrated |
+| State Management | Zustand | v5.0 |
+| Icons | Lucide React | v1.16 |
+| Charts | Recharts | v3.8 |
+| Notifications | Sonner | v2.0 |
+| Language | JavaScript/TypeScript | 94.4% / 5% |
+
+### Cấu Trúc Dự Án
 
 ```text
 exam-bank-system/
-├── app/
-│   ├── api/ocr/            ← API Route: Gọi Gemini AI
-│   ├── classes/            ← Quản lý Lớp học
-│   ├── create-question/    ← Soạn thảo Đề thi (Rich Text + Math)
-│   ├── login/ & register/  ← Xác thực người dùng (Auth)
-│   ├── my-exams/           ← Quản lý đề thi cá nhân
-│   ├── questions/          ← Ngân hàng câu hỏi (Lọc, tìm kiếm)
-│   ├── recycle-bin/        ← Thùng rác (Khôi phục dữ liệu)
-│   ├── settings/           ← Cài đặt hồ sơ & tùy chọn ứng dụng
-│   └── statistics/         ← Dashboard thống kê phân tích dữ liệu
+├── app/                          # Next.js 15 App Router
+│   ├── api/ocr/                 # API Route: Gọi Gemini AI
+│   ├── classes/                 # Quản lý lớp học
+│   ├── create-question/         # Trình soạn thảo đề thi
+│   ├── login/                   # Trang đăng nhập
+│   ├── register/                # Trang đăng ký
+│   ├── my-exams/                # Quản lý đề thi cá nhân
+│   ├── questions/               # Ngân hàng câu hỏi
+│   ├── recycle-bin/             # Thùng rác
+│   ├── settings/                # Cài đặt hồ sơ
+│   ├── statistics/              # Dashboard thống kê
+│   └── layout.tsx               # Root layout
 │
-├── components/
-│   ├── layout/             ← Header, Sidebar, Footer, Layout vỏ
-│   ├── question/           ← Form Câu hỏi (Đơn/Nhóm, Trắc nghiệm, Đúng/Sai, Tự luận)
-│   ├── shared/             ← ThemeToggle, Context providers
-│   └── ui/                 ← Component shadcn/ui
+├── components/                  # React Components
+│   ├── layout/                  # Header, Sidebar, Footer
+│   ├── question/                # Form câu hỏi
+│   ├── shared/                  # Provider, utilities
+│   └── ui/                      # shadcn/ui components
 │
 ├── context/
-│   └── AuthContext.jsx     ← Quản lý State đăng nhập toàn cục
+│   └── AuthContext.jsx          # Global auth state
 │
-├── hooks/                  ← Tách biệt toàn bộ Business Logic
+├── hooks/                       # Custom Hooks (Business Logic)
 │   ├── useClasses.js
 │   ├── useCreateExam.js
 │   ├── useQuestionForm.js
 │   ├── useStatistics.js
 │   └── ...
 │
-├── services/               ← Data Access Layer (Tương tác Firebase)
+├── services/                    # Data Access Layer
 │   ├── classService.js
 │   ├── examService.js
 │   └── teacherService.js
-└── ...
+│
+├── store/                       # Zustand state stores
+├── lib/                         # Utility functions
+├── public/                      # Static assets
+└── config/                      # Configuration files
 ```
-
-### Tính Năng Nổi Bật
-
-**1. Xác thực & Hồ sơ (Authentication & Profile)**
-- Đăng nhập / Đăng ký qua Firebase Auth.
-- Đồng bộ và lưu trữ thông tin hồ sơ chuyên sâu (Học vị, Môn giảng dạy chính).
-- Kiến trúc bền vững với tính năng tự động đồng bộ Local Storage và Firestore.
-
-**2. Quản Lý Đề Thi & Trình Soạn Thảo (Exam Editor)**
-- Hỗ trợ câu hỏi Đơn và câu hỏi Nhóm (Group Questions).
-- 3 loại hình câu hỏi cốt lõi: Trắc nghiệm (A/B/C/D), Đúng/Sai (Mệnh đề động), Tự luận.
-- **AI OCR**: Dán ảnh đề bài → Gemini Vision phân tích → Tự động điền văn bản.
-- **Toán Học**: Tích hợp MathLive để gõ công thức trực quan và KaTeX để hiển thị chuẩn xác.
-- Đính kèm hình ảnh minh họa cho từng đáp án/mệnh đề.
-
-**3. Bảng Điều Khiển & Thống Kê (Dashboard & Statistics)**
-- Theo dõi tốc độ tăng trưởng câu hỏi/đề thi theo từng tháng.
-- Thống kê tỷ lệ loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận) qua biểu đồ Donut.
-- Phân tích độ khó: Nhận biết, Thông hiểu, Vận dụng, Vận dụng cao.
-- Đo lường hiệu suất AI (OCR Confidence) và độ trễ (Latency).
-
-**4. Quản Lý Lớp Học & Học Sinh (Class Management)**
-- Giáo viên có thể tạo và quản lý nhiều lớp học.
-- Theo dõi số lượng học sinh, cài đặt lớp học.
-
-**5. Thùng Rác & Ngân Hàng Câu Hỏi (Recycle Bin & Question Bank)**
-- Thùng rác (Soft Delete): Lưu trữ các đề thi/câu hỏi đã xóa, cho phép phục hồi (Restore) hoặc xóa vĩnh viễn (Hard Delete).
-- Ngân hàng câu hỏi: Bộ lọc đa chiều giúp tìm kiếm câu hỏi dễ dàng theo khối lớp, môn học, độ khó.
-
-**6. Giao Diện & Trải Nghiệm (UI/UX)**
-- Giao diện Premium, responsive với Dark/Light mode toàn diện.
-- Custom Component đẹp mắt (Select, Input) đồng bộ chiều cao và thiết kế.
-- Tách biệt UI và Logic giúp ứng dụng mượt mà, dễ bảo trì.
 
 ### Cài Đặt & Chạy
 
+#### 1. Clone Repository
+
 ```bash
-# Clone repository
 git clone https://github.com/CMTran2005/Exam-Bank-System.git
 cd Exam-Bank-System
-
-# Cài dependencies
-npm install
-
-# Chạy dev server
-npm run dev
 ```
 
-Tạo file `.env.local`:
+#### 2. Cài Đặt Dependencies
+
+```bash
+npm install
+```
+
+#### 3. Tạo File Environment
+
+Tạo file `.env.local` tại thư mục gốc:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key_here
 
-NEXT_PUBLIC_FIREBASE_API_KEY=your_key
+# Firebase Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
@@ -126,15 +168,58 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### Lộ Trình Phát Triển Hiện Tại
+#### 4. Chạy Development Server
 
-| Giai đoạn | Nội dung | Trạng thái |
-|---|---|---|
-| **1 — Nền móng & UI** | Next.js 15, Tailwind v4, shadcn, Dark Mode | Hoàn thành |
-| **2 — Soạn thảo Core** | Editor đa dạng + Gemini OCR + MathLive | Hoàn thành |
-| **3 — Kiến Trúc Tách Rời** | Custom hooks, Services, Tính năng Lớp học, Thùng rác | Hoàn thành |
-| **4 — Dashboard & Auth** | Firebase Auth, Sync Profile, Thống kê trực quan | Hoàn thành |
-| **5 — Tối ưu & Collaboration** | Zen mode, Auto-save, Shared Workspace | Đang phát triển |
+```bash
+npm run dev
+```
+
+Truy cập: http://localhost:3000
+
+#### 5. Build Production
+
+```bash
+npm run build
+npm start
+```
+
+### Lộ Trình Phát Triển
+
+| Phase | Nội Dung | Trạng Thái |
+|-------|---------|-----------|
+| 1 - Foundation | Next.js 15, TailwindCSS v4, shadcn/ui, Dark Mode | Hoàn thành |
+| 2 - Core Editor | Trình soạn thảo + Gemini OCR + MathLive | Hoàn thành |
+| 3 - Architecture | Custom Hooks, Services, Classes, Recycle Bin | Hoàn thành |
+| 4 - Analytics | Firebase Auth, Profile Sync, Dashboard | Hoàn thành |
+| 5 - Collaboration | Zen Mode, Auto-save, Shared Workspace | Đang phát triển |
+
+### Các Lệnh Có Sẵn
+
+```bash
+# Development
+npm run dev              # Chạy server dev
+
+# Production
+npm run build            # Build dự án
+npm start                # Chạy production server
+
+# Linting
+npm run lint             # Kiểm tra code quality
+```
+
+### Tính Năng Nhân Đạo
+
+- Tách biệt Logic: Custom Hooks riêng cho từng feature
+- Bảo mật: Firebase Auth + Firestore security rules
+- Hiệu suất: SSR, Image optimization, Code splitting
+- Responsive: Mobile-first design
+- Accessibility: Radix UI components (ARIA compliant)
+
+### Hỗ Trợ & Liên Hệ
+
+- Email: cmtran2005@gmail.com
+- GitHub: https://github.com/CMTran2005
+- Issues: https://github.com/CMTran2005/Exam-Bank-System/issues
 
 ---
 
@@ -142,112 +227,150 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 ## English
 
-> A professional Full-stack web application designed for educators to manage question banks, classes, and automate exam digitization. Features AI-powered OCR and advanced Math editing capabilities.
+### Overview
+
+**Exam Bank System** is a modern web platform designed for educators and teachers to manage, create, and share question banks. 
+
+The application integrates AI technology (Gemini Vision) and intelligent OCR to automatically digitize exams from images, supports visual mathematical formula editing, along with class management tools and detailed analytics.
+
+### Key Features
+
+#### 1. Authentication & Profile Management
+
+- Login / Registration via Firebase Authentication
+- Store detailed profile information (Academic Degree, Teaching Subject)
+- Auto-sync between Local Storage and Firestore
+
+#### 2. Advanced Exam Editor
+
+- Support for 3 main question types:
+  - Multiple Choice (A/B/C/D options)
+  - True/False (Dynamic statements)
+  - Essay (Open-ended questions)
+- Single and Group Questions support
+- AI OCR: Paste image → Gemini 2.5 Flash analyzes → Auto-fill text
+- Math Support: MathLive (visual editor) + KaTeX (precise rendering)
+- Image attachments for each option/statement
+
+#### 3. Dashboard & Analytics
+
+- Monthly growth tracking (questions and exams)
+- Question type distribution charts
+- Difficulty level analysis (Remembering, Understanding, Applying, High-Order)
+- AI Performance metrics (OCR Confidence, Latency)
+
+#### 4. Class Management
+
+- Create and manage multiple classes
+- Track student enrollment
+- Class-specific customization
+
+#### 5. Question Bank & Search
+
+- Multi-dimensional filters (grade, subject, difficulty)
+- Fast keyword search
+- Favorite marking system
+
+#### 6. Recycle Bin & Recovery
+
+- Soft Delete: Safe removal with restore capability
+- Full restore or permanent deletion
+- Detailed deletion history
+
+#### 7. Modern UI
+
+- Dark Mode / Light Mode support
+- Fully responsive design
+- Premium custom components
+- Optimized performance
 
 ### Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Framework** | Next.js 15+ (App Router) — Full-stack with API Routes |
-| **UI / Styling** | TailwindCSS v4 + shadcn/ui (Radix UI) |
-| **Database & Caching**| Firebase Firestore + Local Storage Sync |
-| **Auth** | Firebase Authentication |
-| **AI / OCR** | Google Gemini 2.5 Flash (Vision) |
-| **Rich Text & Math** | MathLive + KaTeX |
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Framework | Next.js (App Router) | 16.2.6 |
+| UI Library | shadcn/ui + Radix UI | Latest |
+| Styling | TailwindCSS | v4 |
+| Database | Firebase Firestore | Latest |
+| Authentication | Firebase Auth | v12.13 |
+| AI / OCR | Google Gemini 2.5 Flash | Latest |
+| Math Rendering | KaTeX | v0.16.47 |
+| Math Editing | MathLive | Integrated |
+| State Management | Zustand | v5.0 |
+| Icons | Lucide React | v1.16 |
+| Charts | Recharts | v3.8 |
+| Notifications | Sonner | v2.0 |
+| Language | JavaScript/TypeScript | 94.4% / 5% |
 
-### Modular Project Structure
-
-The project has been refactored into a feature-based architecture utilizing Custom Hooks to decouple Business Logic from the UI.
+### Project Structure
 
 ```text
 exam-bank-system/
-├── app/
-│   ├── api/ocr/            ← API Route: Gemini AI invocation
-│   ├── classes/            ← Class Management
-│   ├── create-question/    ← Exam Editor (Rich Text + Math)
-│   ├── login/ & register/  ← Authentication flows
-│   ├── my-exams/           ← Personal Exam Management
-│   ├── questions/          ← Question Bank (Filtering & Search)
-│   ├── recycle-bin/        ← Soft Delete & Data Restoration
-│   ├── settings/           ← User Profile & App Preferences
-│   └── statistics/         ← Analytical Dashboard
+├── app/                         # Next.js 15 App Router
+│   ├── api/ocr/                # API Route: Gemini AI integration
+│   ├── classes/                # Class management
+│   ├── create-question/        # Exam editor
+│   ├── login/                  # Login page
+│   ├── register/               # Registration page
+│   ├── my-exams/               # Personal exam management
+│   ├── questions/              # Question bank
+│   ├── recycle-bin/            # Trash/recovery
+│   ├── settings/               # Profile settings
+│   ├── statistics/             # Analytics dashboard
+│   └── layout.tsx              # Root layout
 │
-├── components/
-│   ├── layout/             ← App shell (Header, Sidebar, Footer)
-│   ├── question/           ← Question Forms (Single/Group, Multiple Choice, T/F, Essay)
-│   ├── shared/             ← Theme providers, utility components
-│   └── ui/                 ← shadcn/ui generic components
+├── components/                 # React Components
+│   ├── layout/                 # Header, Sidebar, Footer
+│   ├── question/               # Question forms
+│   ├── shared/                 # Providers, utilities
+│   └── ui/                     # shadcn/ui components
 │
 ├── context/
-│   └── AuthContext.jsx     ← Global Authentication State
+│   └── AuthContext.jsx         # Global auth state
 │
-├── hooks/                  ← Business Logic isolation
+├── hooks/                      # Custom Hooks (Business Logic)
 │   ├── useClasses.js
 │   ├── useCreateExam.js
 │   ├── useQuestionForm.js
 │   ├── useStatistics.js
 │   └── ...
 │
-├── services/               ← Data Access Layer (Firebase interaction)
+├── services/                   # Data Access Layer
 │   ├── classService.js
 │   ├── examService.js
 │   └── teacherService.js
-└── ...
+│
+├── store/                      # Zustand state stores
+├── lib/                        # Utility functions
+├── public/                     # Static assets
+└── config/                     # Configuration files
 ```
-
-### Key Features
-
-**1. Authentication & User Profiles**
-- Secure Login / Registration powered by Firebase Auth.
-- Persistent synchronization of professional profile data (e.g., Academic Degree, Teaching Subject).
-- Robust state hydration between Local Storage and Firestore.
-
-**2. Advanced Exam Editor**
-- Support for both Single and Group Questions.
-- Three core types: Multiple Choice (A/B/C/D), True/False (Dynamic statements), and Essay.
-- **AI OCR**: Paste an image → Gemini Vision processes it → Content is auto-filled.
-- **Mathematics**: Integrated MathLive for visual equation editing and KaTeX for precise rendering.
-- Per-option and per-statement image upload support.
-
-**3. Analytics Dashboard**
-- Monitor monthly growth of exams and questions.
-- Donut charts visualizing question type distribution (MC, T/F, Essay).
-- Cognitive level analysis: Recognizing, Understanding, Applying, High Applying.
-- AI performance metrics (OCR Confidence rate & Latency).
-
-**4. Class Management**
-- Empower teachers to create and orchestrate multiple classes.
-- Track student enrollment and configure class-specific settings.
-
-**5. Recycle Bin & Question Bank**
-- Soft Deletion: Safely remove exams/questions with full restore capabilities or permanent deletion.
-- Question Bank: Multi-dimensional filters to easily search by grade, subject, and difficulty.
-
-**6. Premium UI/UX**
-- Responsive, polished design featuring full Dark/Light mode support.
-- Highly consistent custom components ensuring a seamless user experience.
-- Clean separation of UI and logic for optimal maintainability and performance.
 
 ### Installation & Setup
 
+#### 1. Clone Repository
+
 ```bash
-# Clone repository
 git clone https://github.com/CMTran2005/Exam-Bank-System.git
 cd Exam-Bank-System
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
 ```
 
-Create `.env.local`:
+#### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+#### 3. Create Environment File
+
+Create `.env.local` in the root directory:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key
+# Google Gemini AI
+GEMINI_API_KEY=your_gemini_api_key_here
 
-NEXT_PUBLIC_FIREBASE_API_KEY=your_key
+# Firebase Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
@@ -255,22 +378,65 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-### Current Roadmap
+#### 4. Run Development Server
+
+```bash
+npm run dev
+```
+
+Access: http://localhost:3000
+
+#### 5. Build for Production
+
+```bash
+npm run build
+npm start
+```
+
+### Development Roadmap
 
 | Phase | Description | Status |
-|---|---|---|
-| **1 — Foundation & UI** | Next.js 15, Tailwind v4, shadcn, Dark Mode | Done |
-| **2 — Core Editor** | Versatile forms + Gemini OCR + MathLive | Done |
-| **3 — Modular Refactor** | Custom hooks, Services, Classes, Recycle Bin | Done |
-| **4 — Dashboard & Auth** | Firebase Auth, Profile Sync, Analytics | Done |
-| **5 — Collaboration** | Zen mode, Auto-save, Shared Workspace | In Progress |
+|-------|-------------|--------|
+| 1 - Foundation | Next.js 15, TailwindCSS v4, shadcn/ui, Dark Mode | Done |
+| 2 - Core Editor | Advanced forms + Gemini OCR + MathLive | Done |
+| 3 - Architecture | Custom Hooks, Services, Classes, Recycle Bin | Done |
+| 4 - Analytics | Firebase Auth, Profile Sync, Dashboard | Done |
+| 5 - Collaboration | Zen Mode, Auto-save, Shared Workspace | In Progress |
+
+### Available Commands
+
+```bash
+# Development
+npm run dev              # Start development server
+
+# Production
+npm run build            # Build project
+npm start                # Start production server
+
+# Quality
+npm run lint             # Check code quality
+```
+
+### Best Practices
+
+- Separation of Concerns: Custom Hooks isolate business logic
+- Security: Firebase Auth + Firestore security rules
+- Performance: SSR, Image optimization, Code splitting
+- Responsive: Mobile-first approach
+- Accessibility: Radix UI components (ARIA-compliant)
+
+### Support & Contact
+
+- Email: cmtran2005@gmail.com
+- GitHub: https://github.com/CMTran2005
+- Issues: https://github.com/CMTran2005/Exam-Bank-System/issues
 
 ---
 
 <div align="center">
 
-**Made by [CMTran2005](https://github.com/CMTran2005)**
+Made with love by CMTran2005
 
-[cmtran2005@gmail.com](mailto:cmtran2005@gmail.com) &nbsp;|&nbsp; [GitHub](https://github.com/CMTran2005/Exam-Bank-System)
+https://github.com/CMTran2005 | cmtran2005@gmail.com | https://github.com/CMTran2005/Exam-Bank-System
 
 </div>
