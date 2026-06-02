@@ -9,7 +9,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2, ChevronDown, ChevronUp, ImagePlus, X } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, ImagePlus, X, Loader2, Wand2 } from "lucide-react";
 
 import MultipleChoiceForm from "./MultipleChoiceForm";
 import TrueFalseForm from "./TrueFalseForm";
@@ -46,7 +46,7 @@ export const createDefaultSubQuestion = (baseType) => ({
  * Component render từng câu hỏi con (Subquestion Item) nằm trong nhóm.
  * Quản lý các trường thông tin cụ thể của câu con: Phân loại, Điểm số, Đề bài con, Phương án lựa chọn và các ảnh đính kèm tương ứng.
  */
-function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) {
+function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove, createPasteHandler, handleGenerateSolution, aiGeneratingSolution }) {
     const toggleCollapse = () => onChangeData({ ...subQ, isCollapsed: !subQ.isCollapsed });
     const updateField = (field, value) => onChangeData({ ...subQ, [field]: value });
 
@@ -65,6 +65,22 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
     const removeImage = (idx, targetField) => {
         const cur = subQ[targetField] || [];
         updateField(targetField, cur.filter((_, i) => i !== idx));
+    };
+
+    const handleSubPaste = (targetField) => {
+        if (!createPasteHandler) return undefined;
+        return createPasteHandler(targetField, (textToInsert, imageToInsert) => {
+            if (textToInsert) {
+                const currentText = subQ[targetField] || "";
+                updateField(targetField, currentText ? `${currentText}\n${textToInsert}` : textToInsert);
+            }
+            if (imageToInsert) {
+                // If OCR fails or returns no text, fallback to inserting image into images array
+                const targetImageArray = targetField === "suggested_solution" || targetField === "final_answer" ? "answer_images" : "images";
+                const currentImages = subQ[targetImageArray] || [];
+                updateField(targetImageArray, [...currentImages, imageToInsert]);
+            }
+        });
     };
 
     return (
@@ -144,6 +160,7 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
                             placeholder="Nhập nội dung câu hỏi con..."
                             value={subQ.content}
                             onChange={(val) => updateField("content", val)}
+                            onPaste={handleSubPaste("content")}
                             rows={2}
                         />
                         {subQ.content && subQ.content.includes("$") && (
@@ -193,7 +210,52 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
                         )}
                     </div>
 
-                    <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50 space-y-3">
+                    <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50 space-y-4">
+                        <div>
+                            <div className="flex items-center justify-between gap-4 mb-1">
+                                <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block">
+                                    Lời giải chi tiết:
+                                </label>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 px-2 gap-1 border-emerald-200 text-emerald-600 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900"
+                                    onClick={() => handleGenerateSolution(subQ, (data) => {
+                                        const updates = { suggested_solution: data.suggested_solution || "" };
+                                        if (subQ.type === "multiple_choice" && data.correct_choice_index !== undefined && data.correct_choice_index !== null) {
+                                            const letters = ["A", "B", "C", "D"];
+                                            if (data.correct_choice_index >= 0 && data.correct_choice_index < 4) {
+                                                updates.correct_answer = letters[data.correct_choice_index];
+                                            }
+                                        } else if (subQ.type === "essay" && data.final_answer) {
+                                            updates.final_answer = data.final_answer;
+                                        }
+                                        onChangeData({ ...subQ, ...updates });
+                                    })}
+                                    disabled={aiGeneratingSolution}
+                                >
+                                    {aiGeneratingSolution ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                                    {aiGeneratingSolution ? "Đang giải..." : "Tự động giải"}
+                                </Button>
+                            </div>
+                            <RichTextarea
+                                id={`subq-suggested-sol-${subQ.id}`}
+                                placeholder="Nhập hướng dẫn giải, phân tích..."
+                                value={subQ.suggested_solution || ""}
+                                onChange={(val) => updateField("suggested_solution", val)}
+                                onPaste={handleSubPaste("suggested_solution")}
+                                rows={2}
+                            />
+                            {subQ.suggested_solution && subQ.suggested_solution.includes("$") && (
+                                <div className="mt-2 p-2 px-3 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-background/50 text-xs text-muted-foreground flex items-center gap-1.5 select-none">
+                                    <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200/30">
+                                        Xem trước LaTeX:
+                                    </span>
+                                    <LatexRenderer text={subQ.suggested_solution} />
+                                </div>
+                            )}
+                        </div>
+
                         <div>
                             <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
                                 Đáp án cuối cùng:
@@ -253,7 +315,7 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove }) 
  * @param {Object}  groupQuestion - Tham số đầu vào
  * @returns {JSX.Element}
  */
-export default function GroupQuestionForm({ groupQuestion, onChangeData }) {
+export default function GroupQuestionForm({ groupQuestion, onChangeData, createPasteHandler, handleGenerateSolution, aiGeneratingSolution }) {
     const baseType = groupQuestion.type.replace("group_", "");
     const typeLabel = BASE_TYPE_LABELS[baseType] || baseType;
     const subQuestions = groupQuestion.subQuestions || [];
@@ -300,6 +362,9 @@ export default function GroupQuestionForm({ groupQuestion, onChangeData }) {
                         totalSubs={subQuestions.length}
                         onChangeData={(updated) => updateSubQuestion(subQ.id, updated)}
                         onRemove={() => removeSubQuestion(subQ.id)}
+                        createPasteHandler={createPasteHandler}
+                        handleGenerateSolution={handleGenerateSolution}
+                        aiGeneratingSolution={aiGeneratingSolution}
                     />
                 ))}
             </div>

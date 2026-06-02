@@ -35,7 +35,7 @@ export function useCreateExam(examId = null) {
     const {
         editId, isCodeManuallyEdited, isSyncingFromRemote, activeUsers,
         examInfo, setExamInfo, questionsList, setQuestionsList, lastSaved,
-        handleTitleChange, handleCodeChange, handleGradeChange, handleSaveExam
+        handleExamInfoChange, handleSaveExam
     } = useExamSync({ currentUser, examId, confirmDialog });
 
     const {
@@ -69,7 +69,7 @@ export function useCreateExam(examId = null) {
     // Trạng thái bật/tắt chế độ tập trung (Zen Mode) đã được chuyển sang quản lý bởi Zustand store
     return {
         currentUser, loading,
-        examInfo, setExamInfo, handleTitleChange, handleCodeChange, handleGradeChange,
+        examInfo, setExamInfo, handleExamInfoChange,
         questionsList, setQuestionsList, addQuestion, removeQuestion, toggleCollapse, updateQuestionData, duplicateQuestion,
         showPicker, setShowPicker,
         zenMode, toggleZenMode, lastSaved,

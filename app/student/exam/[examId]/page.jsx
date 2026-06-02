@@ -39,6 +39,7 @@ export default function ExamInterface({ params }) {
     const [answers, setAnswers] = useState({});
     const [reviewMarks, setReviewMarks] = useState({});
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+    const [currentSubQuestionIdx, setCurrentSubQuestionIdx] = useState(0);
 
     // Quản lý trạng thái (State) của chế độ Luyện tập tự do
     const isPracticeMode = searchParams.get("mode") === "practice";
@@ -53,8 +54,12 @@ export default function ExamInterface({ params }) {
     const timerRef = useRef(null);
     const autoSaveTimerRef = useRef(null);
     const lastSavedAnswersRef = useRef({});
+    const hasInitializedRef = useRef(false);
 
     const loadExamData = useCallback(async () => {
+        if (hasInitializedRef.current) return;
+        hasInitializedRef.current = true;
+
         try {
             // Bước 1: Tải cấu trúc đề thi
             const examData = await examService.getExamDetails(examId);
@@ -115,7 +120,7 @@ export default function ExamInterface({ params }) {
                 }
 
                 // Khởi tạo phiên làm bài mới nếu là chế độ luyện tập hoặc chưa từng tham gia thi
-                currentAttempt = await examAttemptService.startExam(currentUser.uid, currentUser.name, examId, classId || "practice");
+                currentAttempt = await examAttemptService.startExam(currentUser.uid, currentUser.name, examId, classId || "practice", examData.title);
             }
 
             setAttempt(currentAttempt);
@@ -323,6 +328,24 @@ export default function ExamInterface({ params }) {
         });
     };
 
+    const handleGroupAnswer = (questionId, subQId, subType, value, extraIdx = null) => {
+        setAnswers(prev => {
+            const currentQAns = prev[questionId] || {};
+            let subAns = currentQAns[subQId];
+            
+            if (subType === 'multiple_choice' || subType === 'essay') {
+                subAns = value;
+            } else if (subType === 'true_false' || subType === 'fill_blank') {
+                subAns = subAns || {};
+                subAns = { ...subAns, [extraIdx]: value };
+            }
+            
+            const updated = { ...prev, [questionId]: { ...currentQAns, [subQId]: subAns } };
+            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
+            return updated;
+        });
+    };
+
     const handleToggleReview = (questionId) => {
         setReviewMarks(prev => ({
             ...prev,
@@ -337,16 +360,33 @@ export default function ExamInterface({ params }) {
         let answeredQ = 0;
         exam?.questions?.forEach(q => {
             const ans = answers[q.id];
-            if (q.type === 'true_false') {
-                if (ans && Object.keys(ans).length === (q.statements?.length || 0)) answeredQ++;
-            } else if (q.type === 'fill_blank') {
-                const blanksCount = (q.content?.match(/\[\[.*?\]\]/g) || []).length;
-                const ansKeys = ans ? Object.keys(ans).filter(k => ans[k] && ans[k].trim() !== "") : [];
-                if (ansKeys.length === blanksCount && blanksCount > 0) answeredQ++;
-            } else if (q.type === 'essay') {
-                if (ans && ans.trim().length > 0) answeredQ++;
+            
+            const checkAnswerStatus = (type, qAns, qObj) => {
+                if (type === 'true_false') {
+                    return qAns && Object.keys(qAns).length === (qObj.statements?.length || 0);
+                } else if (type === 'fill_blank') {
+                    const blanksCount = (qObj.content?.match(/\[\[.*?\]\]/g) || []).length;
+                    const ansKeys = qAns ? Object.keys(qAns).filter(k => qAns[k] && qAns[k].trim() !== "") : [];
+                    return ansKeys.length === blanksCount && blanksCount > 0;
+                } else if (type === 'essay') {
+                    return qAns && qAns.trim().length > 0;
+                } else {
+                    return qAns !== undefined;
+                }
+            };
+
+            if (q.type?.startsWith('group_')) {
+                const subQs = q.subQuestions || [];
+                let allSubAns = true;
+                if (subQs.length === 0) allSubAns = false;
+                subQs.forEach(sub => {
+                    if (!checkAnswerStatus(sub.type, ans ? ans[sub.id] : undefined, sub)) {
+                        allSubAns = false;
+                    }
+                });
+                if (allSubAns) answeredQ++;
             } else {
-                if (ans !== undefined) answeredQ++;
+                if (checkAnswerStatus(q.type, ans, q)) answeredQ++;
             }
         });
 
@@ -388,49 +428,88 @@ export default function ExamInterface({ params }) {
         }
     };
 
-    const handleCheckAnswer = (qId) => {
+    const handleCheckAnswer = (qId, subQId = null) => {
         const q = exam.questions.find(x => x.id === qId);
         if (!q) return;
+
+        const checkSingleQ = (qObj, sAns) => {
+            if (qObj.type === 'true_false') {
+                const stmts = qObj.statements || [];
+                let stmtCorrectCount = 0;
+                stmts.forEach((stmt, idx) => {
+                    if (sAns && sAns[idx] === stmt.correct) stmtCorrectCount++;
+                });
+                return (stmtCorrectCount === stmts.length && stmts.length > 0);
+            } else if (qObj.type === 'fill_blank') {
+                const regex = /\[\[(.*?)\]\]/g;
+                const correctAnswers = [];
+                let match;
+                while ((match = regex.exec(qObj.content || "")) !== null) {
+                    correctAnswers.push(match[1].trim().toLowerCase());
+                }
+                let blankCorrectCount = 0;
+                correctAnswers.forEach((correct, idx) => {
+                    const ansStr = (sAns && sAns[idx] || "").trim().toLowerCase();
+                    if (ansStr === correct) blankCorrectCount++;
+                });
+                return (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0);
+            } else if (qObj.type === 'essay') {
+                const finalAns = (qObj.final_answer || "").trim().toLowerCase();
+                const ansStr = (sAns || "").trim().toLowerCase();
+                return (finalAns && ansStr === finalAns);
+            } else {
+                const alphabet = ["A", "B", "C", "D", "E", "F"];
+                const actualCorrectIndex = alphabet.indexOf(qObj.correct_answer);
+                return (sAns === actualCorrectIndex);
+            }
+        };
+
+        if (subQId) {
+            const sub = q.subQuestions?.find(x => x.id === subQId);
+            if (!sub) return;
+            const studentAns = answers[qId] ? answers[qId][subQId] : undefined;
+            const isCorrect = checkSingleQ(sub, studentAns);
+            setPracticeResults(prev => ({
+                ...prev,
+                [`${qId}_${subQId}`]: { checked: true, isCorrect }
+            }));
+            return;
+        }
 
         const studentAns = answers[qId];
         let isCorrect = false;
 
-        if (q.type === 'true_false') {
-            const stmts = q.statements || [];
-            let stmtCorrectCount = 0;
-            stmts.forEach((stmt, idx) => {
-                if (studentAns && studentAns[idx] === stmt.correct) {
-                    stmtCorrectCount++;
-                }
+        if (q.type?.startsWith('group_')) {
+            const subQs = q.subQuestions || [];
+            let allSubCorrect = true;
+            if (subQs.length === 0) allSubCorrect = false;
+            subQs.forEach(sub => {
+                const sAns = studentAns ? studentAns[sub.id] : undefined;
+                if (!checkSingleQ(sub, sAns)) allSubCorrect = false;
             });
-            isCorrect = (stmtCorrectCount === stmts.length && stmts.length > 0);
-        } else if (q.type === 'fill_blank') {
-            const regex = /\[\[(.*?)\]\]/g;
-            const correctAnswers = [];
-            let match;
-            while ((match = regex.exec(q.content || "")) !== null) {
-                correctAnswers.push(match[1].trim().toLowerCase());
-            }
-            let blankCorrectCount = 0;
-            correctAnswers.forEach((correct, idx) => {
-                const sAns = (studentAns && studentAns[idx] || "").trim().toLowerCase();
-                if (sAns && sAns === correct) blankCorrectCount++;
-            });
-            isCorrect = (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0);
-        } else if (q.type === 'essay') {
-            const finalAns = (q.final_answer || "").trim().toLowerCase();
-            const sAns = (studentAns || "").trim().toLowerCase();
-            isCorrect = (finalAns && sAns === finalAns);
+            isCorrect = allSubCorrect;
         } else {
-            const alphabet = ["A", "B", "C", "D", "E", "F"];
-            const actualCorrectIndex = alphabet.indexOf(q.correct_answer);
-            isCorrect = (studentAns === actualCorrectIndex);
+            isCorrect = checkSingleQ(q, studentAns);
         }
 
         setPracticeResults(prev => ({
             ...prev,
             [qId]: { checked: true, isCorrect }
         }));
+    };
+
+    // Thoát chế độ Luyện tập
+    const handleExitPractice = async () => {
+        if (await confirmDialog("Bạn có chắc chắn muốn thoát? Quá trình làm bài hiện tại sẽ bị xóa.", "Thoát luyện tập")) {
+            if (attempt?.id) {
+                try {
+                    await examAttemptService.deleteAttempt(attempt.id);
+                } catch (e) {
+                    console.error("Lỗi khi xóa attempt luyện tập:", e);
+                }
+            }
+            router.push("/student");
+        }
     };
 
     // Xử lý Text-To-Speech (Đọc câu hỏi)
@@ -544,7 +623,17 @@ export default function ExamInterface({ params }) {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end w-1/3">
+                <div className="flex items-center justify-end w-1/3 gap-2">
+                    {isPracticeMode && (
+                        <Button
+                            onClick={handleExitPractice}
+                            variant="outline"
+                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-900/50 dark:hover:bg-red-900/20 font-bold h-9 sm:h-10 rounded-xl px-3 sm:px-4 text-xs sm:text-sm"
+                        >
+                            <LogOut className="w-4 h-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Thoát</span>
+                        </Button>
+                    )}
                     <Button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
@@ -647,7 +736,7 @@ export default function ExamInterface({ params }) {
                         </div>
 
                         {/* Options */}
-                        {(!currentQuestion?.type || currentQuestion.type === "multiple_choice") && (
+                        {(!currentQuestion?.type || currentQuestion.type === "multiple_choice") && !currentQuestion?.type?.startsWith('group_') && (
                             <div className="space-y-3 sm:space-y-4 mb-8">
                                 {(shuffleMap[currentQuestion.id] || currentQuestion?.options?.map((_, i) => i) || []).map((originalIdx, renderIdx) => {
                                     const opt = currentQuestion.options[originalIdx];
@@ -736,8 +825,215 @@ export default function ExamInterface({ params }) {
                             </div>
                         )}
 
-                        {/* Check Answer Button (Practice Mode) */}
-                        {isPracticeMode && (
+                        {currentQuestion?.type?.startsWith("group_") && (
+                            <div className="space-y-8 mb-8">
+                                {(() => {
+                                    const subQ = currentQuestion.subQuestions?.[currentSubQuestionIdx];
+                                    if (!subQ) return null;
+                                    const idx = currentSubQuestionIdx;
+                                    const subAns = answers[currentQuestion.id] ? answers[currentQuestion.id][subQ.id] : undefined;
+                                    const shuffleMapSub = shuffleMap[subQ.id] || subQ.options?.map((_, i) => i) || [];
+                                    
+                                    return (
+                                        <div key={subQ.id} className="border-t-2 border-dashed border-border pt-6 mt-6 first:border-0 first:pt-0 first:mt-0">
+                                            <div className="font-bold text-lg mb-4 text-foreground">
+                                                Câu {idx + 1}. <LatexRenderer content={subQ.content || ""} inline={true} />
+                                            </div>
+                                            {subQ.images && subQ.images.length > 0 && (
+                                                <div className="mt-4 mb-4 space-y-4">
+                                                    {subQ.images.map((img, i) => (
+                                                        img ? <img key={i} src={img} alt="Hình ảnh minh họa" className="max-h-[300px] rounded-xl border border-border object-contain shadow-sm" /> : null
+                                                    ))}
+                                                </div>
+                                            )}
+                                            
+                                            {(!subQ.type || subQ.type === "multiple_choice") && (
+                                                <div className="space-y-3 sm:space-y-4">
+                                                    {shuffleMapSub.map((originalIdx, renderIdx) => {
+                                                        const opt = subQ.options[originalIdx];
+                                                        const isSelected = subAns === originalIdx;
+                                                        const alphabet = ["A", "B", "C", "D", "E", "F"];
+                                                        return (
+                                                            <button
+                                                                key={originalIdx}
+                                                                onClick={() => handleGroupAnswer(currentQuestion.id, subQ.id, "multiple_choice", originalIdx)}
+                                                                className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left group ${isSelected
+                                                                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                                                                        : "border-border bg-card hover:border-blue-300 dark:hover:border-blue-700"
+                                                                    }`}
+                                                            >
+                                                                <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm transition-colors ${isSelected
+                                                                        ? "bg-blue-500 text-white shadow-sm"
+                                                                        : "bg-muted text-muted-foreground group-hover:bg-blue-100 group-hover:text-blue-600 dark:group-hover:bg-blue-900 dark:group-hover:text-blue-300"
+                                                                    }`}>
+                                                                    {alphabet[renderIdx]}
+                                                                </div>
+                                                                <div className={`mt-1 font-medium ${isSelected ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+                                                                    <LatexRenderer content={opt} inline={false} />
+                                                                    {subQ.options_images && subQ.options_images[originalIdx] && (
+                                                                        <div className="mt-3">
+                                                                            <img src={subQ.options_images[originalIdx]} alt="Minh họa đáp án" className="max-h-32 rounded-lg border border-border object-contain" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            {subQ.type === "true_false" && (
+                                                <div className="space-y-3 sm:space-y-4">
+                                                    <p className="text-sm font-bold text-muted-foreground mb-4">Chọn Đúng hoặc Sai cho mỗi mệnh đề sau:</p>
+                                                    {subQ.statements?.map((stmt, sIdx) => {
+                                                        const studentChoice = subAns?.[sIdx];
+                                                        return (
+                                                            <div key={sIdx} className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border-2 border-border bg-card">
+                                                                <div className="flex-1">
+                                                                    <span className="font-bold mr-2">{sIdx + 1}.</span>
+                                                                    <LatexRenderer content={stmt.text} inline={true} />
+                                                                    {stmt.image && (
+                                                                        <div className="mt-3">
+                                                                            <img src={stmt.image} alt="Minh họa" className="max-h-40 rounded-lg border border-border" />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 shrink-0">
+                                                                    <button
+                                                                        onClick={() => handleGroupAnswer(currentQuestion.id, subQ.id, "true_false", true, sIdx)}
+                                                                        className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${studentChoice === true
+                                                                                ? "bg-emerald-500 border-emerald-600 text-white"
+                                                                                : "bg-background border-border text-muted-foreground hover:border-emerald-300"
+                                                                            }`}
+                                                                    >
+                                                                        Đúng
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleGroupAnswer(currentQuestion.id, subQ.id, "true_false", false, sIdx)}
+                                                                        className={`px-4 py-2 rounded-lg font-bold text-sm border-2 transition-all ${studentChoice === false
+                                                                                ? "bg-red-500 border-red-600 text-white"
+                                                                                : "bg-background border-border text-muted-foreground hover:border-red-300"
+                                                                            }`}
+                                                                    >
+                                                                        Sai
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            {subQ.type === "essay" && (
+                                                <div className="space-y-3 sm:space-y-4">
+                                                    <p className="text-sm font-bold text-muted-foreground mb-2">Nhập câu trả lời của bạn:</p>
+                                                    <textarea
+                                                        className="w-full min-h-[100px] p-4 rounded-xl border-2 border-border bg-card text-foreground focus:ring-2 focus:ring-primary focus:border-primary resize-y shadow-sm"
+                                                        placeholder="Gõ câu trả lời tự luận vào đây..."
+                                                        value={subAns || ""}
+                                                        onChange={(e) => handleGroupAnswer(currentQuestion.id, subQ.id, "essay", e.target.value)}
+                                                    />
+                                                </div>
+                                            )}
+                                            
+                                            {subQ.type === "fill_blank" && (
+                                                <div className="mt-4 p-4 rounded-xl border-2 border-border bg-card">
+                                                    <p className="text-sm font-bold text-muted-foreground mb-4">Điền vào các chỗ trống:</p>
+                                                    {(() => {
+                                                        const content = subQ.content || "";
+                                                        const parts = content.split(/\[\[.*?\]\]/g);
+                                                        const regex = /\[\[(.*?)\]\]/g;
+                                                        const blanks = [];
+                                                        let match;
+                                                        while ((match = regex.exec(content)) !== null) blanks.push(match[1]);
+
+                                                        return (
+                                                            <div className="inline-block leading-loose w-full">
+                                                                {parts.map((part, pIdx) => (
+                                                                    <span key={pIdx}>
+                                                                        {part && <span className="inline"><LatexRenderer content={part} inline={true} /></span>}
+                                                                        {pIdx < blanks.length && (
+                                                                            <input
+                                                                                type="text"
+                                                                                value={subAns?.[pIdx] || ""}
+                                                                                onChange={(e) => handleGroupAnswer(currentQuestion.id, subQ.id, "fill_blank", e.target.value, pIdx)}
+                                                                                className="mx-2 inline-block min-w-[120px] max-w-full border-b-2 border-border focus:border-blue-500 bg-blue-50/30 dark:bg-blue-900/10 px-2 py-1 text-center font-bold text-blue-700 dark:text-blue-300 outline-none transition-colors rounded-sm"
+                                                                                placeholder="..."
+                                                                            />
+                                                                        )}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            )}
+
+                                            {/* Phần Luyện Tập cho Từng Câu Hỏi Con */}
+                                            {isPracticeMode && (
+                                                <div className="mt-6 p-4 rounded-xl border-2 border-indigo-200 bg-indigo-50/50 dark:border-indigo-900/50 dark:bg-indigo-950/20">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                        <span className="text-sm font-bold text-indigo-800 dark:text-indigo-300">
+                                                            💡 Chế độ Luyện Tập: Bạn có thể kiểm tra đáp án ngay!
+                                                        </span>
+                                                        <Button
+                                                            onClick={() => handleCheckAnswer(currentQuestion.id, subQ.id)}
+                                                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm shrink-0 h-9 px-4 text-xs"
+                                                            disabled={subAns === undefined || practiceResults[`${currentQuestion.id}_${subQ.id}`]?.checked}
+                                                        >
+                                                            Kiểm tra đáp án
+                                                        </Button>
+                                                    </div>
+                                                    
+                                                    {practiceResults[`${currentQuestion.id}_${subQ.id}`]?.checked && (
+                                                        <div className="mt-4 pt-4 border-t-2 border-indigo-200/60 dark:border-indigo-900/60 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                            <div className="font-black text-base mb-3">
+                                                                {practiceResults[`${currentQuestion.id}_${subQ.id}`].isCorrect ? (
+                                                                    <span className="text-emerald-600 flex items-center gap-2"><CheckCircle2 className="w-5 h-5" /> Trả lời chính xác!</span>
+                                                                ) : (
+                                                                    <span className="text-red-600 flex items-center gap-2"><XCircle className="w-5 h-5" /> Chưa chính xác hoặc chưa đủ ý!</span>
+                                                                )}
+                                                            </div>
+                                                            
+                                                            {subQ.suggested_solution && (
+                                                                <div className="text-sm mt-3 bg-background p-3 rounded-lg border border-border shadow-sm">
+                                                                    <p className="font-black text-foreground mb-1 flex items-center gap-2">
+                                                                        <BookOpen className="w-3.5 h-3.5 text-primary" /> Lời giải chi tiết:
+                                                                    </p>
+                                                                    <LatexRenderer content={subQ.suggested_solution} inline={false} />
+                                                                </div>
+                                                            )}
+                                                            {!subQ.suggested_solution && (subQ.final_answer || subQ.correct_answer) && (
+                                                                <div className="text-sm mt-3 bg-background p-3 rounded-lg border border-border shadow-sm">
+                                                                    <p className="font-black text-foreground mb-1">Đáp án đúng:</p>
+                                                                    <div className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                                        {(!subQ.type || subQ.type === 'multiple_choice') ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 px-2 py-0.5 rounded font-black text-xs">
+                                                                                    {subQ.correct_answer}
+                                                                                </span>
+                                                                                <LatexRenderer
+                                                                                    content={subQ.options[Math.max(0, ["A", "B", "C", "D", "E", "F"].indexOf(subQ.correct_answer))]}
+                                                                                    inline={true}
+                                                                                />
+                                                                            </div>
+                                                                        ) : (
+                                                                            <LatexRenderer content={subQ.final_answer || ""} inline={true} />
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
+                        {isPracticeMode && !currentQuestion.type?.startsWith('group_') && (
                             <div className="mt-2 mb-8 p-5 rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 dark:border-indigo-900/50 dark:bg-indigo-950/20">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <span className="text-sm font-bold text-indigo-800 dark:text-indigo-300">
@@ -760,34 +1056,38 @@ export default function ExamInterface({ params }) {
                                                 <span className="text-red-600 flex items-center gap-2"><XCircle className="w-6 h-6" /> Rất tiếc, câu trả lời chưa đúng hoặc chưa đủ!</span>
                                             )}
                                         </div>
-                                        {currentQuestion.explanation && (
-                                            <div className="text-sm mt-4 bg-background p-4 rounded-xl border-2 border-border/80 shadow-sm leading-loose">
-                                                <p className="font-black text-foreground mb-2 flex items-center gap-2">
-                                                    <BookOpen className="w-4 h-4 text-primary" /> Lời giải chi tiết:
-                                                </p>
-                                                <LatexRenderer content={currentQuestion.explanation} inline={false} />
-                                            </div>
-                                        )}
-                                        {!currentQuestion.explanation && (currentQuestion.final_answer || currentQuestion.correct_answer) && (
-                                            <div className="text-sm mt-4 bg-background p-4 rounded-xl border-2 border-border/80 shadow-sm">
-                                                <p className="font-black text-foreground mb-1">Đáp án đúng:</p>
-                                                <div className="font-bold text-emerald-600 dark:text-emerald-400">
-                                                    {(!currentQuestion.type || currentQuestion.type === 'multiple_choice') ? (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 px-2 py-0.5 rounded font-black text-xs">
-                                                                {currentQuestion.correct_answer}
-                                                            </span>
-                                                            <LatexRenderer
-                                                                content={currentQuestion.options[Math.max(0, ["A", "B", "C", "D", "E", "F"].indexOf(currentQuestion.correct_answer))]}
-                                                                inline={true}
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <LatexRenderer content={currentQuestion.final_answer || ""} inline={true} />
-                                                    )}
+                                        
+                                        <>
+                                            {currentQuestion.explanation && (
+                                                <div className="text-sm mt-4 bg-background p-4 rounded-xl border-2 border-border/80 shadow-sm leading-loose">
+                                                    <p className="font-black text-foreground mb-2 flex items-center gap-2">
+                                                        <BookOpen className="w-4 h-4 text-primary" /> Lời giải chi tiết:
+                                                    </p>
+                                                    <LatexRenderer content={currentQuestion.explanation} inline={false} />
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
+                                            {!currentQuestion.explanation && (currentQuestion.final_answer || currentQuestion.correct_answer) && (
+                                                <div className="text-sm mt-4 bg-background p-4 rounded-xl border-2 border-border/80 shadow-sm">
+                                                    <p className="font-black text-foreground mb-1">Đáp án đúng:</p>
+                                                    <div className="font-bold text-emerald-600 dark:text-emerald-400">
+                                                        {(!currentQuestion.type || currentQuestion.type === 'multiple_choice') ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 px-2 py-0.5 rounded font-black text-xs">
+                                                                    {currentQuestion.correct_answer}
+                                                                </span>
+                                                                <LatexRenderer
+                                                                    content={currentQuestion.options[Math.max(0, ["A", "B", "C", "D", "E", "F"].indexOf(currentQuestion.correct_answer))]}
+                                                                    inline={true}
+                                                                />
+                                                            </div>
+                                                        ) : (
+                                                            <LatexRenderer content={currentQuestion.final_answer || ""} inline={true} />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                        
                                     </div>
                                 )}
                             </div>
@@ -795,26 +1095,61 @@ export default function ExamInterface({ params }) {
                     </div>
 
                     {/* Navigation Buttons */}
-                    <div className="mt-auto pt-6 border-t border-border/40 flex justify-between items-center max-w-3xl mx-auto w-full sticky bottom-0 bg-background pb-2">
-                        <Button
-                            variant="outline"
-                            className="h-12 px-4 sm:px-6 rounded-xl font-bold border-2"
-                            disabled={currentQuestionIdx === 0}
-                            onClick={() => setCurrentQuestionIdx(prev => Math.max(0, prev - 1))}
-                        >
-                            <ChevronLeft className="w-5 h-5 sm:mr-2" />
-                            <span className="hidden sm:inline">Câu trước</span>
-                        </Button>
-
-                        <Button
-                            className="h-12 px-4 sm:px-6 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                            disabled={currentQuestionIdx === (exam.questions?.length || 1) - 1}
-                            onClick={() => setCurrentQuestionIdx(prev => Math.min((exam.questions?.length || 1) - 1, prev + 1))}
-                        >
-                            <span className="hidden sm:inline">Câu tiếp theo</span>
-                            <ChevronRight className="w-5 h-5 sm:ml-2" />
-                        </Button>
-                    </div>
+                    {(() => {
+                        const curQ = exam.questions[currentQuestionIdx];
+                        const isGroup = curQ?.type?.startsWith('group_');
+                        const subQsLength = isGroup ? (curQ.subQuestions?.length || 1) : 1;
+                        
+                        const isPrevDisabled = currentQuestionIdx === 0 && (!isGroup || currentSubQuestionIdx === 0);
+                        const isNextDisabled = currentQuestionIdx === (exam.questions?.length || 1) - 1 && (!isGroup || currentSubQuestionIdx === subQsLength - 1);
+                        
+                        const handlePrev = () => {
+                            if (isGroup && currentSubQuestionIdx > 0) {
+                                setCurrentSubQuestionIdx(prev => prev - 1);
+                            } else if (currentQuestionIdx > 0) {
+                                const prevIdx = currentQuestionIdx - 1;
+                                setCurrentQuestionIdx(prevIdx);
+                                const prevQ = exam.questions[prevIdx];
+                                if (prevQ?.type?.startsWith('group_')) {
+                                    setCurrentSubQuestionIdx(Math.max(0, (prevQ.subQuestions?.length || 1) - 1));
+                                } else {
+                                    setCurrentSubQuestionIdx(0);
+                                }
+                            }
+                        };
+                        
+                        const handleNext = () => {
+                            if (isGroup && currentSubQuestionIdx < subQsLength - 1) {
+                                setCurrentSubQuestionIdx(prev => prev + 1);
+                            } else if (currentQuestionIdx < (exam.questions?.length || 1) - 1) {
+                                setCurrentQuestionIdx(prev => prev + 1);
+                                setCurrentSubQuestionIdx(0);
+                            }
+                        };
+                        
+                        return (
+                            <div className="mt-auto pt-6 border-t border-border/40 flex justify-between items-center max-w-3xl mx-auto w-full sticky bottom-0 bg-background pb-2">
+                                <Button
+                                    variant="outline"
+                                    className="h-12 px-4 sm:px-6 rounded-xl font-bold border-2"
+                                    disabled={isPrevDisabled}
+                                    onClick={handlePrev}
+                                >
+                                    <ChevronLeft className="w-5 h-5 sm:mr-2" />
+                                    <span className="hidden sm:inline">Câu trước</span>
+                                </Button>
+        
+                                <Button
+                                    className="h-12 px-4 sm:px-6 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+                                    disabled={isNextDisabled}
+                                    onClick={handleNext}
+                                >
+                                    <span className="hidden sm:inline">Câu tiếp theo</span>
+                                    <ChevronRight className="w-5 h-5 sm:ml-2" />
+                                </Button>
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 {/* Sidebar: Map of Questions */}
@@ -829,39 +1164,77 @@ export default function ExamInterface({ params }) {
                             {exam.questions?.map((q, idx) => {
                                 const ans = answers[q.id];
                                 let isAns = false;
-                                if (q.type === 'true_false') {
-                                    isAns = ans && Object.keys(ans).length === (q.statements?.length || 0);
-                                } else if (q.type === 'fill_blank') {
-                                    const blanksCount = (q.content?.match(/\[\[.*?\]\]/g) || []).length;
-                                    const ansKeys = ans ? Object.keys(ans).filter(k => ans[k] && ans[k].trim() !== "") : [];
-                                    isAns = ansKeys.length === blanksCount && blanksCount > 0;
-                                } else if (q.type === 'essay') {
-                                    isAns = ans && ans.trim().length > 0;
-                                } else {
-                                    isAns = ans !== undefined;
-                                }
+                                
+                                const checkAnsStatus = (type, qAns, qObj) => {
+                                    if (type === 'true_false') {
+                                        return qAns && Object.keys(qAns).length === (qObj.statements?.length || 0);
+                                    } else if (type === 'fill_blank') {
+                                        const blanksCount = (qObj.content?.match(/\[\[.*?\]\]/g) || []).length;
+                                        const ansKeys = qAns ? Object.keys(qAns).filter(k => qAns[k] && qAns[k].trim() !== "") : [];
+                                        return ansKeys.length === blanksCount && blanksCount > 0;
+                                    } else if (type === 'essay') {
+                                        return qAns && qAns.trim().length > 0;
+                                    } else {
+                                        return qAns !== undefined;
+                                    }
+                                };
 
                                 const isRev = reviewMarks[q.id];
                                 const isCur = currentQuestionIdx === idx;
 
-                                return (
-                                    <button
-                                        key={q.id}
-                                        onClick={() => setCurrentQuestionIdx(idx)}
-                                        className={`h-10 rounded-lg flex items-center justify-center text-xs font-bold border-2 transition-all relative ${isCur
-                                                ? "ring-2 ring-primary ring-offset-2 ring-offset-card"
-                                                : "hover:scale-105"
-                                            } ${isRev
-                                                ? "bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-950/50 dark:border-amber-600 dark:text-amber-400"
-                                                : isAns
-                                                    ? "bg-blue-500 border-blue-600 text-white shadow-sm"
-                                                    : "bg-background border-border text-muted-foreground hover:bg-muted"
-                                            }`}
-                                    >
-                                        {idx + 1}
-                                        {isRev && <Flag className="w-2.5 h-2.5 absolute -top-1 -right-1 fill-amber-500 text-amber-500 drop-shadow-sm" />}
-                                    </button>
-                                );
+                                if (q.type?.startsWith('group_')) {
+                                    const subQs = q.subQuestions || [];
+                                    return (
+                                        <div key={q.id} className={`col-span-5 md:col-span-4 lg:col-span-5 border-2 rounded-xl p-3 bg-card transition-all ${isCur ? 'border-primary ring-1 ring-primary' : 'border-border'}`}>
+                                            <div className="font-bold text-xs text-foreground mb-2 pb-1 border-b border-border">
+                                                Câu {idx + 1}: {q.title || "Nhóm câu hỏi"}
+                                            </div>
+                                            <div className="grid grid-cols-5 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                                                {subQs.map((sub, sIdx) => {
+                                                    const subAns = ans ? ans[sub.id] : undefined;
+                                                    const isSubAns = checkAnsStatus(sub.type, subAns, sub);
+                                                    
+                                                    return (
+                                                        <button
+                                                            key={sub.id}
+                                                            onClick={() => { setCurrentQuestionIdx(idx); setCurrentSubQuestionIdx(sIdx); }}
+                                                            className={`h-10 rounded-lg flex items-center justify-center text-xs font-bold border-2 transition-all relative hover:scale-105 ${isRev
+                                                                ? "bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-950/50 dark:border-amber-600 dark:text-amber-400"
+                                                                : isSubAns
+                                                                    ? "bg-blue-500 border-blue-600 text-white shadow-sm"
+                                                                    : "bg-background border-border text-muted-foreground hover:bg-muted"
+                                                            }`}
+                                                            title={`Câu con ${sIdx + 1}`}
+                                                        >
+                                                            {sIdx + 1}
+                                                            {isRev && <Flag className="w-2.5 h-2.5 absolute -top-1 -right-1 fill-amber-500 text-amber-500 drop-shadow-sm" />}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                } else {
+                                    isAns = checkAnsStatus(q.type, ans, q);
+                                    return (
+                                        <button
+                                            key={q.id}
+                                            onClick={() => { setCurrentQuestionIdx(idx); setCurrentSubQuestionIdx(0); }}
+                                            className={`h-10 rounded-lg flex items-center justify-center text-xs font-bold border-2 transition-all relative ${isCur
+                                                    ? "ring-2 ring-primary ring-offset-2 ring-offset-card"
+                                                    : "hover:scale-105"
+                                                } ${isRev
+                                                    ? "bg-amber-100 border-amber-400 text-amber-700 dark:bg-amber-950/50 dark:border-amber-600 dark:text-amber-400"
+                                                    : isAns
+                                                        ? "bg-blue-500 border-blue-600 text-white shadow-sm"
+                                                        : "bg-background border-border text-muted-foreground hover:bg-muted"
+                                                }`}
+                                        >
+                                            {idx + 1}
+                                            {isRev && <Flag className="w-2.5 h-2.5 absolute -top-1 -right-1 fill-amber-500 text-amber-500 drop-shadow-sm" />}
+                                        </button>
+                                    );
+                                }
                             })}
                         </div>
                     </div>

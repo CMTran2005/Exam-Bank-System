@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc, increment } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, getDoc, query, where, updateDoc, increment, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 /**
@@ -23,9 +23,10 @@ export const examAttemptService = {
      * @param {string} studentName - Tên của học sinh
      * @param {string} examId - ID của đề thi
      * @param {string} classId - ID của lớp học (hoặc "practice" nếu là luyện tập tự do)
+     * @param {string} examTitle - Tên đề thi (tùy chọn)
      * @returns {Promise<Object>} - Thông tin chi tiết của phiên làm bài (attempt)
      */
-    async startExam(studentUid, studentName, examId, classId) {
+    async startExam(studentUid, studentName, examId, classId, examTitle = "Bài thi không tên") {
         try {
             // Sử dụng ID cố định cho thi thật, ID ngẫu nhiên (chứa timestamp) cho luyện thi
             let attemptId = `attempt_${studentUid}_${classId}_${examId}`;
@@ -48,6 +49,7 @@ export const examAttemptService = {
                 studentId: studentUid,
                 studentName: studentName || "Học sinh ẩn danh",
                 examId: examId,
+                examTitle: examTitle,
                 classId: classId,
                 startTime: new Date().toISOString(),
                 submitTime: null,
@@ -76,8 +78,11 @@ export const examAttemptService = {
             await runWithTimeout(updateDoc(docRef, { answers: answers, lastSaved: new Date().toISOString() }));
             return true;
         } catch (error) {
-            console.error("Lỗi saveAnswersDraft:", error);
-            throw error;
+            if (error?.code !== 'not-found') {
+                console.error("Lỗi saveAnswersDraft:", error);
+                throw error;
+            }
+            return false;
         }
     },
 
@@ -104,7 +109,9 @@ export const examAttemptService = {
             await updateDoc(docRef, updateData);
             return true;
         } catch (error) {
-            console.error("Lỗi logCheat:", error);
+            if (error?.code !== 'not-found') {
+                console.error("Lỗi logCheat:", error);
+            }
             // Không throw error để không làm gián đoạn bài thi
         }
     },
@@ -241,6 +248,22 @@ export const examAttemptService = {
             return leaderboard;
         } catch (error) {
             console.error("Lỗi getClassLeaderboard:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Xóa một phiên làm bài (Thường dùng để hủy kết quả luyện tập dang dở)
+     * @param {string} attemptId - ID của phiên làm bài
+     */
+    async deleteAttempt(attemptId) {
+        if (!attemptId) return;
+        try {
+            const docRef = doc(db, "exam_attempts", attemptId);
+            await runWithTimeout(deleteDoc(docRef));
+            return true;
+        } catch (error) {
+            console.error("Lỗi deleteAttempt:", error);
             throw error;
         }
     }

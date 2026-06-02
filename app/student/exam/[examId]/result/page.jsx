@@ -63,7 +63,16 @@ export default function ExamResultPage({ params }) {
 
             // Bước 2: Tải kết quả bài làm thực tế của học sinh (Attempt)
             const attempts = await examAttemptService.getStudentAttempts(currentUser.uid);
-            const currentAttempt = attempts.find(a => a.examId === examId);
+            
+            // Sắp xếp các lần làm bài theo thời gian nộp bài mới nhất
+            const sortedAttempts = attempts.sort((a, b) => {
+                const timeA = new Date(a.submitTime || a.startTime).getTime();
+                const timeB = new Date(b.submitTime || b.startTime).getTime();
+                return timeB - timeA;
+            });
+            
+            // Lấy kết quả mới nhất của đề thi này
+            const currentAttempt = sortedAttempts.find(a => a.examId === examId);
             
             if (!currentAttempt) {
                 toast.error("Không tìm thấy kết quả làm bài của bạn.");
@@ -162,90 +171,132 @@ export default function ExamResultPage({ params }) {
     
     exam.questions.forEach(q => {
         const studentAns = answers[q.id];
-        const qPoints = parseFloat(q.points || "1");
         
-        totalPossiblePoints += qPoints;
+        if (q.type?.startsWith('group_')) {
+            const subQs = q.subQuestions || [];
+            subQs.forEach(sub => {
+                totalPossiblePoints += parseFloat(sub.points || "1");
+            });
+        } else {
+            totalPossiblePoints += parseFloat(q.points || "1");
+        }
         
-        if (q.type === 'true_false') {
-            const stmts = q.statements || [];
-            if (!studentAns || Object.keys(studentAns).length === 0) {
+        const calcSubScore = (type, sAns, subQ) => {
+            let correct = 0;
+            let wrong = 0;
+            let skipped = 0;
+            let pEarned = 0;
+            const pPossible = parseFloat(subQ.points || "1");
+
+            if (type === 'true_false') {
+                const stmts = subQ.statements || [];
+                if (!sAns || Object.keys(sAns).length === 0) {
+                    skipped++;
+                } else {
+                    let stmtCorrectCount = 0;
+                    stmts.forEach((stmt, idx) => {
+                        if (sAns[idx] === stmt.correct) stmtCorrectCount++;
+                    });
+                    if (stmtCorrectCount === stmts.length && stmts.length > 0) correct++;
+                    else wrong++;
+                    
+                    if (stmts.length === 4 && pPossible === 1.0) {
+                        if (stmtCorrectCount === 1) pEarned = 0.1;
+                        else if (stmtCorrectCount === 2) pEarned = 0.25;
+                        else if (stmtCorrectCount === 3) pEarned = 0.5;
+                        else if (stmtCorrectCount === 4) pEarned = 1.0;
+                    } else {
+                        pEarned = stmts.length > 0 ? (pPossible / stmts.length) * stmtCorrectCount : 0;
+                    }
+                }
+            } else if (type === 'fill_blank') {
+                const regex = /\[\[(.*?)\]\]/g;
+                const correctAnswers = [];
+                let match;
+                while ((match = regex.exec(subQ.content || "")) !== null) correctAnswers.push(match[1].trim().toLowerCase());
+                
+                if (!sAns || Object.keys(sAns).length === 0) {
+                    skipped++;
+                } else {
+                    let blankCorrectCount = 0;
+                    correctAnswers.forEach((corr, idx) => {
+                        const sAnsVal = (sAns[idx] || "").trim().toLowerCase();
+                        if (sAnsVal && sAnsVal === corr) blankCorrectCount++;
+                    });
+                    if (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0) {
+                        correct++;
+                        pEarned = pPossible;
+                    } else {
+                        wrong++;
+                    }
+                }
+            } else if (type === 'essay') {
+                if (!sAns || sAns.trim() === '') {
+                    skipped++;
+                } else {
+                    const finalAns = (subQ.final_answer || "").trim().toLowerCase();
+                    const sAnsVal = sAns.trim().toLowerCase();
+                    if (finalAns && sAnsVal === finalAns) {
+                        correct++;
+                        pEarned = pPossible;
+                    } else {
+                        wrong++;
+                    }
+                }
+            } else {
+                const actualCorrectIndex = alphabet.indexOf(subQ.correct_answer);
+                if (sAns === undefined) {
+                    skipped++;
+                } else if (sAns === actualCorrectIndex) {
+                    correct++;
+                    pEarned = pPossible;
+                } else {
+                    wrong++;
+                }
+            }
+            return { correct, wrong, skipped, pEarned, pPossible };
+        };
+
+        if (q.type?.startsWith('group_')) {
+            const subQs = q.subQuestions || [];
+            if (subQs.length === 0) {
                 skippedCount++;
             } else {
-                let stmtCorrectCount = 0;
-                stmts.forEach((stmt, idx) => {
-                    if (studentAns[idx] === stmt.correct) {
-                        stmtCorrectCount++;
-                    }
+                let gCorrect = 0, gWrong = 0, gSkipped = 0;
+                let gPEarned = 0, gPPossible = 0;
+                
+                subQs.forEach(sub => {
+                    const sAns = studentAns ? studentAns[sub.id] : undefined;
+                    const res = calcSubScore(sub.type, sAns, sub);
+                    gCorrect += res.correct;
+                    gWrong += res.wrong;
+                    gSkipped += res.skipped;
+                    gPEarned += res.pEarned;
+                    gPPossible += res.pPossible;
                 });
                 
-                if (stmtCorrectCount === stmts.length && stmts.length > 0) {
-                    correctCount++;
-                } else {
-                    wrongCount++;
-                }
-                
-                if (stmts.length > 0) {
-                    totalPointsEarned += (qPoints / stmts.length) * stmtCorrectCount;
-                }
-            }
-        } else if (q.type === 'fill_blank') {
-            const regex = /\[\[(.*?)\]\]/g;
-            const correctAnswers = [];
-            let match;
-            while ((match = regex.exec(q.content || "")) !== null) {
-                correctAnswers.push(match[1].trim().toLowerCase());
-            }
+                // For group questions, correctCount means ALL subquestions are correct
+                if (gCorrect === subQs.length) correctCount++;
+                else if (gSkipped === subQs.length) skippedCount++;
+                else wrongCount++;
 
-            if (!studentAns || Object.keys(studentAns).length === 0) {
-                skippedCount++;
-            } else {
-                let blankCorrectCount = 0;
-                correctAnswers.forEach((correct, idx) => {
-                    const sAns = (studentAns[idx] || "").trim().toLowerCase();
-                    if (sAns && sAns === correct) {
-                        blankCorrectCount++;
-                    }
-                });
-
-                if (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0) {
-                    correctCount++;
-                } else {
-                    wrongCount++;
-                }
-
-                if (correctAnswers.length > 0) {
-                    totalPointsEarned += (qPoints / correctAnswers.length) * blankCorrectCount;
-                }
-            }
-        } else if (q.type === 'essay') {
-            if (!studentAns || studentAns.trim() === '') {
-                skippedCount++;
-            } else {
-                const finalAns = (q.final_answer || "").trim().toLowerCase();
-                const sAns = studentAns.trim().toLowerCase();
-                if (finalAns && sAns === finalAns) {
-                    correctCount++;
-                    totalPointsEarned += qPoints;
-                } else {
-                    wrongCount++; // Đánh dấu là câu trả lời sai (hoặc chưa được hệ thống chấm)
-                }
+                // Đã cộng trực tiếp gPEarned vào totalPointsEarned ở calcSubScore
+                totalPointsEarned += gPEarned;
             }
         } else {
-            const actualCorrectIndex = alphabet.indexOf(q.correct_answer);
-            if (studentAns === undefined) {
-                skippedCount++;
-            } else if (studentAns === actualCorrectIndex) {
-                correctCount++;
-                totalPointsEarned += qPoints;
-            } else {
-                wrongCount++;
-            }
+            const res = calcSubScore(q.type, studentAns, q);
+            correctCount += res.correct;
+            wrongCount += res.wrong;
+            skippedCount += res.skipped;
+            const qPoints = parseFloat(q.points || "1");
+            totalPointsEarned += (qPoints / res.pPossible) * res.pEarned;
         }
     });
 
     const totalQuestions = exam.questions.length;
-    // Tính toán điểm số tổng hợp dựa trên dữ liệu từ bản ghi Attempt
-    const score = totalPointsEarned.toFixed(2);
+    // Hiển thị điểm từ server nếu có, ngược lại dùng logic tính toán dự phòng
+    const score = attempt.score != null ? Number(attempt.score).toFixed(2) : totalPointsEarned.toFixed(2);
+    const maxScore = attempt.maxScore != null ? Number(attempt.maxScore).toFixed(2) : totalPossiblePoints.toFixed(2);
     
     // Tính toán tổng thời lượng học sinh đã sử dụng để hoàn thành bài thi
     const startTime = new Date(attempt.startTime).getTime();
@@ -313,29 +364,13 @@ export default function ExamResultPage({ params }) {
             </div>
 
             {/* Score Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4">
                 <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center">
                     <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 rounded-full flex items-center justify-center mb-3">
                         <Trophy className="w-6 h-6" />
                     </div>
                     <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Điểm số</p>
-                    <p className="text-3xl font-black text-foreground mt-1">{score}</p>
-                </div>
-
-                <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 text-blue-600 rounded-full flex items-center justify-center mb-3">
-                        <Target className="w-6 h-6" />
-                    </div>
-                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Đúng</p>
-                    <p className="text-3xl font-black text-blue-600 mt-1">{correctCount} <span className="text-sm text-muted-foreground">/ {totalQuestions}</span></p>
-                </div>
-
-                <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center">
-                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/40 text-red-600 rounded-full flex items-center justify-center mb-3">
-                        <XCircle className="w-6 h-6" />
-                    </div>
-                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Sai / Bỏ qua</p>
-                    <p className="text-3xl font-black text-red-600 mt-1">{wrongCount + skippedCount}</p>
+                    <p className="text-3xl font-black text-foreground mt-1">{score} <span className="text-sm text-muted-foreground">/ {maxScore}</span></p>
                 </div>
 
                 <div className="bg-card border border-border p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center">
@@ -364,40 +399,64 @@ export default function ExamResultPage({ params }) {
                             const studentAns = answers[q.id];
                             const alphabet = ["A", "B", "C", "D", "E", "F"];
                             const actualCorrectIndex = alphabet.indexOf(q.correct_answer);
+                            const checkSubQ = (subQ, sAns) => {
+                                let c = false, s = false;
+                                if (subQ.type === 'true_false') {
+                                    const stmts = subQ.statements || [];
+                                    s = !sAns || Object.keys(sAns).length === 0;
+                                    let stmtCorrectCount = 0;
+                                    stmts.forEach((stmt, idx) => {
+                                        if (sAns && sAns[idx] === stmt.correct) stmtCorrectCount++;
+                                    });
+                                    c = !s && stmtCorrectCount === stmts.length;
+                                } else if (subQ.type === 'fill_blank') {
+                                    const regex = /\[\[(.*?)\]\]/g;
+                                    const correctAnswers = [];
+                                    let match;
+                                    while ((match = regex.exec(subQ.content || "")) !== null) correctAnswers.push(match[1]);
+                                    
+                                    s = !sAns || Object.keys(sAns).length === 0;
+                                    let blankCorrectCount = 0;
+                                    correctAnswers.forEach((correct, idx) => {
+                                        const ansVal = (sAns && sAns[idx] || "").trim().toLowerCase();
+                                        if (ansVal && ansVal === correct.trim().toLowerCase()) blankCorrectCount++;
+                                    });
+                                    c = !s && blankCorrectCount === correctAnswers.length;
+                                } else if (subQ.type === 'essay') {
+                                    s = !sAns || sAns.trim() === '';
+                                    const finalAns = (subQ.final_answer || "").trim().toLowerCase();
+                                    const ansVal = (sAns || "").trim().toLowerCase();
+                                    c = !s && finalAns && ansVal === finalAns;
+                                } else {
+                                    const aIdx = alphabet.indexOf(subQ.correct_answer);
+                                    s = sAns === undefined;
+                                    c = sAns === aIdx;
+                                }
+                                return { isCorrect: c, isSkipped: s };
+                            };
+
                             let isCorrect = false;
                             let isSkipped = false;
                             
-                            if (q.type === 'true_false') {
-                                const stmts = q.statements || [];
-                                isSkipped = !studentAns || Object.keys(studentAns).length === 0;
-                                let stmtCorrectCount = 0;
-                                stmts.forEach((stmt, idx) => {
-                                    if (studentAns && studentAns[idx] === stmt.correct) stmtCorrectCount++;
-                                });
-                                isCorrect = !isSkipped && stmtCorrectCount === stmts.length;
-                            } else if (q.type === 'fill_blank') {
-                                const regex = /\[\[(.*?)\]\]/g;
-                                const correctAnswers = [];
-                                let match;
-                                while ((match = regex.exec(q.content || "")) !== null) {
-                                    correctAnswers.push(match[1]);
+                            if (q.type?.startsWith('group_')) {
+                                const subQs = q.subQuestions || [];
+                                if (subQs.length === 0) {
+                                    isSkipped = true;
+                                } else {
+                                    let allCorrect = true;
+                                    let allSkipped = true;
+                                    subQs.forEach(sub => {
+                                        const res = checkSubQ(sub, studentAns ? studentAns[sub.id] : undefined);
+                                        if (!res.isCorrect) allCorrect = false;
+                                        if (!res.isSkipped) allSkipped = false;
+                                    });
+                                    isCorrect = allCorrect;
+                                    isSkipped = allSkipped;
                                 }
-                                
-                                isSkipped = !studentAns || Object.keys(studentAns).length === 0;
-                                let blankCorrectCount = 0;
-                                correctAnswers.forEach((correct, idx) => {
-                                    const sAns = (studentAns && studentAns[idx] || "").trim().toLowerCase();
-                                    if (sAns && sAns === correct.trim().toLowerCase()) blankCorrectCount++;
-                                });
-                                isCorrect = !isSkipped && blankCorrectCount === correctAnswers.length;
-                            } else if (q.type === 'essay') {
-                                isSkipped = !studentAns || studentAns.trim() === '';
-                                const finalAns = (q.final_answer || "").trim().toLowerCase();
-                                const sAns = (studentAns || "").trim().toLowerCase();
-                                isCorrect = !isSkipped && finalAns && sAns === finalAns;
                             } else {
-                                isSkipped = studentAns === undefined;
-                                isCorrect = studentAns === actualCorrectIndex;
+                                const res = checkSubQ(q, studentAns);
+                                isCorrect = res.isCorrect;
+                                isSkipped = res.isSkipped;
                             }
 
                             return (
@@ -434,7 +493,7 @@ export default function ExamResultPage({ params }) {
                                                 )}
                                             </div>
 
-                                            {(!q.type || q.type === 'multiple_choice') && (
+                                            {(!q.type || q.type === 'multiple_choice') && !q.type?.startsWith('group_') && (
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                                                     {(shuffleMap[q.id] || q.options?.map((_, i) => i) || []).map((originalIdx, renderIdx) => {
                                                         const opt = q.options[originalIdx];
@@ -585,6 +644,152 @@ export default function ExamResultPage({ params }) {
                                                             </div>
                                                         </div>
                                                     )}
+                                                </div>
+                                            )}
+                                            
+                                            {q.type?.startsWith('group_') && (
+                                                <div className="mt-6 space-y-6">
+                                                    {q.subQuestions?.map((subQ, sIdx) => {
+                                                        const sAns = studentAns ? studentAns[subQ.id] : undefined;
+                                                        const res = checkSubQ(subQ, sAns);
+                                                        const isSubSkipped = res.isSkipped;
+                                                        const isSubCorrect = res.isCorrect;
+                                                        const actualSubCorrectIndex = alphabet.indexOf(subQ.correct_answer);
+
+                                                        return (
+                                                            <div key={subQ.id} className="p-4 rounded-xl border border-border bg-background/50">
+                                                                <div className="flex items-start gap-3 mb-4">
+                                                                    <div className="shrink-0 mt-0.5">
+                                                                        {isSubCorrect ? (
+                                                                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                                                                        ) : isSubSkipped ? (
+                                                                            <AlertCircle className="w-5 h-5 text-slate-400" />
+                                                                        ) : (
+                                                                            <XCircle className="w-5 h-5 text-red-500" />
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="font-medium">
+                                                                        <span className="font-bold mr-2">Câu {sIdx + 1}:</span>
+                                                                        <LatexRenderer content={subQ.content} inline={true} />
+                                                                    </div>
+                                                                </div>
+
+                                                                {(!subQ.type || subQ.type === 'multiple_choice') && (
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                                                        {(shuffleMap[subQ.id] || subQ.options?.map((_, i) => i) || []).map((originalIdx, renderIdx) => {
+                                                                            const opt = subQ.options[originalIdx];
+                                                                            const isStudentChoice = sAns === originalIdx;
+                                                                            const isActualCorrect = actualSubCorrectIndex === originalIdx;
+                                                                            
+                                                                            let style = "bg-card border-border text-muted-foreground opacity-50";
+                                                                            
+                                                                            if (isActualCorrect) {
+                                                                                style = "bg-emerald-50 border-emerald-500 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 ring-1 ring-emerald-500 shadow-sm opacity-100";
+                                                                            } else if (isStudentChoice && !isSubCorrect) {
+                                                                                style = "bg-red-50 border-red-500 text-red-800 dark:bg-red-950/40 dark:text-red-300 shadow-sm opacity-100";
+                                                                            } else if (isStudentChoice) {
+                                                                                style = "opacity-100 border-border";
+                                                                            }
+
+                                                                            return (
+                                                                                <div key={originalIdx} className={`p-2 rounded-lg border flex items-start gap-2 ${style}`}>
+                                                                                    <div className={`shrink-0 w-5 h-5 rounded flex items-center justify-center text-[10px] font-black ${
+                                                                                        isActualCorrect ? "bg-emerald-500 text-white" :
+                                                                                        (isStudentChoice ? "bg-red-500 text-white" : "bg-muted text-muted-foreground")
+                                                                                    }`}>
+                                                                                        {alphabet[renderIdx]}
+                                                                                    </div>
+                                                                                    <div className={`mt-0 text-sm ${isActualCorrect || isStudentChoice ? "text-inherit font-medium" : "text-muted-foreground"}`}>
+                                                                                        <LatexRenderer content={opt} inline={true} />
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+
+                                                                {subQ.type === 'true_false' && (
+                                                                    <div className="space-y-2 mt-3">
+                                                                        {subQ.statements?.map((stmt, s2Idx) => {
+                                                                            const s2Choice = sAns ? sAns[s2Idx] : undefined;
+                                                                            const s2Correct = stmt.correct;
+                                                                            const isS2Skipped = s2Choice === undefined;
+                                                                            const isS2Correct = s2Choice === s2Correct;
+
+                                                                            return (
+                                                                                <div key={s2Idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded-lg border border-border/50 text-sm">
+                                                                                    <div className="flex-1">
+                                                                                        <span className="font-bold mr-1">{s2Idx + 1}.</span>
+                                                                                        <LatexRenderer content={stmt.text} inline={true} />
+                                                                                    </div>
+                                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                                                                            isS2Skipped ? "bg-muted text-muted-foreground" : 
+                                                                                            (isS2Correct ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300" : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300")
+                                                                                        }`}>
+                                                                                            {isS2Skipped ? "Bỏ qua" : (s2Choice ? "Đúng" : "Sai")}
+                                                                                        </span>
+                                                                                        <span className={`px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300`}>
+                                                                                            Đáp án: {s2Correct ? "Đúng" : "Sai"}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {subQ.type === 'fill_blank' && (
+                                                                    <div className="space-y-2 mt-3">
+                                                                        {(() => {
+                                                                            const regex = /\[\[(.*?)\]\]/g;
+                                                                            const correctAnswers = [];
+                                                                            let match;
+                                                                            while ((match = regex.exec(subQ.content || "")) !== null) correctAnswers.push(match[1]);
+
+                                                                            return correctAnswers.map((correct, s2Idx) => {
+                                                                                const s2Choice = sAns ? sAns[s2Idx] : "";
+                                                                                const isS2Skipped = !s2Choice || s2Choice.trim() === "";
+                                                                                const isS2Correct = !isS2Skipped && s2Choice.trim().toLowerCase() === correct.trim().toLowerCase();
+
+                                                                                return (
+                                                                                    <div key={s2Idx} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded-lg border border-border/50 text-sm">
+                                                                                        <div className="font-bold">Ô {s2Idx + 1}</div>
+                                                                                        <div className="flex items-center gap-2 shrink-0">
+                                                                                            <span className={`px-2 py-0.5 rounded text-xs font-bold max-w-[100px] truncate ${
+                                                                                                isS2Skipped ? "bg-muted text-muted-foreground" : 
+                                                                                                (isS2Correct ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300" : "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300")
+                                                                                            }`}>
+                                                                                                {isS2Skipped ? "Bỏ qua" : s2Choice}
+                                                                                            </span>
+                                                                                            <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 max-w-[100px] truncate">
+                                                                                                Đáp án: {correct}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            });
+                                                                        })()}
+                                                                    </div>
+                                                                )}
+
+                                                                {subQ.type === 'essay' && (
+                                                                    <div className="space-y-2 mt-3 text-sm">
+                                                                        <div className="p-3 rounded-lg border border-border bg-muted/30">
+                                                                            <span className="font-bold text-muted-foreground mb-1 block text-xs uppercase">Bạn:</span>
+                                                                            <div className="whitespace-pre-wrap">{sAns || <span className="italic text-muted-foreground">Không có</span>}</div>
+                                                                        </div>
+                                                                        {subQ.final_answer && (
+                                                                            <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/20">
+                                                                                <span className="font-bold text-emerald-600 dark:text-emerald-400 mb-1 block text-xs uppercase">Đáp án:</span>
+                                                                                <div className="text-emerald-800 dark:text-emerald-200"><LatexRenderer content={subQ.final_answer} inline={true} /></div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>

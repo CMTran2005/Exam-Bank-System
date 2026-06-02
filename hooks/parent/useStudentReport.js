@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import useSWR from "swr";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -39,6 +40,22 @@ export function useStudentReport(currentUser, studentId, router) {
                 const timeB = b.startTime ? Date.parse(b.startTime) : 0;
                 return timeB - timeA;
             });
+
+        // Lấy tên đề thi cho các bản ghi cũ không lưu examTitle
+        const examIds = [...new Set(attempts.map(a => a.examId))].filter(Boolean);
+        const examTitleMap = {};
+        if (examIds.length > 0) {
+            const examSnaps = await Promise.all(examIds.map(eid => getDoc(doc(db, "exams", eid))));
+            examSnaps.forEach(snap => {
+                if (snap.exists()) examTitleMap[snap.id] = snap.data().title;
+            });
+        }
+        
+        attempts.forEach(a => {
+            if (!a.examTitle) {
+                a.examTitle = examTitleMap[a.examId] || "Bài thi không tên";
+            }
+        });
 
         let total = 0;
         let count = 0;

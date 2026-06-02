@@ -101,6 +101,10 @@ export const examCollaborationService = {
         });
     },
 
+    // Quản lý bộ đếm thời gian cho việc đồng bộ (Debounce timers)
+    _syncTimers: {},
+    _pendingData: {},
+
     /**
      * Cập nhật các thông tin cơ bản của đề thi (Tiêu đề, Môn học, Khối lớp...)
      * @param {string} examId - ID của phiên soạn thảo
@@ -108,9 +112,20 @@ export const examCollaborationService = {
      * @returns {Promise<void>}
      */
     async updateExamInfo(examId, updates) {
-        if (!examId) return;
-        const docRef = doc(db, "exam_sessions", examId);
-        await updateDoc(docRef, updates);
+        if (!examId || !updates) return;
+        
+        // Loại bỏ các giá trị undefined bằng cách clone qua JSON (Firestore không hỗ trợ undefined)
+        const cleanUpdates = JSON.parse(JSON.stringify(updates));
+        this._pendingData[`examInfo_${examId}`] = cleanUpdates;
+        
+        if (this._syncTimers[`examInfo_${examId}`]) clearTimeout(this._syncTimers[`examInfo_${examId}`]);
+        
+        this._syncTimers[`examInfo_${examId}`] = setTimeout(async () => {
+            const docRef = doc(db, "exam_sessions", examId);
+            try {
+                await updateDoc(docRef, this._pendingData[`examInfo_${examId}`]);
+            } catch (err) { console.warn("Lỗi đồng bộ thông tin đề:", err); }
+        }, 1500); // Trì hoãn 1.5s để chống spam
     },
 
     /**
@@ -120,9 +135,20 @@ export const examCollaborationService = {
      * @returns {Promise<void>}
      */
     async updateQuestions(examId, questions) {
-        if (!examId) return;
-        const docRef = doc(db, "exam_sessions", examId);
-        await updateDoc(docRef, { questions });
+        if (!examId || !questions) return;
+        
+        // Loại bỏ các giá trị undefined bằng cách clone qua JSON
+        const cleanQuestions = JSON.parse(JSON.stringify(questions));
+        this._pendingData[`questions_${examId}`] = cleanQuestions;
+        
+        if (this._syncTimers[`questions_${examId}`]) clearTimeout(this._syncTimers[`questions_${examId}`]);
+        
+        this._syncTimers[`questions_${examId}`] = setTimeout(async () => {
+            const docRef = doc(db, "exam_sessions", examId);
+            try {
+                await updateDoc(docRef, { questions: this._pendingData[`questions_${examId}`] });
+            } catch (err) { console.warn("Lỗi đồng bộ câu hỏi:", err); }
+        }, 1500); // Trì hoãn 1.5s để giảm tải Firestore
     },
 
     /**

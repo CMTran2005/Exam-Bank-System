@@ -356,7 +356,9 @@ export default function ClassDetailsPage({ params }) {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-center font-black text-lg text-primary">
-                                                {attempt && attempt.score !== null ? attempt.score.toFixed(2) : "-"}
+                                                {attempt && attempt.score !== null 
+                                                    ? `${attempt.score.toFixed(2)}${attempt.maxScore ? ` / ${attempt.maxScore.toFixed(2)}` : ''}` 
+                                                    : "-"}
                                             </td>
                                             <td className="px-6 py-4 text-right text-muted-foreground text-xs font-medium">
                                                 {attempt && attempt.submitTime ? new Date(attempt.submitTime).toLocaleString('vi-VN') : "--"}

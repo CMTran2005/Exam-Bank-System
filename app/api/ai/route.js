@@ -38,8 +38,9 @@ Các phương án lựa chọn (nếu có): ${JSON.stringify(choices || [])}
 Yêu cầu nghiêm ngặt:
 1. Lời giải chi tiết (suggested_solution) phải phân tích rõ ràng, giải thích từng bước lập luận logic khoa học bằng tiếng Việt.
 2. Các công thức toán/lý/hóa phải được viết bằng định dạng LaTeX chuẩn và bao bọc bằng duy nhất một cặp ký tự $ (Ví dụ: $V = B \\cdot h$, $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$). KHÔNG bao bọc bằng ký tự $$ trừ khi đó là công thức lớn cần xuống dòng ở giữa câu.
-3. Đáp số đúng cuối cùng (final_answer) phải ngắn gọn, chính xác (Ví dụ: "A" hoặc "x = 2" hoặc "Mệnh đề A Đúng, Mệnh đề B Sai").
-4. Đối với câu hỏi trắc nghiệm khách quan ("multiple_choice"): Hãy xác định chỉ số (0-indexed) của phương án đúng trong mảng choices được truyền vào (0 tương ứng A, 1 tương ứng B, 2 tương ứng C, 3 tương ứng D) và trả về trong trường "correct_choice_index".
+3. ĐẶC BIỆT LƯU Ý KHI VIẾT LATEX TRONG JSON: Bạn BẮT BUỘC phải escape ký tự dấu gạch chéo ngược (backslash). Ví dụ: thay vì viết \frac, hãy viết \\\\frac. Thay vì viết \Delta, hãy viết \\\\Delta. Thay vì \cdot, hãy viết \\\\cdot.
+4. Đáp số đúng cuối cùng (final_answer) phải ngắn gọn, chính xác (Ví dụ: "A" hoặc "x = 2" hoặc "Mệnh đề A Đúng, Mệnh đề B Sai").
+5. Đối với câu hỏi trắc nghiệm khách quan ("multiple_choice"): Hãy xác định chỉ số (0-indexed) của phương án đúng trong mảng choices được truyền vào (0 tương ứng A, 1 tương ứng B, 2 tương ứng C, 3 tương ứng D) và trả về trong trường "correct_choice_index".
 
 Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG bao bọc trong ký tự markdown \`\`\`json hay bất cứ thứ gì khác ngoài cặp ngoặc {}, tuân thủ đúng cấu trúc sau:
 {
@@ -253,10 +254,14 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             
             let sanitized = jsonMatch[0];
             
-            // Bước 1: Xử lý các ký tự xuống dòng (newline) nằm bên trong các chuỗi giá trị để đảm bảo chuẩn JSON
+            // Bước 1: Khắc phục lỗi AI quên escape dấu gạch chéo ngược (\) trong công thức LaTeX (như \frac, \cdot, \Delta...)
+            // Bỏ qua các escape hợp lệ của JSON như \n, \r, \t, \", \\, \/ và \u
+            sanitized = sanitized.replace(/\\([^"\\/nrtu])/g, "\\\\$1");
+            
+            // Bước 2: Xử lý các ký tự xuống dòng (newline) nằm bên trong các chuỗi giá trị để đảm bảo chuẩn JSON
             sanitized = sanitized.replace(/\n/g, "\\n").replace(/\r/g, "\\r");
             
-            // Bước 2: Khôi phục cấu trúc phân cấp gốc của JSON để tiến hành phân tích cú pháp (parsing)
+            // Bước 3: Khôi phục cấu trúc phân cấp gốc của JSON để tiến hành phân tích cú pháp (parsing)
             sanitized = sanitized
                 .replace(/\\n\s*"/g, '\n"')
                 .replace(/\\n\s*\}/g, '\n}')

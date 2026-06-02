@@ -63,31 +63,37 @@ export async function POST(request) {
 
         let responseText = "";
 
-        // Khởi tạo tiến trình thử nghiệm nhiều mô hình: Ưu tiên sử dụng mô hình mới nhất gemini-2.5-flash (nhẹ, nhanh, tối ưu chi phí)
+        // Khởi tạo tiến trình thử nghiệm nhiều mô hình AI: Ưu tiên sử dụng mô hình mới nhất gemini-2.5-flash
         try {
             const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
             const result = await model.generateContent([prompt, imagePart]);
             responseText = result.response.text().trim();
         } catch (err1) {
-            console.warn("Thử gemini-2.5-flash thất bại, chuyển sang gemini-1.5-flash...", err1.message);
+            console.warn("Thử gemini-2.5-flash thất bại, chuyển sang gemini-2.0-flash...", err1.message);
+            if (err1.message.includes("429")) {
+                return NextResponse.json({ error: "Hệ thống AI đang quá tải do có nhiều người sử dụng. Vui lòng đợi vài giây và thử lại!" }, { status: 429 });
+            }
             try {
-                // Phương án dự phòng 1: Chuyển sang mô hình gemini-1.5-flash nếu mô hình mặc định gặp sự cố
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                // Phương án dự phòng 1: Chuyển sang mô hình gemini-2.0-flash
+                const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
                 const result = await model.generateContent([prompt, imagePart]);
                 responseText = result.response.text().trim();
             } catch (err2) {
-                console.warn("Thử gemini-1.5-flash thất bại, chuyển sang gemini-1.5-pro...", err2.message);
+                console.warn("Thử gemini-2.0-flash thất bại, chuyển sang gemini-2.5-pro...", err2.message);
+                if (err2.message.includes("429")) {
+                    return NextResponse.json({ error: "Hệ thống AI đang quá tải do có nhiều người sử dụng. Vui lòng đợi vài giây và thử lại!" }, { status: 429 });
+                }
                 try {
-                    // Phương án dự phòng 2: Chuyển sang mô hình cao cấp gemini-1.5-pro
-                    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-                    const result = await model.generateContent([prompt, imagePart]);
-                    responseText = result.response.text().trim();
-                } catch (err3) {
-                    console.warn("Thử gemini-1.5-pro thất bại, chuyển sang gemini-2.5-pro làm phương án cuối...", err3.message);
-                    // Phương án dự phòng cuối cùng: Dùng mô hình gemini-1.0-pro đời cũ
+                    // Phương án dự phòng 2: Chuyển sang mô hình cao cấp gemini-2.5-pro
                     const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
                     const result = await model.generateContent([prompt, imagePart]);
                     responseText = result.response.text().trim();
+                } catch (err3) {
+                    console.error("Tất cả các mô hình AI đều thất bại:", err3.message);
+                    if (err3.message.includes("429") || err3.message.includes("503")) {
+                        return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API miễn phí. Vui lòng thử lại sau 1 phút." }, { status: 429 });
+                    }
+                    throw err3;
                 }
             }
         }

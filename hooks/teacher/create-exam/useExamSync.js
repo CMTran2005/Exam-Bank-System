@@ -121,7 +121,8 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
                     if (data) {
                         isSyncingFromRemote.current = true;
                         setExamInfo(prev => {
-                            const newInfo = { ...prev, title: data.title || "", code: data.code || "", grade: data.grade || "", subject: data.subject || "" };
+                            const { questions, activeUsers, ...examInfoRemote } = data;
+                            const newInfo = { ...prev, ...examInfoRemote };
                             return JSON.stringify(prev) !== JSON.stringify(newInfo) ? newInfo : prev;
                         });
                         setQuestionsList(prev => {
@@ -161,7 +162,8 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
             
             if (currentUser?.uid) {
                 try {
-                    await setDoc(doc(db, "drafts", currentUser.uid), draft);
+                    const cleanDraft = JSON.parse(JSON.stringify(draft));
+                    await setDoc(doc(db, "drafts", currentUser.uid), cleanDraft);
                 } catch (err) { console.warn("Lỗi lưu nháp Cloud:", err); }
             }
             setLastSaved(new Date());
@@ -169,30 +171,32 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
         return () => clearTimeout(timer);
     }, [examInfo, questionsList, currentUser]);
 
-    const handleTitleChange = (title) => {
+    const handleExamInfoChange = (field, value) => {
         setExamInfo((prev) => {
-            const updated = { ...prev, title };
-            if (!isCodeManuallyEdited.current) {
-                const slug = slugify(title);
+            const updated = { ...prev, [field]: value };
+            
+            // Xử lý tự động tạo mã đề thi từ tiêu đề nếu người dùng chưa tự chỉnh sửa mã
+            if (field === 'title' && !isCodeManuallyEdited.current) {
+                const slug = slugify(value);
                 updated.code = slug ? `${slug}-${Math.floor(1000 + Math.random() * 9000)}` : "";
             }
-            if (examId && !isSyncingFromRemote.current) examCollaborationService.updateExamInfo(examId, updated);
+            
+            // Đánh dấu là đã chỉnh sửa mã thủ công
+            if (field === 'code') {
+                isCodeManuallyEdited.current = true;
+                updated.code = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+            }
+            
+            // Xóa môn học khi đổi cấp học (vì danh sách môn sẽ khác nhau)
+            if (field === 'grade') {
+                updated.subject = "";
+            }
+            
+            if (examId && !isSyncingFromRemote.current) {
+                examCollaborationService.updateExamInfo(examId, updated);
+            }
             return updated;
         });
-    };
-
-    const handleCodeChange = (e) => {
-        isCodeManuallyEdited.current = true;
-        const cleanedVal = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
-        const updated = { ...examInfo, code: cleanedVal };
-        setExamInfo(updated);
-        if (examId && !isSyncingFromRemote.current) examCollaborationService.updateExamInfo(examId, updated);
-    };
-
-    const handleGradeChange = (selectedGrade) => {
-        const updated = { ...examInfo, grade: selectedGrade, subject: "" };
-        setExamInfo(updated);
-        if (examId && !isSyncingFromRemote.current) examCollaborationService.updateExamInfo(examId, updated);
     };
 
     const handleSaveExam = async () => {
@@ -239,7 +243,8 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
             }
 
             // Lưu trữ thông tin từng câu hỏi hiện tại vào bộ sưu tập câu hỏi (questions collection)
-            questionsList.forEach((q, index) => {
+            const cleanQuestions = JSON.parse(JSON.stringify(questionsList));
+            cleanQuestions.forEach((q, index) => {
                 const qDocRef = doc(db, "questions", String(q.id));
                 const { isCollapsed, ...rest } = q;
                 batch.set(qDocRef, {
@@ -252,11 +257,13 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
 
             // Ghi nhận cấu hình (Metadata) của đề thi vào bộ sưu tập đề thi (exams collection)
             const examDocRef = doc(db, "exams", finalId);
-            batch.set(examDocRef, finalExamPayload, { merge: true });
+            const cleanPayload = JSON.parse(JSON.stringify(finalExamPayload));
+            batch.set(examDocRef, cleanPayload, { merge: true });
 
-            await runWithTimeout(batch.commit(), 3000);
+            await runWithTimeout(batch.commit(), 15000);
         } catch (err) {
-            console.warn("Bỏ qua lỗi Firestore khi lưu đề thi:", err.message);
+            console.error("Lỗi Firestore khi lưu đề thi:", err.message);
+            return toast.error("Có lỗi khi lưu lên Cloud: " + err.message);
         }
 
         if (editId) {
@@ -285,6 +292,6 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
     return {
         editId, isCodeManuallyEdited, isSyncingFromRemote, activeUsers,
         examInfo, setExamInfo, questionsList, setQuestionsList, lastSaved,
-        handleTitleChange, handleCodeChange, handleGradeChange, handleSaveExam
+        handleExamInfoChange, handleSaveExam
     };
 }

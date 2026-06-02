@@ -25,7 +25,7 @@ export default function CreateExamSessionPage() {
 
     const {
         currentUser, loading,
-        handleTitleChange, handleCodeChange, handleGradeChange,
+        handleExamInfoChange,
         addQuestion, removeQuestion, toggleCollapse, updateQuestionData, duplicateQuestion,
         handleSaveExam
     } = useCreateExam(examId);
@@ -89,11 +89,7 @@ export default function CreateExamSessionPage() {
                 </div>
             </div>
 
-            <ExamInfoCard 
-                handleTitleChange={handleTitleChange} 
-                handleCodeChange={handleCodeChange} 
-                handleGradeChange={handleGradeChange} 
-            />
+            <ExamInfoCard handleExamInfoChange={handleExamInfoChange} />
 
             <AiAssistantCard />
 

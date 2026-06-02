@@ -98,7 +98,7 @@ export function useQuestionForm(question, onChangeData) {
         updateField(targetField, currentImages.filter((_, idx) => idx !== indexToRemove));
     };
 
-    const handlePaste = async (e) => {
+    const createPasteHandler = (targetField, customUpdateCallback = null) => async (e) => {
         const items = e.clipboardData?.items;
         if (!items) return;
         for (let i = 0; i < items.length; i++) {
@@ -123,28 +123,45 @@ export function useQuestionForm(question, onChangeData) {
                             body: JSON.stringify({ image: base64Image }),
                         });
                         const data = await response.json();
-                        if (data.error || !data.content || !data.content.trim()) {
+                        if (data.error || (!data.content && !data.suggested_solution)) {
+                            if (customUpdateCallback) {
+                                customUpdateCallback(null, base64Image);
+                            } else {
+                                const currentImages = Array.isArray(question.images) ? question.images : [];
+                                onChangeData({
+                                    ...question,
+                                    images: [...currentImages, base64Image]
+                                });
+                            }
+                        } else {
+                            // Gộp nội dung và lời giải (nếu có) để dán thẳng vào trường mà người dùng đang focus
+                            let textToInsert = "";
+                            if (data.content) textToInsert += data.content;
+                            if (data.suggested_solution) {
+                                textToInsert += textToInsert ? `\n\n**Lời giải:**\n${data.suggested_solution}` : data.suggested_solution;
+                            }
+                            
+                            if (customUpdateCallback) {
+                                customUpdateCallback(textToInsert, null);
+                            } else {
+                                const currentText = question[targetField] || "";
+                                onChangeData({
+                                    ...question,
+                                    [targetField]: currentText ? `${currentText}\n${textToInsert}` : textToInsert
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Lỗi gọi API dán ảnh, giữ nguyên ảnh gốc:", err);
+                        if (customUpdateCallback) {
+                            customUpdateCallback(null, base64Image);
+                        } else {
                             const currentImages = Array.isArray(question.images) ? question.images : [];
                             onChangeData({
                                 ...question,
                                 images: [...currentImages, base64Image]
                             });
-                        } else {
-                            onChangeData({
-                                ...question,
-                                content: question.content ? `${question.content}\n${data.content}` : data.content,
-                                suggested_solution: data.suggested_solution
-                                    ? (question.suggested_solution ? `${question.suggested_solution}\n${data.suggested_solution}` : data.suggested_solution)
-                                    : question.suggested_solution
-                            });
                         }
-                    } catch (err) {
-                        console.error("Lỗi gọi API dán ảnh, giữ nguyên ảnh gốc:", err);
-                        const currentImages = Array.isArray(question.images) ? question.images : [];
-                        onChangeData({
-                            ...question,
-                            images: [...currentImages, base64Image]
-                        });
                     } finally {
                         setLoading(false);
                     }
@@ -153,9 +170,67 @@ export function useQuestionForm(question, onChangeData) {
         }
     };
 
+    const [aiGeneratingSolution, setAiGeneratingSolution] = useState(false);
+
+    const handleGenerateSolution = async (customQuestion = null, customUpdateCallback = null) => {
+        const targetQuestion = customQuestion || question;
+        if (!targetQuestion.content || !targetQuestion.content.trim()) {
+            return toast.error("Nội dung câu hỏi đang trống. Không thể sinh lời giải.");
+        }
+
+        setAiGeneratingSolution(true);
+        try {
+            const { auth } = await import("@/lib/firebase");
+            const token = auth.currentUser ? await auth.currentUser.getIdToken() : "";
+
+            const payload = {
+                action: "generate_solution",
+                type: targetQuestion.type,
+                content: targetQuestion.content,
+                choices: targetQuestion.options || targetQuestion.statements?.map(s => s.text) || []
+            };
+
+            const response = await fetch("/api/ai", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            if (customUpdateCallback) {
+                customUpdateCallback(data);
+            } else {
+                const updates = { suggested_solution: data.suggested_solution || "" };
+                
+                if (targetQuestion.type === "multiple_choice" && data.correct_choice_index !== undefined && data.correct_choice_index !== null) {
+                    const letters = ["A", "B", "C", "D"];
+                    if (data.correct_choice_index >= 0 && data.correct_choice_index < 4) {
+                        updates.correct_answer = letters[data.correct_choice_index];
+                    }
+                } else if (targetQuestion.type === "essay" && data.final_answer) {
+                    updates.final_answer = data.final_answer;
+                }
+                // For True/False, parsing correct_choice_index is tricky, so we mostly rely on suggested_solution.
+
+                onChangeData({ ...targetQuestion, ...updates });
+            }
+            toast.success("Đã sinh lời giải tự động thành công!");
+        } catch (error) {
+            console.error("Lỗi sinh lời giải AI:", error);
+            toast.error(error.message || "Không thể sinh lời giải, vui lòng thử lại.");
+        } finally {
+            setAiGeneratingSolution(false);
+        }
+    };
+
     return {
-        loading, tagInput, setTagInput, aiTaggingLoading,
+        loading, tagInput, setTagInput, aiTaggingLoading, aiGeneratingSolution,
         updateField, handleAITagging, handleAddManualTag, handleRemoveTag,
-        handleImageChange, removeImage, handlePaste
+        handleImageChange, removeImage, createPasteHandler, handleGenerateSolution
     };
 }

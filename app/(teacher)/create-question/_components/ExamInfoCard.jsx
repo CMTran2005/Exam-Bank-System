@@ -18,7 +18,7 @@ const ACADEMIC_YEARS = getDynamicAcademicYears();
  * @param {any}  handleTitleChange - Tham số đầu vào
  * @returns {JSX.Element}
  */
-export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeChange }) {
+export function ExamInfoCard({ handleExamInfoChange }) {
     const { provinces } = useProvinces();
     const { gradeSubjectsMap } = useSubjects();
     const GRADES = Object.keys(gradeSubjectsMap);
@@ -40,7 +40,7 @@ export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeC
                         <Checkbox 
                             id="isPublic" 
                             checked={examInfo.isPublic || false} 
-                            onCheckedChange={(checked) => setExamInfo({ ...examInfo, isPublic: checked })}
+                            onCheckedChange={(checked) => handleExamInfoChange("isPublic", checked)}
                             className="w-3.5 h-3.5"
                         />
                         <label htmlFor="isPublic" className="text-[11px] font-extrabold uppercase text-blue-700 dark:text-blue-400 cursor-pointer flex items-center gap-1 select-none">
@@ -59,7 +59,7 @@ export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeC
                         <Input
                             placeholder="Ví dụ: Đề thi thử THPT Quốc Gia môn Toán..."
                             value={examInfo.title}
-                            onChange={(e) => handleTitleChange(e.target.value)}
+                            onChange={(e) => handleExamInfoChange("title", e.target.value)}
                         />
                     </div>
                     <div className="sm:col-span-2 lg:col-span-1">
@@ -69,7 +69,7 @@ export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeC
                         <Input
                             placeholder="vi-du-ma-de-thi"
                             value={examInfo.code}
-                            onChange={handleCodeChange}
+                            onChange={(e) => handleExamInfoChange("code", e.target.value)}
                         />
                     </div>
                     <div>
@@ -78,14 +78,14 @@ export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeC
                             type="number"
                             placeholder="Ví dụ: 90"
                             value={examInfo.duration}
-                            onChange={(e) => setExamInfo({ ...examInfo, duration: e.target.value })}
+                            onChange={(e) => handleExamInfoChange("duration", e.target.value)}
                         />
                     </div>
                     <div>
                         <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Tỉnh thành</label>
                         <Combobox
                             value={examInfo.province}
-                            onValueChange={(val) => setExamInfo({ ...examInfo, province: val })}
+                            onValueChange={(val) => handleExamInfoChange("province", val)}
                             options={provinces.map(p => ({ value: p, label: p }))}
                             placeholder="Chọn tỉnh thành"
                             icon={MapPin}
@@ -94,7 +94,7 @@ export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeC
                     </div>
                     <div>
                         <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Năm học</label>
-                        <Select value={examInfo.year} onValueChange={(val) => setExamInfo({ ...examInfo, year: val })}>
+                        <Select value={examInfo.year} onValueChange={(val) => handleExamInfoChange("year", val)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Chọn năm học" />
                             </SelectTrigger>
@@ -105,7 +105,7 @@ export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeC
                     </div>
                     <div>
                         <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Cấp học / Lớp</label>
-                        <Select value={examInfo.grade} onValueChange={handleGradeChange}>
+                        <Select value={examInfo.grade} onValueChange={(val) => handleExamInfoChange("grade", val)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Chọn cấp học" />
                             </SelectTrigger>
@@ -122,7 +122,7 @@ export function ExamInfoCard({ handleTitleChange, handleCodeChange, handleGradeC
                         <label className="text-xs font-semibold text-blue-700 dark:text-blue-400 block mb-1.5">Môn học</label>
                         <Combobox
                             value={examInfo.subject}
-                            onValueChange={(val) => setExamInfo({ ...examInfo, subject: val })}
+                            onValueChange={(val) => handleExamInfoChange("subject", val)}
                             options={(gradeSubjectsMap[examInfo.grade] || []).map(sub => ({ value: sub, label: sub }))}
                             placeholder={examInfo.grade ? "Chọn môn học" : "Chọn lớp trước"}
                             disabled={!examInfo.grade}

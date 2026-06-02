@@ -9,9 +9,10 @@
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import RichTextarea from "./RichTextarea";
 import RichInput from "./RichInput";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wand2 } from "lucide-react";
 
 import MultipleChoiceForm from "./MultipleChoiceForm";
 import TrueFalseForm from "./TrueFalseForm";
@@ -52,9 +53,9 @@ const isGroupType = (type) => type?.startsWith("group_");
  */
 export default function QuestionForm({ question, onChangeData }) {
     const {
-        loading, tagInput, setTagInput, aiTaggingLoading,
+        loading, tagInput, setTagInput, aiTaggingLoading, aiGeneratingSolution,
         updateField, handleAITagging, handleAddManualTag, handleRemoveTag,
-        handleImageChange, removeImage, handlePaste
+        handleImageChange, removeImage, createPasteHandler, handleGenerateSolution
     } = useQuestionForm(question, onChangeData);
 
     const isGroup = isGroupType(question.type);
@@ -154,7 +155,7 @@ export default function QuestionForm({ question, onChangeData }) {
                         placeholder={isGroup ? "Nhập nội dung / đoạn văn chung cho cả nhóm câu hỏi..." : "Nhập nội dung đề bài câu hỏi tại đây..."}
                         value={question.content}
                         onChange={(val) => updateField("content", val)}
-                        onPaste={handlePaste}
+                        onPaste={createPasteHandler("content")}
                         rows={3}
                         disabled={loading}
                     />
@@ -193,67 +194,86 @@ export default function QuestionForm({ question, onChangeData }) {
                     )}
 
                     {isGroup && (
-                        <GroupQuestionForm groupQuestion={question} onChangeData={onChangeData} />
+                        <GroupQuestionForm 
+                            groupQuestion={question} 
+                            onChangeData={onChangeData} 
+                            createPasteHandler={createPasteHandler}
+                            handleGenerateSolution={handleGenerateSolution}
+                            aiGeneratingSolution={aiGeneratingSolution}
+                        />
                     )}
                 </div>
 
-                <div className="border-t pt-4 mt-2 space-y-4 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
-                    <div className="w-full space-y-2">
-                        <div className="flex items-center justify-between gap-4">
-                            <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block">
-                                Lời giải chi tiết (Suggested Solution):
-                            </label>
+                {!isGroup && (
+                    <div className="border-t pt-4 mt-2 space-y-4 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-lg border border-emerald-100 dark:border-emerald-900/50">
+                        <div className="w-full space-y-2">
+                            <div className="flex items-center justify-between gap-4">
+                                <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block">
+                                    Lời giải chi tiết (Suggested Solution):
+                                </label>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 gap-1 border-emerald-200 text-emerald-600 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900"
+                                    onClick={() => handleGenerateSolution()}
+                                    disabled={aiGeneratingSolution}
+                                >
+                                    {aiGeneratingSolution ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                                    {aiGeneratingSolution ? "Đang giải..." : "Tự động giải"}
+                                </Button>
+                            </div>
+                            <RichTextarea
+                                id={`q-suggested-sol-${question.id}`}
+                                placeholder="Nhập hướng dẫn giải, phân tích và các bước lập luận chi tiết..."
+                                value={question.suggested_solution || ""}
+                                onChange={(val) => updateField("suggested_solution", val)}
+                                onPaste={createPasteHandler("suggested_solution")}
+                                rows={3}
+                            />
+                            {question.suggested_solution && question.suggested_solution.includes("$") && (
+                                <div className="mt-2.5 p-3.5 rounded-xl border border-emerald-200/50 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/15 space-y-1.5 animate-in fade-in duration-250">
+                                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block select-none">
+                                        Xem trước nội dung (Preview content):
+                                    </span>
+                                    <div className="text-sm font-medium text-foreground">
+                                        <LatexRenderer text={question.suggested_solution} />
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        <RichTextarea
-                            id={`q-suggested-sol-${question.id}`}
-                            placeholder="Nhập hướng dẫn giải, phân tích và các bước lập luận chi tiết..."
-                            value={question.suggested_solution || ""}
-                            onChange={(val) => updateField("suggested_solution", val)}
-                            rows={3}
-                        />
-                        {question.suggested_solution && question.suggested_solution.includes("$") && (
-                            <div className="mt-2.5 p-3.5 rounded-xl border border-emerald-200/50 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/15 space-y-1.5 animate-in fade-in duration-250">
-                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block select-none">
-                                    Xem trước nội dung (Preview content):
-                                </span>
-                                <div className="text-sm font-medium text-foreground">
-                                    <LatexRenderer text={question.suggested_solution} />
-                                </div>
-                            </div>
-                        )}
-                    </div>
 
-                    <QuestionMedia 
-                        label="Hình ảnh sơ đồ minh họa kèm theo cho lời giải (nếu có):"
-                        images={question.answer_images}
-                        targetField="answer_images"
-                        handleImageChange={handleImageChange}
-                        removeImage={removeImage}
-                    />
-
-                    <div className="w-full pt-2 border-t border-emerald-200/40 dark:border-emerald-850/30">
-                        <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
-                            Kết quả / Đáp số đúng cuối cùng:
-                        </label>
-                        <RichInput
-                            id={`q-final-ans-${question.id}`}
-                            placeholder="Nhập đáp số hoặc kết quả ngắn chuẩn xác (Ví dụ: x = 2; C; Đúng;...)"
-                            value={question.final_answer || ""}
-                            onChange={(val) => updateField("final_answer", val)}
-                            className="bg-background border-emerald-200 dark:border-emerald-800 font-semibold text-emerald-900 dark:text-emerald-200 placeholder:text-muted-foreground"
+                        <QuestionMedia 
+                            label="Hình ảnh sơ đồ minh họa kèm theo cho lời giải (nếu có):"
+                            images={question.answer_images}
+                            targetField="answer_images"
+                            handleImageChange={handleImageChange}
+                            removeImage={removeImage}
                         />
-                        {question.final_answer && question.final_answer.includes("$") && (
-                            <div className="mt-2.5 p-3.5 rounded-xl border border-emerald-200/50 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/15 space-y-1.5 animate-in fade-in duration-250">
-                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block select-none">
-                                    Xem trước công thức (Word Equation View):
-                                </span>
-                                <div className="text-sm font-medium text-foreground">
-                                    <LatexRenderer text={question.final_answer} />
+
+                        <div className="w-full pt-2 border-t border-emerald-200/40 dark:border-emerald-850/30">
+                            <label className="text-sm font-bold text-emerald-800 dark:text-emerald-300 block mb-1">
+                                Kết quả / Đáp số đúng cuối cùng:
+                            </label>
+                            <RichInput
+                                id={`q-final-ans-${question.id}`}
+                                placeholder="Nhập đáp số hoặc kết quả ngắn chuẩn xác (Ví dụ: x = 2; C; Đúng;...)"
+                                value={question.final_answer || ""}
+                                onChange={(val) => updateField("final_answer", val)}
+                                className="bg-background border-emerald-200 dark:border-emerald-800 font-semibold text-emerald-900 dark:text-emerald-200 placeholder:text-muted-foreground"
+                            />
+                            {question.final_answer && question.final_answer.includes("$") && (
+                                <div className="mt-2.5 p-3.5 rounded-xl border border-emerald-200/50 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/15 space-y-1.5 animate-in fade-in duration-250">
+                                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest block select-none">
+                                        Xem trước công thức (Word Equation View):
+                                    </span>
+                                    <div className="text-sm font-medium text-foreground">
+                                        <LatexRenderer text={question.final_answer} />
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </CardContent>
         </Card>
     );

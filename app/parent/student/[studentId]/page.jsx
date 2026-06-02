@@ -22,6 +22,7 @@ export default function ParentStudentDetail() {
     const params = useParams();
     const router = useRouter();
     const { currentUser } = useAuth();
+    const studentId = params?.studentId;
     
     const { studentData, classes, attempts, radarData, trendData, avgScore, loading } = useStudentReport(currentUser, studentId, router);
 
