@@ -24,7 +24,10 @@ const getDifficultyBadge = (difficulty) => {
  * @returns {JSX.Element}
  */
 export function QuestionCard({ q, toggleCollapse, handleDelete }) {
-    const isGroup = q.type.startsWith("group_");
+    const isGroup = q.type?.startsWith("group_");
+    const displayPoints = isGroup
+        ? (q.subQuestions || []).reduce((sum, sq) => sum + parseFloat(sq.points || 0), 0).toFixed(2).replace(/\.?0+$/, "")
+        : q.points;
     return (
         <div className="border border-border/80 bg-card rounded-2xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
             <div className="flex justify-between items-center bg-muted/60 px-4 py-3 border-b border-border/60">
@@ -52,7 +55,7 @@ export function QuestionCard({ q, toggleCollapse, handleDelete }) {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-4">
                     <span className="text-xs font-bold text-primary mr-2">
-                        {q.points} điểm
+                        {displayPoints} điểm
                     </span>
                     <Button
                         variant="ghost" size="icon"
