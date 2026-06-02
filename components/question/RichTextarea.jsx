@@ -20,6 +20,30 @@ import RichTextToolbar from "./RichTextToolbar";
  * @param {string} className - Class CSS tùy chỉnh bên ngoài
  * @param {function} onPaste - Sự kiện khi dán văn bản hoặc ảnh
  */
+const sanitizeHtml = (html) => {
+    if (typeof window === "undefined") return html;
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        doc.querySelectorAll("script, style, link, meta").forEach((el) => el.remove());
+        const all = doc.body.getElementsByTagName("*");
+        for (let i = 0; i < all.length; i++) {
+            const el = all[i];
+            const allowedAttrs = ["href", "src", "alt", "target"];
+            const attrs = Array.from(el.attributes);
+            attrs.forEach((attr) => {
+                if (!allowedAttrs.includes(attr.name)) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+        }
+        return doc.body.innerHTML;
+    } catch (e) {
+        console.error("Lỗi khi làm sạch HTML:", e);
+        return html;
+    }
+};
+
 export default function RichTextarea({
     id,
     value = "",
@@ -139,6 +163,13 @@ export default function RichTextarea({
                 document.execCommand("insertText", false, plainText);
             } finally {
                 setIsCleaningWord(false);
+            }
+        } else if (htmlData) {
+            e.preventDefault();
+            const cleanHtml = sanitizeHtml(htmlData);
+            document.execCommand("insertHTML", false, cleanHtml);
+            if (editorRef.current) {
+                onChange(editorRef.current.innerHTML);
             }
         }
     };
