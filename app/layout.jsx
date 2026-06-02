@@ -6,6 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ConfirmProvider } from "@/context/ConfirmContext";
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,6 +47,7 @@ export default function RootLayout({ children }) {
         </ThemeProvider>
         <Toaster position="top-right" richColors />
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
