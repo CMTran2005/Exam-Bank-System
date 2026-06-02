@@ -40,6 +40,22 @@ export async function POST(request) {
         let maxPossibleScore = 0;
         const alphabet = ["A", "B", "C", "D", "E", "F"];
 
+        const cleanAndNormalize = (text) => {
+            if (text === undefined || text === null) return "";
+            return text
+                .toString()
+                .replace(/<[^>]*>/g, "")
+                .replace(/&nbsp;/g, " ")
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">")
+                .replace(/&amp;/g, "&")
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .trim()
+                .toLowerCase()
+                .replace(/,/g, ".");
+        };
+
         const gradeSingleQuestion = (qObj, sAns) => {
             if (sAns === undefined || sAns === null) return 0;
             let earnedPoints = 0;
@@ -72,17 +88,17 @@ export async function POST(request) {
                 const correctAnswers = [];
                 let match;
                 while ((match = regex.exec(qObj.content || "")) !== null) {
-                    correctAnswers.push(match[1].trim().toLowerCase().replace(/,/g, '.'));
+                    correctAnswers.push(cleanAndNormalize(match[1]));
                 }
                 let blankCorrectCount = 0;
                 correctAnswers.forEach((correct, idx) => {
-                    const ans = (sAns[idx] || "").trim().toLowerCase().replace(/,/g, '.');
+                    const ans = cleanAndNormalize(sAns[idx]);
                     if (ans && ans === correct) blankCorrectCount++;
                 });
                 if (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0) isCorrect = true;
             } else if (qObj.type === 'essay') {
-                const finalAns = (qObj.final_answer || "").trim().toLowerCase().replace(/,/g, '.');
-                const ans = (sAns || "").trim().toLowerCase().replace(/,/g, '.');
+                const finalAns = cleanAndNormalize(qObj.final_answer);
+                const ans = cleanAndNormalize(sAns);
                 if (finalAns && ans === finalAns) isCorrect = true;
             } else {
                 const studentLetter = alphabet[sAns];

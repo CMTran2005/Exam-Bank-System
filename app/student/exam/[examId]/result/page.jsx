@@ -19,6 +19,22 @@ import { badgeService } from "@/services/badgeService";
 import confetti from "canvas-confetti";
 import { getShuffleMap } from "@/lib/shuffleUtils";
 
+const cleanAndNormalize = (text) => {
+    if (text === undefined || text === null) return "";
+    return text
+        .toString()
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim()
+        .toLowerCase()
+        .replace(/,/g, ".");
+};
+
 /**
  * Component ExamResultPage
  * Đảm nhiệm việc hiển thị giao diện và xử lý logic tương ứng.
@@ -213,14 +229,16 @@ export default function ExamResultPage({ params }) {
                 const regex = /\[\[(.*?)\]\]/g;
                 const correctAnswers = [];
                 let match;
-                while ((match = regex.exec(subQ.content || "")) !== null) correctAnswers.push(match[1].trim().toLowerCase());
+                while ((match = regex.exec(subQ.content || "")) !== null) {
+                    correctAnswers.push(cleanAndNormalize(match[1]));
+                }
                 
                 if (!sAns || Object.keys(sAns).length === 0) {
                     skipped++;
                 } else {
                     let blankCorrectCount = 0;
                     correctAnswers.forEach((corr, idx) => {
-                        const sAnsVal = (sAns[idx] || "").trim().toLowerCase();
+                        const sAnsVal = cleanAndNormalize(sAns[idx]);
                         if (sAnsVal && sAnsVal === corr) blankCorrectCount++;
                     });
                     if (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0) {
@@ -234,8 +252,8 @@ export default function ExamResultPage({ params }) {
                 if (!sAns || sAns.trim() === '') {
                     skipped++;
                 } else {
-                    const finalAns = (subQ.final_answer || "").trim().toLowerCase();
-                    const sAnsVal = sAns.trim().toLowerCase();
+                    const finalAns = cleanAndNormalize(subQ.final_answer);
+                    const sAnsVal = cleanAndNormalize(sAns);
                     if (finalAns && sAnsVal === finalAns) {
                         correct++;
                         pEarned = pPossible;
@@ -413,19 +431,21 @@ export default function ExamResultPage({ params }) {
                                     const regex = /\[\[(.*?)\]\]/g;
                                     const correctAnswers = [];
                                     let match;
-                                    while ((match = regex.exec(subQ.content || "")) !== null) correctAnswers.push(match[1]);
+                                    while ((match = regex.exec(subQ.content || "")) !== null) {
+                                        correctAnswers.push(cleanAndNormalize(match[1]));
+                                    }
                                     
                                     s = !sAns || Object.keys(sAns).length === 0;
                                     let blankCorrectCount = 0;
                                     correctAnswers.forEach((correct, idx) => {
-                                        const ansVal = (sAns && sAns[idx] || "").trim().toLowerCase();
-                                        if (ansVal && ansVal === correct.trim().toLowerCase()) blankCorrectCount++;
+                                        const ansVal = cleanAndNormalize(sAns && sAns[idx]);
+                                        if (ansVal && ansVal === correct) blankCorrectCount++;
                                     });
                                     c = !s && blankCorrectCount === correctAnswers.length;
                                 } else if (subQ.type === 'essay') {
                                     s = !sAns || sAns.trim() === '';
-                                    const finalAns = (subQ.final_answer || "").trim().toLowerCase();
-                                    const ansVal = (sAns || "").trim().toLowerCase();
+                                    const finalAns = cleanAndNormalize(subQ.final_answer);
+                                    const ansVal = cleanAndNormalize(sAns);
                                     c = !s && finalAns && ansVal === finalAns;
                                 } else {
                                     const aIdx = alphabet.indexOf(subQ.correct_answer);
