@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import Header from "@/components/layout/Header";
@@ -21,6 +21,7 @@ export default function AppLayout({ children }) {
     const [zenMode, setZenMode] = useState(false);
     const { currentUser, loading } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     useEffect(() => {
         if (!loading && currentUser) {
@@ -31,6 +32,12 @@ export default function AppLayout({ children }) {
             }
         }
     }, [currentUser, loading, router]);
+
+    useEffect(() => {
+        if (isMobile) {
+            setSidebarOpen(false);
+        }
+    }, [pathname, isMobile]);
 
     useEffect(() => {
         const checkMobile = () => {

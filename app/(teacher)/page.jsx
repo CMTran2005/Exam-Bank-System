@@ -92,6 +92,7 @@ export default function Home() {
     }, [currentUser, loading, router]);
 
     useEffect(() => {
+        if (!currentUser) return;
         const fetchDashboardData = async () => {
             if (typeof window !== "undefined") {
                 let liveExamsCount = 0;

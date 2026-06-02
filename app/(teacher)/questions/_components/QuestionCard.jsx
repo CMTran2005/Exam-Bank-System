@@ -30,47 +30,49 @@ export function QuestionCard({ q, toggleCollapse, handleDelete }) {
         : q.points;
     return (
         <div className="border border-border/80 bg-card rounded-2xl shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
-            <div className="flex justify-between items-center bg-muted/60 px-4 py-3 border-b border-border/60">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${q.typeClass}`}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-muted/60 p-3 sm:px-4 sm:py-3 border-b border-border/60 gap-3 sm:gap-4">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 min-w-0">
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold border uppercase tracking-wider ${q.typeClass}`}>
                         {q.typeName}
                     </span>
                     {q.difficulty && (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${getDifficultyBadge(q.difficulty).className}`}>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold border uppercase tracking-wider ${getDifficultyBadge(q.difficulty).className}`}>
                             {getDifficultyBadge(q.difficulty).label}
                         </span>
                     )}
-                    <span className="font-bold text-sm text-foreground truncate">{q.number_label}</span>
-                    <span className="text-[10px] text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 px-2.5 py-0.5 rounded-full border border-teal-200/50 dark:border-teal-850/30 shrink-0 font-bold shadow-sm">
+                    <span className="font-bold text-xs sm:text-sm text-foreground">{q.number_label}</span>
+                    <span className="text-[9px] sm:text-[10px] text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 px-2 py-0.5 rounded-full border border-teal-200/50 dark:border-teal-850/30 font-bold shadow-sm">
                         {q.subject}
                     </span>
-                    <span className="text-[10px] text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 px-2.5 py-0.5 rounded-full border border-violet-200/50 dark:border-violet-850/30 shrink-0 font-medium shadow-sm">
+                    <span className="text-[9px] sm:text-[10px] text-violet-600 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/40 px-2 py-0.5 rounded-full border border-violet-200/50 dark:border-violet-850/30 font-medium shadow-sm">
                         {q.grade === "Đại học" ? "Đại học" : `Lớp ${q.grade}`}
                     </span>
                     {q.province && (
-                        <span className="text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full border border-blue-200/50 shrink-0 font-medium">
+                        <span className="text-[9px] sm:text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full border border-blue-200/50 font-medium">
                             {q.province}
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0 ml-4">
-                    <span className="text-xs font-bold text-primary mr-2">
+                <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-1.5 border-t border-border/40 pt-2 sm:border-none sm:pt-0 shrink-0">
+                    <span className="text-xs font-bold text-primary sm:mr-2">
                         {displayPoints} điểm
                     </span>
-                    <Button
-                        variant="ghost" size="icon"
-                        onClick={() => toggleCollapse(q.id)}
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    >
-                        {q.isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                        variant="ghost" size="icon"
-                        onClick={() => handleDelete(q.id, q.examId)}
-                        className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost" size="icon"
+                            onClick={() => toggleCollapse(q.id)}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        >
+                            {q.isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                            variant="ghost" size="icon"
+                            onClick={() => handleDelete(q.id, q.examId)}
+                            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
 

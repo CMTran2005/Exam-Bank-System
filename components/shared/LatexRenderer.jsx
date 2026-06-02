@@ -67,7 +67,7 @@ export default function LatexRenderer({ text = "", content = "", className = "" 
                 const html = katex.renderToString(math, {
                     displayMode: true,
                     throwOnError: false,
-                    strict: "ignore"
+                    strict: () => "ignore"
                 });
                 resultHtml += `<div class="block my-3 p-3 rounded-xl border border-blue-200/80 dark:border-blue-900/60 bg-blue-50/20 dark:bg-blue-950/20 text-[inherit] font-question-math shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] hover:border-primary transition-colors cursor-text select-all">${html}</div>`;
             } catch (e) {
@@ -79,7 +79,7 @@ export default function LatexRenderer({ text = "", content = "", className = "" 
                 const html = katex.renderToString(math, {
                     displayMode: false,
                     throwOnError: false,
-                    strict: "ignore"
+                    strict: () => "ignore"
                 });
                 resultHtml += `<span class="inline-flex items-center mx-1 px-2 py-0.5 rounded border border-blue-200/60 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/20 text-blue-950 dark:text-blue-100 font-question-math text-[13.5px] font-semibold align-middle shadow-[0_1px_1px_rgba(0,0,0,0.01)] hover:border-primary transition-all cursor-text select-all">${html}</span>`;
             } catch (e) {
@@ -91,7 +91,7 @@ export default function LatexRenderer({ text = "", content = "", className = "" 
                 const html = katex.renderToString(math, {
                     displayMode: true,
                     throwOnError: false,
-                    strict: "ignore"
+                    strict: () => "ignore"
                 });
                 resultHtml += `<div class="block my-3 p-3 rounded-xl border border-blue-200/80 dark:border-blue-900/60 bg-blue-50/20 dark:bg-blue-950/20 text-[inherit] font-question-math shadow-[inset_0_1px_2px_rgba(0,0,0,0.01)] hover:border-primary transition-colors cursor-text select-all">${html}</div>`;
             } catch (e) {
@@ -103,7 +103,7 @@ export default function LatexRenderer({ text = "", content = "", className = "" 
                 const html = katex.renderToString(math, {
                     displayMode: false,
                     throwOnError: false,
-                    strict: "ignore"
+                    strict: () => "ignore"
                 });
                 resultHtml += `<span class="inline-flex items-center mx-1 px-2 py-0.5 rounded border border-blue-200/60 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/20 text-blue-950 dark:text-blue-100 font-question-math text-[13.5px] font-semibold align-middle shadow-[0_1px_1px_rgba(0,0,0,0.01)] hover:border-primary transition-all cursor-text select-all">${html}</span>`;
             } catch (e) {

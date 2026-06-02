@@ -12,7 +12,7 @@ export default function StudentSummaryCards({ avgScore, attempts }) {
     const practiceAttempts = attempts.filter(a => a.classId === "practice").length;
 
     return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-sky-50 dark:bg-sky-950/30 p-4 rounded-2xl border border-sky-100 dark:border-sky-900">
                 <p className="text-xs font-bold text-sky-600 dark:text-sky-400 uppercase mb-1">Điểm Trung Bình</p>
                 <p className="text-3xl font-black text-sky-700 dark:text-sky-300">{avgScore}</p>
