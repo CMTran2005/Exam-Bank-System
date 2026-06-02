@@ -214,7 +214,9 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             "gemini-1.5-flash"
         ];
 
+        let isQuotaError = false;
         let lastError = null;
+
         for (const modelName of modelsToTry) {
             try {
                 console.log(`Đang thử gọi model AI: ${modelName}...`);
@@ -239,15 +241,62 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
                 console.warn(`Model AI ${modelName} thất bại:`, err.message);
                 lastError = err;
                 
-                // Trả về ngay lập tức nếu lỗi là do giới hạn API (429) để không bị treo
+                // Kiểm tra 429 để bật phao cứu sinh
                 const msg = err.message?.toLowerCase() || "";
                 if (msg.includes("429") || msg.includes("too many requests") || msg.includes("quota") || msg.includes("exhausted")) {
-                    return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API. Vui lòng thử lại sau vài giây." }, { status: 429 });
+                    isQuotaError = true;
+                    break;
                 }
             }
         }
 
+        // --- PHAO CỨU SINH OPENROUTER ---
+        if (!responseText && isQuotaError && process.env.OPENROUTER_API_KEY) {
+            console.log("Kích hoạt phao cứu sinh OpenRouter do Google Gemini quá tải...");
+            try {
+                const messages = [{ role: "user", content: prompt }];
+                if (imagePart) {
+                    // OpenRouter vision format (chỉ dùng nếu action sinh câu hỏi từ ảnh được gộp vào đây, 
+                    // nhưng AI route chủ yếu là text, tuy nhiên cứ để cho an toàn nếu có imagePart)
+                    messages[0].content = [
+                        { type: "text", text: prompt },
+                        { type: "image_url", image_url: { url: `data:image/png;base64,${imagePart.inlineData.data}` } }
+                    ];
+                }
+
+                const orResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://exam-bank-system.vercel.app", 
+                        "X-Title": "Exam Bank System"
+                    },
+                    body: JSON.stringify({
+                        model: "google/gemini-2.5-flash", 
+                        messages: messages
+                    })
+                });
+
+                if (orResponse.ok) {
+                    const orData = await orResponse.json();
+                    const text = orData.choices?.[0]?.message?.content?.trim();
+                    if (text) {
+                        responseText = text;
+                        console.log("Gọi thành công AI qua OpenRouter!");
+                    }
+                } else {
+                    console.error("OpenRouter cũng thất bại:", await orResponse.text());
+                }
+            } catch (orError) {
+                console.error("Lỗi khi gọi OpenRouter:", orError.message);
+            }
+        }
+
         if (!responseText) {
+            if (isQuotaError) {
+                return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API. Gợi ý: Hãy thêm OPENROUTER_API_KEY vào biến môi trường để dùng tính năng dự phòng." }, { status: 429 });
+            }
             throw new Error(`Tất cả các model AI trong chuỗi fallback đều thất bại. Lỗi cuối cùng: ${lastError?.message}`);
         }
 
