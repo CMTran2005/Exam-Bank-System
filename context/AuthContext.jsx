@@ -112,7 +112,7 @@ export function AuthProvider({ children }) {
                     uid: firebaseUser.uid,
                     name: firebaseUser.displayName || "Giáo viên",
                     email: firebaseUser.email,
-                    role: "teacher",
+                    role: "guest",
                     school: "Trường THPT Chuyên Quốc Học",
                     degree: "Thạc sĩ",
                     mainSubject: "Toán học",
@@ -190,7 +190,7 @@ export function AuthProvider({ children }) {
     };
 
     // Hàm xử lý Đăng nhập / Đăng ký cực nhanh bằng Tài khoản Google
-    const loginWithGoogle = async (role = "teacher") => {
+    const loginWithGoogle = async (role = "guest") => {
         setLoading(true);
         try {
             const provider = new GoogleAuthProvider();

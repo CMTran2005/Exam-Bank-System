@@ -24,8 +24,10 @@ export default function LoginPage() {
                 router.push("/student");
             } else if (currentUser.role === "parent") {
                 router.push("/parent");
-            } else {
+            } else if (currentUser.role === "teacher") {
                 router.push("/");
+            } else {
+                router.push("/complete-profile");
             }
         }
     }, [currentUser, authLoading, router]);
@@ -46,8 +48,10 @@ export default function LoginPage() {
                 router.push("/student");
             } else if (userData?.role === "parent") {
                 router.push("/parent");
-            } else {
+            } else if (userData?.role === "teacher") {
                 router.push("/");
+            } else {
+                router.push("/complete-profile");
             }
         } catch (err) {
             setError(err.message || "Đăng nhập thất bại, vui lòng thử lại!");
@@ -64,8 +68,10 @@ export default function LoginPage() {
                 router.push("/student");
             } else if (userData?.role === "parent") {
                 router.push("/parent");
-            } else {
+            } else if (userData?.role === "teacher") {
                 router.push("/");
+            } else {
+                router.push("/complete-profile");
             }
         } catch (err) {
             setError(err.message || "Đăng nhập bằng Google thất bại, vui lòng thử lại!");
