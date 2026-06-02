@@ -254,45 +254,58 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
         // --- PHAO CỨU SINH OPENROUTER ---
         if (!responseText && isQuotaError && process.env.OPENROUTER_API_KEY) {
             console.log("Kích hoạt phao cứu sinh OpenRouter do Google Gemini quá tải...");
-            try {
-                const messages = [{ role: "user", content: prompt }];
-                if (imagePart) {
-                    // OpenRouter vision format (chỉ dùng nếu action sinh câu hỏi từ ảnh được gộp vào đây, 
-                    // nhưng AI route chủ yếu là text, tuy nhiên cứ để cho an toàn nếu có imagePart)
-                    messages[0].content = [
-                        { type: "text", text: prompt },
-                        { type: "image_url", image_url: { url: `data:image/png;base64,${imagePart.inlineData.data}` } }
-                    ];
-                }
-
-                const orResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "https://exam-bank-system.vercel.app", 
-                        "X-Title": "Exam Bank System"
-                    },
-                    body: JSON.stringify({
-                        model: "meta-llama/llama-3.3-70b-instruct:free", 
-                        messages: messages
-                    })
-                });
-
-                if (orResponse.ok) {
-                    const orData = await orResponse.json();
-                    const text = orData.choices?.[0]?.message?.content?.trim();
-                    if (text) {
-                        responseText = text;
-                        console.log("Gọi thành công AI qua OpenRouter!");
+            const orModels = [
+                "meta-llama/llama-3.3-70b-instruct:free",
+                "qwen/qwen-2.5-72b-instruct:free",
+                "mistralai/mistral-7b-instruct:free",
+                "huggingfaceh4/zephyr-7b-beta:free"
+            ];
+            
+            for (const orModel of orModels) {
+                try {
+                    console.log(`Đang thử gọi OpenRouter model: ${orModel}...`);
+                    const messages = [{ role: "user", content: prompt }];
+                    if (imagePart) {
+                        messages[0].content = [
+                            { type: "text", text: prompt },
+                            { type: "image_url", image_url: { url: `data:image/png;base64,${imagePart.inlineData.data}` } }
+                        ];
                     }
-                } else {
-                    orErrorMessage = await orResponse.text();
-                    console.error("OpenRouter cũng thất bại:", orErrorMessage);
+
+                    const orResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                            "Content-Type": "application/json",
+                            "HTTP-Referer": "https://exam-bank-system.vercel.app", 
+                            "X-Title": "Exam Bank System"
+                        },
+                        body: JSON.stringify({
+                            model: orModel, 
+                            messages: messages
+                        })
+                    });
+
+                    if (orResponse.ok) {
+                        const orData = await orResponse.json();
+                        const text = orData.choices?.[0]?.message?.content?.trim();
+                        if (text) {
+                            responseText = text;
+                            console.log(`Gọi thành công AI qua OpenRouter bằng model ${orModel}!`);
+                            break;
+                        }
+                    } else {
+                        orErrorMessage = await orResponse.text();
+                        console.error(`OpenRouter model ${orModel} thất bại:`, orErrorMessage);
+                        if (!orErrorMessage.includes("429") && !orErrorMessage.includes("rate-limited")) {
+                            // Nếu không phải lỗi 429 của OpenRouter thì bỏ qua các model còn lại
+                            break;
+                        }
+                    }
+                } catch (orError) {
+                    orErrorMessage = orError.message;
+                    console.error(`Lỗi khi gọi OpenRouter model ${orModel}:`, orErrorMessage);
                 }
-            } catch (orError) {
-                orErrorMessage = orError.message;
-                console.error("Lỗi khi gọi OpenRouter:", orErrorMessage);
             }
         }
 
