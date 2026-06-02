@@ -205,12 +205,15 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             responseMimeType: "application/json",
         };
 
-        // Danh sách các mô hình ngôn ngữ lớn (LLM) khả dụng của Google Gemini (Đã loại bỏ các mô hình cũ đã ngừng hỗ trợ)
+        // Danh sách các mô hình ngôn ngữ lớn (LLM) khả dụng của Google Gemini (Đã bổ sung các phiên bản 3.x mới nhất)
         const modelsToTry = [
+            "gemini-3.5-flash",
+            "gemini-3.1-pro",
             "gemini-2.5-flash",
             "gemini-2.0-flash",
-            "gemini-2.5-flash-lite",
-            "gemini-2.5-pro"
+            "gemini-2.5-pro",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash"
         ];
 
         let lastError = null;

@@ -61,41 +61,40 @@ export async function POST(request) {
       }
     `;
 
-        let responseText = "";
+        // Danh sách các mô hình AI tiên tiến nhất, ưu tiên các model 3.5 Flash và 3.1 Pro mới nhất theo yêu cầu
+        const modelsToTry = [
+            "gemini-3.5-flash",
+            "gemini-3.1-pro",
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-1.5-pro",
+            "gemini-1.5-flash"
+        ];
 
-        // Khởi tạo tiến trình thử nghiệm nhiều mô hình AI: Ưu tiên sử dụng mô hình mới nhất gemini-2.5-flash
-        try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-            const result = await model.generateContent([prompt, imagePart]);
-            responseText = result.response.text().trim();
-        } catch (err1) {
-            console.warn("Thử gemini-2.5-flash thất bại, chuyển sang gemini-2.0-flash...", err1.message);
-            if (err1.message.includes("429")) {
-                return NextResponse.json({ error: "Hệ thống AI đang quá tải do có nhiều người sử dụng. Vui lòng đợi vài giây và thử lại!" }, { status: 429 });
-            }
+        let lastError = null;
+        for (const modelName of modelsToTry) {
             try {
-                // Phương án dự phòng 1: Chuyển sang mô hình gemini-2.0-flash
-                const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+                console.log(`Đang thử gọi model AI OCR: ${modelName}...`);
+                const model = genAI.getGenerativeModel({ model: modelName });
                 const result = await model.generateContent([prompt, imagePart]);
-                responseText = result.response.text().trim();
-            } catch (err2) {
-                console.warn("Thử gemini-2.0-flash thất bại, chuyển sang gemini-2.5-pro...", err2.message);
-                if (err2.message.includes("429")) {
-                    return NextResponse.json({ error: "Hệ thống AI đang quá tải do có nhiều người sử dụng. Vui lòng đợi vài giây và thử lại!" }, { status: 429 });
+                const text = result.response.text().trim();
+                if (text) {
+                    responseText = text;
+                    console.log(`Gọi thành công model AI OCR: ${modelName}!`);
+                    break;
                 }
-                try {
-                    // Phương án dự phòng 2: Chuyển sang mô hình cao cấp gemini-2.5-pro
-                    const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-                    const result = await model.generateContent([prompt, imagePart]);
-                    responseText = result.response.text().trim();
-                } catch (err3) {
-                    console.error("Tất cả các mô hình AI đều thất bại:", err3.message);
-                    if (err3.message.includes("429") || err3.message.includes("503")) {
-                        return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API miễn phí. Vui lòng thử lại sau 1 phút." }, { status: 429 });
-                    }
-                    throw err3;
-                }
+            } catch (err) {
+                console.warn(`Model AI ${modelName} thất bại hoặc hết quota:`, err.message);
+                lastError = err;
             }
+        }
+
+        if (!responseText) {
+            console.error("Tất cả các mô hình AI đều thất bại:", lastError?.message);
+            if (lastError?.message?.includes("429") || lastError?.message?.includes("503")) {
+                return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API. Vui lòng thử lại sau 1 phút." }, { status: 429 });
+            }
+            throw lastError;
         }
 
         // Tối ưu hóa quá trình bóc tách dữ liệu JSON từ chuỗi phản hồi bằng Biểu thức chính quy (Regex)
