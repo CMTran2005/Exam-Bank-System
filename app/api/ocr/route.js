@@ -61,11 +61,10 @@ export async function POST(request) {
       }
     `;
 
-        // Danh sách các mô hình AI tiên tiến nhất, ưu tiên các model 3.5 Flash và 3.1 Pro mới nhất theo yêu cầu
+        // Danh sách các mô hình AI tiên tiến nhất hiện có trên Google Generative AI API
         const modelsToTry = [
-            "gemini-3.5-flash",
-            "gemini-3.1-pro",
             "gemini-2.5-flash",
+            "gemini-2.5-pro",
             "gemini-2.0-flash",
             "gemini-1.5-pro",
             "gemini-1.5-flash"
@@ -84,16 +83,20 @@ export async function POST(request) {
                     break;
                 }
             } catch (err) {
-                console.warn(`Model AI ${modelName} thất bại hoặc hết quota:`, err.message);
+                console.warn(`Model AI ${modelName} thất bại:`, err.message);
                 lastError = err;
+                
+                // Nếu lỗi là 429 (Too Many Requests / Quota Exceeded), thoát vòng lặp ngay lập tức 
+                // để tránh treo hệ thống 20 giây do SDK tự động retry hoặc thử các model khác cũng bị limit
+                const msg = err.message?.toLowerCase() || "";
+                if (msg.includes("429") || msg.includes("too many requests") || msg.includes("quota") || msg.includes("exhausted")) {
+                    return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API. Vui lòng thử lại sau vài giây." }, { status: 429 });
+                }
             }
         }
 
         if (!responseText) {
             console.error("Tất cả các mô hình AI đều thất bại:", lastError?.message);
-            if (lastError?.message?.includes("429") || lastError?.message?.includes("503")) {
-                return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API. Vui lòng thử lại sau 1 phút." }, { status: 429 });
-            }
             throw lastError;
         }
 

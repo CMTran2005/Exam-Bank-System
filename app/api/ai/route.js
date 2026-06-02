@@ -205,13 +205,11 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             responseMimeType: "application/json",
         };
 
-        // Danh sách các mô hình ngôn ngữ lớn (LLM) khả dụng của Google Gemini (Đã bổ sung các phiên bản 3.x mới nhất)
+        // Danh sách các mô hình ngôn ngữ lớn (LLM) khả dụng của Google Gemini API
         const modelsToTry = [
-            "gemini-3.5-flash",
-            "gemini-3.1-pro",
             "gemini-2.5-flash",
-            "gemini-2.0-flash",
             "gemini-2.5-pro",
+            "gemini-2.0-flash",
             "gemini-1.5-pro",
             "gemini-1.5-flash"
         ];
@@ -238,8 +236,14 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
                     break;
                 }
             } catch (err) {
-                console.warn(`Model AI ${modelName} thất bại hoặc hết quota:`, err.message);
+                console.warn(`Model AI ${modelName} thất bại:`, err.message);
                 lastError = err;
+                
+                // Trả về ngay lập tức nếu lỗi là do giới hạn API (429) để không bị treo
+                const msg = err.message?.toLowerCase() || "";
+                if (msg.includes("429") || msg.includes("too many requests") || msg.includes("quota") || msg.includes("exhausted")) {
+                    return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API. Vui lòng thử lại sau vài giây." }, { status: 429 });
+                }
             }
         }
 
