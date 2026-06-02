@@ -72,17 +72,17 @@ export async function POST(request) {
                 const correctAnswers = [];
                 let match;
                 while ((match = regex.exec(qObj.content || "")) !== null) {
-                    correctAnswers.push(match[1].trim().toLowerCase());
+                    correctAnswers.push(match[1].trim().toLowerCase().replace(/,/g, '.'));
                 }
                 let blankCorrectCount = 0;
                 correctAnswers.forEach((correct, idx) => {
-                    const ans = (sAns[idx] || "").trim().toLowerCase();
+                    const ans = (sAns[idx] || "").trim().toLowerCase().replace(/,/g, '.');
                     if (ans && ans === correct) blankCorrectCount++;
                 });
                 if (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0) isCorrect = true;
             } else if (qObj.type === 'essay') {
-                const finalAns = (qObj.final_answer || "").trim().toLowerCase();
-                const ans = (sAns || "").trim().toLowerCase();
+                const finalAns = (qObj.final_answer || "").trim().toLowerCase().replace(/,/g, '.');
+                const ans = (sAns || "").trim().toLowerCase().replace(/,/g, '.');
                 if (finalAns && ans === finalAns) isCorrect = true;
             } else {
                 const studentLetter = alphabet[sAns];
