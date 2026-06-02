@@ -37,7 +37,7 @@ Các phương án/mệnh đề/chỗ trống (nếu có): ${JSON.stringify(choic
 
 Yêu cầu nghiêm ngặt:
 1. Lời giải chi tiết (suggested_solution) phải phân tích rõ ràng, giải thích từng bước lập luận logic khoa học bằng tiếng Việt.
-2. BẮT BUỘC mọi công thức toán/lý/hóa học, ký hiệu toán (như x, y, \Delta, \approx, \sqrt,...) hoặc biểu thức toán phải được viết bằng định dạng LaTeX chuẩn và được bao bọc hoàn chỉnh bằng duy nhất một cặp ký tự $ ở hai đầu (Ví dụ: $V = B \\cdot h$, $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$, $x_1$, $\\sqrt{\\Delta'}$). Tuyệt đối không được viết công thức LaTeX trần trụi mà thiếu ký tự $ ở đầu hoặc ở cuối. KHÔNG bao bọc bằng ký tự $$ trừ khi đó là công thức lớn cần xuống dòng ở giữa câu.
+2. Các công thức toán/lý/hóa phải được viết bằng định dạng LaTeX chuẩn và bao bọc bằng duy nhất một cặp ký tự $ (Ví dụ: $V = B \\cdot h$, $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$). KHÔNG bao bọc bằng ký tự $$ trừ khi đó là công thức lớn cần xuống dòng ở giữa câu.
 3. ĐẶC BIỆT LƯU Ý KHI VIẾT LATEX TRONG JSON: Bạn BẮT BUỘC phải escape ký tự dấu gạch chéo ngược (backslash). Ví dụ: thay vì viết \frac, hãy viết \\\\frac. Thay vì viết \Delta, hãy viết \\\\Delta.
 4. Đáp số (final_answer):
    - Trắc nghiệm (multiple_choice): Đáp số ngắn gọn (Ví dụ: "A", "B", "C", "D").
@@ -67,7 +67,7 @@ Loại câu hỏi: ${type || "multiple_choice"}
 
 Yêu cầu chất lượng câu hỏi:
 1. Nội dung câu hỏi sinh động, bám sát yêu cầu chuyên môn, phân loại người học (học sinh/sinh viên) cực kỳ tốt.
-2. BẮT BUỘC mọi ký hiệu, biểu thức học thuật/toán/lý/hóa học hoặc bất kỳ kí tự toán học nào (như x, y, \Delta, \sqrt) phải sử dụng định dạng mã LaTeX chuẩn và bao bọc hoàn chỉnh bằng duy nhất một cặp ký tự $ ở hai đầu (Ví dụ: $y = f(x)$, $x^2 - 4 = 0$, $x_1$, $\\sqrt{\\Delta'}$). Tuyệt đối không để sót kí tự $ ở đầu hoặc cuối.
+2. Tất cả các ký hiệu và biểu thức học thuật/toán/lý/hóa học phải sử dụng định dạng mã LaTeX chuẩn và bao bọc bằng duy nhất một cặp ký tự $ (Ví dụ: $y = f(x)$, $x^2 - 4 = 0$).
 3. Nếu loại câu hỏi là trắc nghiệm ("multiple_choice"):
    - Cung cấp đúng 4 phương án lựa chọn (A, B, C, D) dưới dạng mảng "choices".
    - Mỗi phương án có trường "text" (nội dung câu trả lời) và "isCorrect" (boolean).
