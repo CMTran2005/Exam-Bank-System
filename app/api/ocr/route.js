@@ -61,8 +61,10 @@ export async function POST(request) {
       }
     `;
 
-        // Danh sách các mô hình AI tiên tiến nhất hiện có trên Google Generative AI API
+        // Danh sách các mô hình AI tiên tiến nhất hiện có trên Google Generative AI API (Đã cập nhật Gemini 3.5/3.1 mới nhất của năm 2026)
         const modelsToTry = [
+            "gemini-3.5-flash",
+            "gemini-3.1-pro",
             "gemini-2.5-flash",
             "gemini-2.5-pro",
             "gemini-2.0-flash",
@@ -102,10 +104,14 @@ export async function POST(request) {
         // --- PHAO CỨU SINH OPENROUTER ---
         if (!responseText && isQuotaError && process.env.OPENROUTER_API_KEY) {
             console.log("Kích hoạt phao cứu sinh OpenRouter do Google Gemini quá tải...");
+            // Sử dụng các mô hình 2026 mới nhất có trong API Key của bạn trên OpenRouter
             const orModels = [
-                "meta-llama/llama-3.2-90b-vision-instruct:free",
-                "meta-llama/llama-3.2-11b-vision-instruct:free",
-                "qwen/qwen-2-vl-72b-instruct:free"
+                "google/gemini-3.5-flash",
+                "qwen/qwen-3.7-max",
+                "stepfun/step-3.7-flash",
+                "step/step-3.7-flash",
+                "meta-llama/llama-3.3-70b-instruct",
+                "google/gemini-2.5-flash"
             ];
             for (const orModel of orModels) {
                 try {

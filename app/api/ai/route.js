@@ -205,8 +205,10 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             responseMimeType: "application/json",
         };
 
-        // Danh sách các mô hình ngôn ngữ lớn (LLM) khả dụng của Google Gemini API
+        // Danh sách các mô hình ngôn ngữ lớn (LLM) khả dụng của Google Gemini API (Đã cập nhật các model 3.5 và 3.1 mới nhất năm 2026)
         const modelsToTry = [
+            "gemini-3.5-flash",
+            "gemini-3.1-pro",
             "gemini-2.5-flash",
             "gemini-2.5-pro",
             "gemini-2.0-flash",
@@ -254,11 +256,14 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
         // --- PHAO CỨU SINH OPENROUTER ---
         if (!responseText && isQuotaError && process.env.OPENROUTER_API_KEY) {
             console.log("Kích hoạt phao cứu sinh OpenRouter do Google Gemini quá tải...");
+            // Sử dụng các mô hình 2026 mới nhất có trong API Key của bạn trên OpenRouter
             const orModels = [
-                "meta-llama/llama-3.3-70b-instruct:free",
-                "qwen/qwen-2.5-72b-instruct:free",
-                "mistralai/mistral-7b-instruct:free",
-                "huggingfaceh4/zephyr-7b-beta:free"
+                "google/gemini-3.5-flash",
+                "qwen/qwen-3.7-max",
+                "stepfun/step-3.7-flash",
+                "step/step-3.7-flash",
+                "meta-llama/llama-3.3-70b-instruct",
+                "google/gemini-2.5-flash"
             ];
             
             for (const orModel of orModels) {
