@@ -47,11 +47,11 @@ export default function Header({ onMenuToggle }) {
                 </Button>
 
                 <Link href="/" className="flex items-center gap-2.5 group">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm group-hover:shadow-md transition-shadow">
-                        <BookOpen className="h-5 w-5 text-primary-foreground" />
+                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
+                        <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
                     </div>
                     <div className="hidden sm:block">
-                        <p className="text-sm font-bold text-foreground leading-tight">Ngân Hàng Câu Hỏi</p>
+                        <p className="text-sm font-bold text-foreground leading-tight">Exam Bank</p>
                         <p className="text-[11px] text-muted-foreground leading-tight">Hệ thống quản lý đề thi</p>
                     </div>
                 </Link>

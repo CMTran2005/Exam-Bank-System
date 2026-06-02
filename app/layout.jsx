@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Ngân Hàng Câu Hỏi",
+  title: "Exam Bank",
   description: "Hệ thống tạo và quản lý ngân hàng câu hỏi thi",
 };
 

@@ -59,8 +59,8 @@ export default function StudentLayout({ children }) {
                 <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                     <div className="flex items-center gap-6">
                         <Link href="/student" className="flex items-center gap-2 group">
-                            <div className="bg-primary/10 p-2 rounded-xl group-hover:bg-primary/20 transition-colors">
-                                <GraduationCap className="h-6 w-6 text-primary" />
+                            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl shadow-sm transition-colors">
+                                <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
                             </div>
                             <span className="font-black text-xl tracking-tight hidden sm:inline-block">
                                 E-Learning

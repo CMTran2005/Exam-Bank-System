@@ -34,8 +34,8 @@ export default function ParentLayout({ children }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
                         <Link href="/parent" className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-sky-500 rounded-xl flex items-center justify-center shadow-md">
-                                <GraduationCap className="w-5 h-5 text-white" />
+                            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-md transition-shadow">
+                                <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
                             </div>
                             <span className="text-xl font-black text-foreground tracking-tight">
                                 Parent<span className="text-sky-500">Portal</span>

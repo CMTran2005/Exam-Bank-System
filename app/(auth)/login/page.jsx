@@ -81,8 +81,8 @@ export default function LoginPage() {
 
             <div className="w-full max-w-md bg-card/60 backdrop-blur-xl border border-border shadow-2xl rounded-2xl p-8 relative z-10 transition-all duration-300 hover:shadow-primary/5">
                 <div className="flex flex-col items-center mb-5 text-center">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 mb-2">
-                        <BookOpen className="h-4 w-4" />
+                    <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-primary/20 mb-2">
+                        <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
                     </div>
                     <h2 className="text-lg font-black text-foreground tracking-tight">Đăng Nhập</h2>
                     <p className="text-[10px] text-muted-foreground mt-0.5">Hệ thống quản lý Ngân hàng Câu hỏi nâng cao</p>
