@@ -98,6 +98,13 @@ export const classService = {
      */
     async deleteClass(classId) {
         try {
+            // 1. Xóa tất cả các thành viên (học sinh) liên kết với lớp học này
+            const membersQuery = query(collection(db, "class_members"), where("classId", "==", classId));
+            const membersSnap = await getDocs(membersQuery);
+            const deletePromises = membersSnap.docs.map(memberDoc => deleteDoc(doc(db, "class_members", memberDoc.id)));
+            await Promise.all(deletePromises);
+
+            // 2. Xóa thông tin lớp học chính
             const docRef = doc(db, "classes", classId);
             await runWithTimeout(deleteDoc(docRef));
             return true;

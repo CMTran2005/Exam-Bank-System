@@ -119,7 +119,7 @@ export default function Sidebar({ isOpen, isMobile = false }) {
 
                             <div className="flex flex-col gap-0.5">
                                 {group.items.map((item) => {
-                                    const isActive = pathname === item.href;
+                                    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href + '/'));
                                     return (
                                         <Link
                                             key={item.href}

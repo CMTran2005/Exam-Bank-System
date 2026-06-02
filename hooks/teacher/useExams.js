@@ -3,6 +3,7 @@ import useSWR from "swr";
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useConfirm } from "@/context/ConfirmContext";
+import { examCollaborationService } from "@/services/examCollaborationService";
 
 /**
  * Chạy một Promise với thời gian giới hạn (timeout).
@@ -33,6 +34,9 @@ export function useExams(currentUser) {
     const { data: exams = [], mutate: mutateExams } = useSWR(
         currentUser ? `exams_${currentUser.uid}` : null,
         async () => {
+            // Tự động dọn dẹp các phiên (sessions) mồ côi ngầm trong background
+            examCollaborationService.cleanUpAbandonedSessions(currentUser.uid).catch(() => {});
+
             const q = query(collection(db, "exams"), where("uid", "==", currentUser.uid));
             const snapshot = await runWithTimeout(getDocs(q), 1500);
             const list = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));

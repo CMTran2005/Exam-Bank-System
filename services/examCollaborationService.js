@@ -166,5 +166,39 @@ export const examCollaborationService = {
         });
         
         await this.updateQuestions(examId, updatedQuestions);
+    },
+
+    /**
+     * Tự động dọn dẹp các phiên soạn thảo (exam_sessions) bị bỏ hoang để tránh rác dữ liệu.
+     * @param {string} uid - ID của giáo viên
+     * @returns {Promise<void>}
+     */
+    async cleanUpAbandonedSessions(uid) {
+        if (!uid) return;
+        try {
+            const { query, collection, where, getDocs, deleteDoc } = await import("firebase/firestore");
+            const q = query(collection(db, "exam_sessions"), where("creatorId", "==", uid));
+            const snap = await getDocs(q);
+            
+            const now = new Date().getTime();
+            const deletePromises = [];
+            
+            snap.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                const createdAt = new Date(data.createdAt).getTime();
+                const diffHours = (now - createdAt) / (1000 * 60 * 60);
+                
+                // Xóa nếu session đã tạo hơn 24 giờ và không có ai đang online
+                if (diffHours > 24 && (!data.activeUsers || data.activeUsers.length === 0)) {
+                    deletePromises.push(deleteDoc(docSnap.ref));
+                }
+            });
+            
+            if (deletePromises.length > 0) {
+                await Promise.all(deletePromises);
+            }
+        } catch (error) {
+            console.error("Lỗi dọn dẹp sessions:", error);
+        }
     }
 };
