@@ -110,7 +110,10 @@ export default function LatexRenderer({ text = "", content = "", className = "" 
                 resultHtml += `<code class="inline-block px-1 bg-red-50 text-red-500 rounded font-question-math">${part}</code>`;
             }
         } else {
-            resultHtml += part;
+            resultHtml += part
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
         }
     });
 
