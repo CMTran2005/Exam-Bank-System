@@ -33,19 +33,23 @@ Nhiệm vụ của bạn là đọc nội dung câu hỏi sau và viết lời g
 
 Loại câu hỏi: ${type || "multiple_choice"}
 Nội dung câu hỏi: ${content}
-Các phương án lựa chọn (nếu có): ${JSON.stringify(choices || [])}
+Các phương án/mệnh đề/chỗ trống (nếu có): ${JSON.stringify(choices || [])}
 
 Yêu cầu nghiêm ngặt:
 1. Lời giải chi tiết (suggested_solution) phải phân tích rõ ràng, giải thích từng bước lập luận logic khoa học bằng tiếng Việt.
 2. Các công thức toán/lý/hóa phải được viết bằng định dạng LaTeX chuẩn và bao bọc bằng duy nhất một cặp ký tự $ (Ví dụ: $V = B \\cdot h$, $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$). KHÔNG bao bọc bằng ký tự $$ trừ khi đó là công thức lớn cần xuống dòng ở giữa câu.
-3. ĐẶC BIỆT LƯU Ý KHI VIẾT LATEX TRONG JSON: Bạn BẮT BUỘC phải escape ký tự dấu gạch chéo ngược (backslash). Ví dụ: thay vì viết \frac, hãy viết \\\\frac. Thay vì viết \Delta, hãy viết \\\\Delta. Thay vì \cdot, hãy viết \\\\cdot.
-4. Đáp số đúng cuối cùng (final_answer) phải ngắn gọn, chính xác (Ví dụ: "A" hoặc "x = 2" hoặc "Mệnh đề A Đúng, Mệnh đề B Sai").
-5. Đối với câu hỏi trắc nghiệm khách quan ("multiple_choice"): Hãy xác định chỉ số (0-indexed) của phương án đúng trong mảng choices được truyền vào (0 tương ứng A, 1 tương ứng B, 2 tương ứng C, 3 tương ứng D) và trả về trong trường "correct_choice_index".
+3. ĐẶC BIỆT LƯU Ý KHI VIẾT LATEX TRONG JSON: Bạn BẮT BUỘC phải escape ký tự dấu gạch chéo ngược (backslash). Ví dụ: thay vì viết \frac, hãy viết \\\\frac. Thay vì viết \Delta, hãy viết \\\\Delta.
+4. Đáp số (final_answer):
+   - Trắc nghiệm (multiple_choice): Đáp số ngắn gọn (Ví dụ: "A", "B", "C", "D").
+   - Đúng/Sai (true_false): Trả về mảng boolean tương ứng với tính Đúng/Sai của từng mệnh đề (Ví dụ: [true, false, true, true]).
+   - Điền khuyết (fill_blank): Trả về mảng chuỗi chứa đáp án cho từng ô trống theo thứ tự (Ví dụ: ["12", "x^2", "vận tốc"]).
+   - Tự luận (essay): Đáp số ngắn gọn cuối cùng (Ví dụ: "x = 2").
+5. Chỉ số đáp án (correct_choice_index): Dành riêng cho trắc nghiệm (multiple_choice). Trả về số nguyên 0, 1, 2, hoặc 3 tương ứng với phương án đúng (0 là A, 1 là B...). Các loại khác trả về null.
 
 Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG bao bọc trong ký tự markdown \`\`\`json hay bất cứ thứ gì khác ngoài cặp ngoặc {}, tuân thủ đúng cấu trúc sau:
 {
   "suggested_solution": "Nội dung lời giải chi tiết đầy đủ có chứa LaTeX",
-  "final_answer": "Đáp số ngắn gọn cuối cùng",
+  "final_answer": "Đáp số ngắn gọn cuối cùng hoặc mảng đáp án (nếu là đúng/sai hoặc điền khuyết)",
   "correct_choice_index": 0 | 1 | 2 | 3 | null
 }
 `;

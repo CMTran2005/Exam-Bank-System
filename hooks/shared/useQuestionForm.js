@@ -214,8 +214,14 @@ export function useQuestionForm(question, onChangeData) {
                     }
                 } else if (targetQuestion.type === "essay" && data.final_answer) {
                     updates.final_answer = data.final_answer;
+                } else if (targetQuestion.type === "true_false" && Array.isArray(data.final_answer)) {
+                    if (targetQuestion.statements && targetQuestion.statements.length === data.final_answer.length) {
+                        updates.statements = targetQuestion.statements.map((stmt, i) => ({
+                            ...stmt,
+                            correct: !!data.final_answer[i]
+                        }));
+                    }
                 }
-                // For True/False, parsing correct_choice_index is tricky, so we mostly rely on suggested_solution.
 
                 onChangeData({ ...targetQuestion, ...updates });
             }

@@ -53,13 +53,13 @@ export async function POST(request) {
                 });
                 
                 // Quy tắc tính điểm Đúng/Sai chuẩn BGD 2025 (4 ý):
-                // 1 ý: 0.1, 2 ý: 0.25, 3 ý: 0.5, 4 ý: 1.0 (Giả sử tổng điểm câu là 1.0)
+                // 1 ý đúng: 0.1 điểm, 2 ý đúng: 0.25 điểm, 3 ý đúng: 0.5 điểm, 4 ý đúng: 1.0 điểm
                 const basePoints = parseFloat(qObj.points || "1");
-                if (stmts.length === 4 && basePoints === 1.0) {
-                    if (stmtCorrectCount === 1) earnedPoints = 0.1;
-                    else if (stmtCorrectCount === 2) earnedPoints = 0.25;
-                    else if (stmtCorrectCount === 3) earnedPoints = 0.5;
-                    else if (stmtCorrectCount === 4) earnedPoints = 1.0;
+                if (stmts.length === 4) {
+                    if (stmtCorrectCount === 1) earnedPoints = 0.1 * basePoints;
+                    else if (stmtCorrectCount === 2) earnedPoints = 0.25 * basePoints;
+                    else if (stmtCorrectCount === 3) earnedPoints = 0.5 * basePoints;
+                    else if (stmtCorrectCount === 4) earnedPoints = 1.0 * basePoints;
                 } else {
                     // Nếu không phải chuẩn 4 ý, tính tỷ lệ %
                     if (stmts.length > 0) {
