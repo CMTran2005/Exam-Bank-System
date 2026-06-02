@@ -112,7 +112,7 @@ export async function POST(request) {
                         "X-Title": "Exam Bank System"
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-2.0-pro-exp-02-05:free", // Sử dụng model miễn phí 100% của OpenRouter
+                        model: "meta-llama/llama-3.2-90b-vision-instruct:free", // Sử dụng Llama 3.2 90B Vision (rất tốt cho nhận diện ảnh và 100% miễn phí trên OpenRouter)
                         messages: [
                             {
                                 role: "user",

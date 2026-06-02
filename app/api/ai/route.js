@@ -274,7 +274,7 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
                         "X-Title": "Exam Bank System"
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-2.0-pro-exp-02-05:free", 
+                        model: "meta-llama/llama-3.3-70b-instruct:free", 
                         messages: messages
                     })
                 });
