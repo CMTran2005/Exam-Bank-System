@@ -1,8 +1,12 @@
-# Exam Bank System — Hệ Thống Ngân Hàng Câu Hỏi Thông Minh
-
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-0.1.0-gray)
+<img src="./public/logo.png" alt="Exam Bank Logo" width="120" />
+
+# Exam Bank — Hệ Thống Quản Lý Đề Thi Thông Minh
+
+[![Vercel Deployment](https://img.shields.io/badge/Live_Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://exam-bank-system.vercel.app/)
+
+![Version](https://img.shields.io/badge/version-1.0.0-gray)
 ![Language](https://img.shields.io/badge/JavaScript-94.9%25-fff2b2)
 ![TypeScript](https://img.shields.io/badge/TypeScript-4.5%25-bbf7d0)
 ![CSS](https://img.shields.io/badge/CSS-0.6%25-e9d5ff)
