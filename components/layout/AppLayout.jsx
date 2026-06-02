@@ -23,8 +23,12 @@ export default function AppLayout({ children }) {
     const router = useRouter();
 
     useEffect(() => {
-        if (!loading && currentUser && currentUser.role === "student") {
-            router.replace("/student");
+        if (!loading && currentUser) {
+            if (currentUser.role === "student") {
+                router.replace("/student");
+            } else if (currentUser.role === "parent") {
+                router.replace("/parent");
+            }
         }
     }, [currentUser, loading, router]);
 
@@ -48,7 +52,7 @@ export default function AppLayout({ children }) {
 
     const handleMenuToggle = () => setSidebarOpen((prev) => !prev);
 
-    if (loading || (currentUser && currentUser.role === "student")) {
+    if (loading || (currentUser && (currentUser.role === "student" || currentUser.role === "parent"))) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <div className="flex flex-col items-center gap-4">

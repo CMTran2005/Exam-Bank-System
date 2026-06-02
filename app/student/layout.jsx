@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain } from "lucide-react";
+import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain, Menu, X } from "lucide-react";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
 
@@ -20,6 +20,7 @@ export default function StudentLayout({ children }) {
     const router = useRouter();
     const pathname = usePathname();
     const [isMounted, setIsMounted] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
@@ -66,7 +67,8 @@ export default function StudentLayout({ children }) {
                             </span>
                         </Link>
                         
-                        <nav className="hidden md:flex items-center gap-1">
+                        {/* Desktop Navigation */}
+                        <nav className="hidden lg:flex items-center gap-1">
                             <Link 
                                 href="/student" 
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
@@ -130,12 +132,12 @@ export default function StudentLayout({ children }) {
                         </nav>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         <ThemeToggle />
                         
-                        <div className="h-8 w-px bg-border mx-1"></div>
+                        <div className="hidden sm:block h-8 w-px bg-border mx-1"></div>
                         
-                        <div className="flex items-center gap-3">
+                        <div className="hidden sm:flex items-center gap-3">
                             <div className="hidden sm:block text-right">
                                 <p className="text-sm font-bold leading-none">{currentUser.name}</p>
                                 <p className="text-[10px] text-muted-foreground mt-1 uppercase font-semibold">Học sinh</p>
@@ -148,8 +150,51 @@ export default function StudentLayout({ children }) {
                                 <LogOut className="h-5 w-5" />
                             </button>
                         </div>
+
+                        {/* Mobile Menu Toggle */}
+                        <button 
+                            className="lg:hidden p-2 ml-1 text-muted-foreground hover:bg-muted rounded-xl transition-colors"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        >
+                            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                        </button>
                     </div>
                 </div>
+
+                {/* Mobile Navigation Dropdown */}
+                {mobileMenuOpen && (
+                    <div className="lg:hidden border-t border-border/40 bg-background shadow-lg absolute w-full left-0 animate-in slide-in-from-top-2">
+                        <nav className="flex flex-col p-4 gap-2">
+                            {[
+                                { href: "/student", icon: LayoutDashboard, label: "Lớp thi" },
+                                { href: "/student/practice", icon: BookOpen, label: "Luyện thi" },
+                                { href: "/student/flashcards", icon: Brain, label: "Thẻ ghi nhớ" },
+                                { href: "/student/profile", icon: UserCircle, label: "Cá nhân" },
+                                { href: "/student/badges", icon: Medal, label: "Huy hiệu" },
+                                { href: "/student/settings", icon: Settings, label: "Cài đặt" },
+                            ].map((item) => (
+                                <Link 
+                                    key={item.href}
+                                    href={item.href}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                                        pathname === item.href 
+                                        ? "bg-primary/10 text-primary" 
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    }`}
+                                >
+                                    <item.icon className="h-5 w-5" /> {item.label}
+                                </Link>
+                            ))}
+                            <button 
+                                onClick={handleLogout}
+                                className="flex items-center gap-3 px-4 py-3 mt-2 rounded-xl text-sm font-bold text-red-500 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 transition-colors"
+                            >
+                                <LogOut className="h-5 w-5" /> Đăng xuất
+                            </button>
+                        </nav>
+                    </div>
+                )}
             </header>
 
             {/* Main Content */}

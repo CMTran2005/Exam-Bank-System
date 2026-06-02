@@ -85,6 +85,8 @@ export default function Home() {
                 router.push("/login");
             } else if (currentUser.role === "student") {
                 router.push("/student");
+            } else if (currentUser.role === "parent") {
+                router.push("/parent");
             }
         }
     }, [currentUser, loading, router]);

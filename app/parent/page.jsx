@@ -21,6 +21,9 @@ export default function ParentDashboard() {
     const { currentUser } = useAuth();
     const router = useRouter();
     const { childrenData, loading, linkStudent } = useChildren(currentUser);
+    const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+    const [studentEmailOrId, setStudentEmailOrId] = useState("");
+    const [linking, setLinking] = useState(false);
 
     const handleLinkStudent = async () => {
         setLinking(true);
