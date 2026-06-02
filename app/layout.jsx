@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/shared/theme-provider";
 import { AuthProvider } from "@/context/AuthContext";
 import { ConfirmProvider } from "@/context/ConfirmContext";
 import { Toaster } from "@/components/ui/sonner";
+import { Analytics } from "@vercel/analytics/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,6 +45,7 @@ export default function RootLayout({ children }) {
           </AuthProvider>
         </ThemeProvider>
         <Toaster position="top-right" richColors />
+        <Analytics />
       </body>
     </html>
   );
