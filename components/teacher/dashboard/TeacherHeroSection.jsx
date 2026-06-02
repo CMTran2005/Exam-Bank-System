@@ -19,13 +19,13 @@ export default function TeacherHeroSection({ currentUser }) {
             <div className="relative z-10 max-w-2xl space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs text-white font-semibold">
                     <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-                    Hỗ trợ Trí tuệ Nhân tạo Gemini 2.5 Flash
+                    Hỗ trợ AI Gemini
                 </div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
                     Hệ Thống Ngân Hàng <br className="hidden sm:inline" /> Câu Hỏi & Đề Thi
                 </h1>
                 <p className="text-sm sm:text-base text-slate-300 max-w-md leading-relaxed">
-                    Chào mừng {currentUser ? <span className="font-bold text-white">{currentUser.name}</span> : "bạn"} đến với hệ thống quản lý, biên soạn đề thi chuyên nghiệp tích hợp OCR quét đề nhanh bằng AI hàng đầu.
+                    Chào mừng {currentUser ? <span className="font-bold text-white">{currentUser.name}</span> : "bạn"} đến với hệ thống quản lý, biên soạn đề thi chuyên nghiệp tích hợp OCR quét đề nhanh bằng AI.
                 </p>
                 <div className="pt-2 flex flex-wrap gap-3">
                     <Link href="/create-question">

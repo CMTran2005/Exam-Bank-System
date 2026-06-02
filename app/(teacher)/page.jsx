@@ -32,7 +32,7 @@ const quickActions = [
         href: "/create-question",
         icon: FilePlus2,
         title: "Tạo Đề Thi Mới",
-        desc: "Soạn thảo đề thi trắc nghiệm, tự luận bằng AI.",
+        desc: "Soạn thảo đề thi trắc nghiệm, tự luận.",
         btnText: "Bắt đầu soạn",
         color: "from-blue-600 to-indigo-600 shadow-blue-500/10"
     },
@@ -56,7 +56,7 @@ const quickActions = [
         href: "/settings",
         icon: Settings,
         title: "Cấu Hình Hệ Thống",
-        desc: "Thiết lập điểm mặc định, thông số AI và OCR.",
+        desc: "Thiết lập điểm mặc định, thông số OCR.",
         btnText: "Vào cài đặt",
         color: "from-amber-600 to-orange-600 shadow-amber-500/10"
     }
