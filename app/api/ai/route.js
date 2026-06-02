@@ -250,6 +250,7 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
             }
         }
 
+        let orErrorMessage = null;
         // --- PHAO CỨU SINH OPENROUTER ---
         if (!responseText && isQuotaError && process.env.OPENROUTER_API_KEY) {
             console.log("Kích hoạt phao cứu sinh OpenRouter do Google Gemini quá tải...");
@@ -273,7 +274,7 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
                         "X-Title": "Exam Bank System"
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-2.5-flash", 
+                        model: "google/gemini-2.0-pro-exp-02-05:free", 
                         messages: messages
                     })
                 });
@@ -286,15 +287,20 @@ Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG
                         console.log("Gọi thành công AI qua OpenRouter!");
                     }
                 } else {
-                    console.error("OpenRouter cũng thất bại:", await orResponse.text());
+                    orErrorMessage = await orResponse.text();
+                    console.error("OpenRouter cũng thất bại:", orErrorMessage);
                 }
             } catch (orError) {
-                console.error("Lỗi khi gọi OpenRouter:", orError.message);
+                orErrorMessage = orError.message;
+                console.error("Lỗi khi gọi OpenRouter:", orErrorMessage);
             }
         }
 
         if (!responseText) {
             if (isQuotaError) {
+                if (process.env.OPENROUTER_API_KEY) {
+                    return NextResponse.json({ error: `Cả Google và phao cứu sinh OpenRouter đều thất bại. Lỗi OpenRouter: ${orErrorMessage}` }, { status: 429 });
+                }
                 return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API. Gợi ý: Hãy thêm OPENROUTER_API_KEY vào biến môi trường để dùng tính năng dự phòng." }, { status: 429 });
             }
             throw new Error(`Tất cả các model AI trong chuỗi fallback đều thất bại. Lỗi cuối cùng: ${lastError?.message}`);

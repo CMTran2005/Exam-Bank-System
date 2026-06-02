@@ -98,6 +98,7 @@ export async function POST(request) {
             }
         }
 
+        let orErrorMessage = null;
         // --- PHAO CỨU SINH OPENROUTER ---
         if (!responseText && isQuotaError && process.env.OPENROUTER_API_KEY) {
             console.log("Kích hoạt phao cứu sinh OpenRouter do Google Gemini quá tải...");
@@ -111,7 +112,7 @@ export async function POST(request) {
                         "X-Title": "Exam Bank System"
                     },
                     body: JSON.stringify({
-                        model: "google/gemini-2.5-flash", // Hoặc "meta-llama/llama-3.2-90b-vision-instruct" nếu muốn xài Llama miễn phí
+                        model: "google/gemini-2.0-pro-exp-02-05:free", // Sử dụng model miễn phí 100% của OpenRouter
                         messages: [
                             {
                                 role: "user",
@@ -132,15 +133,20 @@ export async function POST(request) {
                         console.log("Gọi thành công AI qua OpenRouter!");
                     }
                 } else {
-                    console.error("OpenRouter cũng thất bại:", await orResponse.text());
+                    orErrorMessage = await orResponse.text();
+                    console.error("OpenRouter cũng thất bại:", orErrorMessage);
                 }
             } catch (orError) {
-                console.error("Lỗi khi gọi OpenRouter:", orError.message);
+                orErrorMessage = orError.message;
+                console.error("Lỗi khi gọi OpenRouter:", orErrorMessage);
             }
         }
 
         if (!responseText) {
             if (isQuotaError) {
+                if (process.env.OPENROUTER_API_KEY) {
+                    return NextResponse.json({ error: `Cả Google và phao cứu sinh OpenRouter đều thất bại. Lỗi OpenRouter: ${orErrorMessage}` }, { status: 429 });
+                }
                 return NextResponse.json({ error: "Hệ thống AI đang bị quá tải hoặc vượt quá giới hạn API. Gợi ý: Hãy thêm OPENROUTER_API_KEY vào biến môi trường để dùng tính năng dự phòng." }, { status: 429 });
             }
             console.error("Tất cả các mô hình AI đều thất bại:", lastError?.message);
