@@ -433,6 +433,32 @@ export default function ExamInterface({ params }) {
         const q = exam.questions.find(x => x.id === qId);
         if (!q) return;
 
+        const cleanAndNormalize = (text) => {
+            if (text === undefined || text === null) return "";
+            let cleaned = text
+                .toString()
+                .replace(/<[^>]*>/g, "")
+                .replace(/&nbsp;/g, " ")
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">")
+                .replace(/&amp;/g, "&")
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/\$/g, "") // Loại bỏ ký hiệu $
+                .trim()
+                .toLowerCase()
+                .replace(/,/g, "."); // Đồng nhất dấu phẩy và dấu chấm thập phân
+
+            // Nếu chuỗi chứa số hoặc ký tự toán học, loại bỏ toàn bộ khoảng trắng
+            if (/[\d\+\-\*\/=]/.test(cleaned)) {
+                cleaned = cleaned.replace(/\s+/g, "");
+            } else {
+                // Nếu là văn bản, chuẩn hóa khoảng trắng liền nhau thành 1 khoảng trắng duy nhất
+                cleaned = cleaned.replace(/\s+/g, " ");
+            }
+            return cleaned;
+        };
+
         const checkSingleQ = (qObj, sAns) => {
             if (qObj.type === 'true_false') {
                 const stmts = qObj.statements || [];
@@ -446,17 +472,17 @@ export default function ExamInterface({ params }) {
                 const correctAnswers = [];
                 let match;
                 while ((match = regex.exec(qObj.content || "")) !== null) {
-                    correctAnswers.push(match[1].trim().toLowerCase());
+                    correctAnswers.push(cleanAndNormalize(match[1]));
                 }
                 let blankCorrectCount = 0;
                 correctAnswers.forEach((correct, idx) => {
-                    const ansStr = (sAns && sAns[idx] || "").trim().toLowerCase();
+                    const ansStr = cleanAndNormalize(sAns && sAns[idx] || "");
                     if (ansStr === correct) blankCorrectCount++;
                 });
                 return (blankCorrectCount === correctAnswers.length && correctAnswers.length > 0);
             } else if (qObj.type === 'essay') {
-                const finalAns = (qObj.final_answer || "").trim().toLowerCase();
-                const ansStr = (sAns || "").trim().toLowerCase();
+                const finalAns = cleanAndNormalize(qObj.final_answer || "");
+                const ansStr = cleanAndNormalize(sAns || "");
                 return (finalAns && ansStr === finalAns);
             } else {
                 const alphabet = ["A", "B", "C", "D", "E", "F"];

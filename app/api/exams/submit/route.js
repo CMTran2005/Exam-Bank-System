@@ -42,7 +42,7 @@ export async function POST(request) {
 
         const cleanAndNormalize = (text) => {
             if (text === undefined || text === null) return "";
-            return text
+            let cleaned = text
                 .toString()
                 .replace(/<[^>]*>/g, "")
                 .replace(/&nbsp;/g, " ")
@@ -51,9 +51,19 @@ export async function POST(request) {
                 .replace(/&amp;/g, "&")
                 .replace(/&quot;/g, '"')
                 .replace(/&#39;/g, "'")
+                .replace(/\$/g, "") // Loại bỏ ký hiệu $
                 .trim()
                 .toLowerCase()
-                .replace(/,/g, ".");
+                .replace(/,/g, "."); // Đồng nhất dấu phẩy và dấu chấm thập phân
+
+            // Nếu chuỗi chứa số hoặc ký tự toán học, loại bỏ toàn bộ khoảng trắng
+            if (/[\d\+\-\*\/=]/.test(cleaned)) {
+                cleaned = cleaned.replace(/\s+/g, "");
+            } else {
+                // Nếu là văn bản, chuẩn hóa khoảng trắng liền nhau thành 1 khoảng trắng duy nhất
+                cleaned = cleaned.replace(/\s+/g, " ");
+            }
+            return cleaned;
         };
 
         const gradeSingleQuestion = (qObj, sAns) => {
