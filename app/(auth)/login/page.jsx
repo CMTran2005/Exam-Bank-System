@@ -79,6 +79,19 @@ export default function LoginPage() {
         }
     };
 
+    if (authLoading || (currentUser && !authLoading)) {
+        return (
+            <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-background relative overflow-hidden">
+                <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-primary/10 blur-[100px] pointer-events-none" />
+                <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-80 h-80 rounded-full bg-violet-500/10 blur-[100px] pointer-events-none" />
+                <div className="w-full max-w-md bg-card/60 backdrop-blur-xl border border-border shadow-2xl rounded-2xl p-8 relative z-10 flex flex-col items-center justify-center min-h-[420px]">
+                    <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+                    <p className="text-xs text-muted-foreground font-bold">Đang xác thực phiên đăng nhập...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center px-4 py-8 relative overflow-hidden bg-background">
             {/* Background Decorative Gradients */}

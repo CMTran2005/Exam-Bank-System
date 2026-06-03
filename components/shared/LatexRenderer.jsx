@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import katex from "katex";
 
 const decodeHtmlEntities = (str) => {
     if (!str) return "";
@@ -21,27 +21,9 @@ const decodeHtmlEntities = (str) => {
  */
 export default function LatexRenderer({ text = "", content = "", className = "" }) {
     const actualText = text || content || "";
-    const [mounted, setMounted] = useState(false);
-    const [katex, setKatex] = useState(null);
-
-    useEffect(() => {
-        let isMounted = true;
-        import("katex").then((mod) => {
-            if (isMounted) {
-                setKatex(mod.default);
-                setMounted(true);
-            }
-        });
-        return () => {
-            isMounted = false;
-        };
-    }, []);
 
     if (!actualText) return null;
 
-    if (!mounted || !katex) {
-        return <div className={`${className} font-question-text whitespace-pre-wrap`} dangerouslySetInnerHTML={{ __html: actualText }} />;
-    }
     let processText = actualText;
     
     // Tự động nhận diện nếu chuỗi là phương trình/công thức toán thuần túy nhưng quên bọc $
