@@ -36,16 +36,7 @@ export default function StudentLayout({ children }) {
         }
     }, [currentUser, loading, router, isMounted]);
 
-    if (loading || !isMounted || !currentUser || currentUser.role !== "student") {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-background">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-sm text-muted-foreground font-medium animate-pulse">Đang tải không gian học tập...</p>
-                </div>
-            </div>
-        );
-    }
+    // Không render chặn toàn trang ở đây nữa, chuyển xuống phần main content để thanh header và footer hiển thị ngay lập tức
 
     const handleLogout = async () => {
         await logout();
@@ -138,17 +129,23 @@ export default function StudentLayout({ children }) {
                         <div className="hidden sm:block h-8 w-px bg-border mx-1"></div>
                         
                         <div className="hidden sm:flex items-center gap-3">
-                            <div className="hidden sm:block text-right">
-                                <p className="text-sm font-bold leading-none">{currentUser.name}</p>
-                                <p className="text-[10px] text-muted-foreground mt-1 uppercase font-semibold">Học sinh</p>
-                            </div>
-                            <button 
-                                onClick={handleLogout}
-                                className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors"
-                                title="Đăng xuất"
-                            >
-                                <LogOut className="h-5 w-5" />
-                            </button>
+                            {(!loading && currentUser) ? (
+                                <>
+                                    <div className="hidden sm:block text-right">
+                                        <p className="text-sm font-bold leading-none">{currentUser.name}</p>
+                                        <p className="text-[10px] text-muted-foreground mt-1 uppercase font-semibold">Học sinh</p>
+                                    </div>
+                                    <button 
+                                        onClick={handleLogout}
+                                        className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors"
+                                        title="Đăng xuất"
+                                    >
+                                        <LogOut className="h-5 w-5" />
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="w-24 h-8 bg-muted animate-pulse rounded-lg"></div>
+                            )}
                         </div>
 
                         {/* Mobile Menu Toggle */}
@@ -199,7 +196,14 @@ export default function StudentLayout({ children }) {
 
             {/* Main Content */}
             <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
-                {children}
+                {(loading || !isMounted || !currentUser || currentUser.role !== "student") ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-sm text-muted-foreground font-medium animate-pulse">Đang tải không gian học tập...</p>
+                    </div>
+                ) : (
+                    children
+                )}
             </main>
 
             <Footer />

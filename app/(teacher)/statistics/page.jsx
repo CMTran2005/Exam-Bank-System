@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, Loader2 } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 import { useStatistics } from "@/hooks/teacher/useStatistics";
 import { 
@@ -10,6 +10,7 @@ import {
     QuestionTypeCard, 
     GrowthChartCard 
 } from "./_components/ChartCards";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Component StatisticsPage
@@ -25,13 +26,7 @@ export default function StatisticsPage() {
         difficultyStats, typeStats, subjectStats, monthlyGrowth, donutSegments
     } = useStatistics();
 
-    if (loading || !currentUser) {
-        return (
-            <div className="flex h-[80vh] items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-        );
-    }
+    const isPageLoading = loading || !currentUser;
 
     return (
         <div className="p-4 sm:p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
@@ -43,38 +38,59 @@ export default function StatisticsPage() {
                     </h1>
                     <p className="text-xs text-muted-foreground mt-1">Phân tích chuyên sâu số liệu ngân hàng đề thi</p>
                 </div>
-                {isLive && (
+                {!isPageLoading && isLive && (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 w-fit">
                         <TrendingUp className="w-3.5 h-3.5 mr-1" /> Dữ liệu thời gian thực
                     </span>
                 )}
             </div>
 
-            <OverviewCards 
-                subjectCount={subjectCount} 
-                subjectsListStr={subjectsListStr} 
-                totalQuestions={totalQuestions} 
-                growthPercent={growthPercent} 
-                ocrRate={ocrRate} 
-                avgLatency={avgLatency} 
-            />
+            {isPageLoading ? (
+                <div className="space-y-8">
+                    {/* Overview Cards Skeletons */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[1, 2, 3].map(i => (
+                            <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+                        ))}
+                    </div>
+                    {/* Subject Coverage Skeleton */}
+                    <Skeleton className="h-48 w-full rounded-2xl" />
+                    {/* Grid charts Skeletons */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <Skeleton className="h-64 w-full rounded-2xl" />
+                        <Skeleton className="h-64 w-full rounded-2xl" />
+                        <Skeleton className="h-80 w-full rounded-2xl lg:col-span-2" />
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <OverviewCards 
+                        subjectCount={subjectCount} 
+                        subjectsListStr={subjectsListStr} 
+                        totalQuestions={totalQuestions} 
+                        growthPercent={growthPercent} 
+                        ocrRate={ocrRate} 
+                        avgLatency={avgLatency} 
+                    />
 
-            <SubjectCoverageCard subjectStats={subjectStats} />
+                    <SubjectCoverageCard subjectStats={subjectStats} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <DifficultyChartCard 
-                    totalQuestions={totalQuestions} 
-                    difficultyStats={difficultyStats} 
-                    donutSegments={donutSegments} 
-                />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <DifficultyChartCard 
+                            totalQuestions={totalQuestions} 
+                            difficultyStats={difficultyStats} 
+                            donutSegments={donutSegments} 
+                        />
 
-                <QuestionTypeCard typeStats={typeStats} />
+                        <QuestionTypeCard typeStats={typeStats} />
 
-                <GrowthChartCard 
-                    monthlyGrowth={monthlyGrowth} 
-                    totalQuestions={totalQuestions} 
-                />
-            </div>
+                        <GrowthChartCard 
+                            monthlyGrowth={monthlyGrowth} 
+                            totalQuestions={totalQuestions} 
+                        />
+                    </div>
+                </>
+            )}
         </div>
     );
 }

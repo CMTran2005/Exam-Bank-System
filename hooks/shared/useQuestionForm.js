@@ -1,6 +1,37 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+const compressImage = (base64Str, maxWidth = 1280, maxHeight = 720, quality = 0.8) => {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.src = base64Str;
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => resolve(base64Str);
+    });
+};
+
 /**
  * Hàm useQuestionForm
  * Xử lý logic và chức năng liên quan.
@@ -109,8 +140,11 @@ export function useQuestionForm(question, onChangeData) {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onloadend = async () => {
-                    const base64Image = reader.result;
+                    let base64Image = reader.result;
                     try {
+                        // Tự động nén ảnh chất lượng cao dạng JPEG trước khi gửi lên API OCR
+                        base64Image = await compressImage(base64Image);
+
                         const { auth } = await import("@/lib/firebase");
                         const token = auth.currentUser ? await auth.currentUser.getIdToken() : "";
                         

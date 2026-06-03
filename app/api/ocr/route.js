@@ -3,11 +3,32 @@ import { NextResponse } from "next/server";
 import { adminAuth } from "@/lib/firebaseAdmin";
 
 /**
- * Component POST
- * Xử lý logic và chức năng liên quan.
+ * Hàm Heuristics check xem đoạn text có chứa ký tự toán học/khoa học hoặc số liệu không
+ * 
+ * @param {string} text 
+ * @returns {boolean}
+ */
+function checkHasMathOrStats(text) {
+    if (!text) return false;
+    
+    // 1. Quét regex các ký hiệu toán học, vật lý, hóa học hoặc định dạng lũy thừa, chỉ số dưới
+    const mathSymbolsRegex = /[\u2200-\u22FF]|[\u2A00-\u2AFF]|[\u2190-\u21FF]|^|_|\/|\\frac|\\sqrt|\\sum|\\int|\\pi|\\alpha|\\beta|\\gamma|\+|-|=|\*|\\rightarrow|\\delta|\\theta/gi;
+    const hasMathSymbol = mathSymbolsRegex.test(text);
+
+    // 2. Kiểm tra mật độ chữ số (Digit Density) > 15%
+    const digits = text.replace(/[^0-9]/g, "").length;
+    const totalChars = text.length || 1;
+    const digitDensity = digits / totalChars;
+
+    return hasMathSymbol || digitDensity > 0.15;
+}
+
+/**
+ * API POST /api/ocr
+ * Xử lý quét văn bản và công thức toán học từ ảnh tải lên.
  *
- * @param {any} request - Tham số đầu vào
- * @returns {JSX.Element}
+ * @param {Request} request
+ * @returns {Promise<NextResponse>}
  */
 export async function POST(request) {
     try {
@@ -33,43 +54,107 @@ export async function POST(request) {
             return NextResponse.json({ error: "Không tìm thấy dữ liệu ảnh." }, { status: 400 });
         }
 
+        const base64Data = image.split(",")[1] || image;
+
+        // ========================================================
+        // GIAI ĐOẠN 1: GOOGLE CLOUD VISION API (LẤY VĂN BẢN THÔ)
+        // ========================================================
+        const gcvApiKey = process.env.GOOGLE_CLOUD_API_KEY;
+        let rawText = "";
+        let gcvSuccess = false;
+
+        if (gcvApiKey) {
+            try {
+                console.log("Đang gọi Google Cloud Vision API để trích xuất văn bản thô...");
+                const gcvResponse = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${gcvApiKey}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        requests: [
+                            {
+                                image: { content: base64Data },
+                                features: [{ type: "DOCUMENT_TEXT_DETECTION" }]
+                            }
+                        ]
+                    })
+                });
+
+                if (gcvResponse.ok) {
+                    const gcvData = await gcvResponse.json();
+                    rawText = gcvData.responses?.[0]?.fullTextAnnotation?.text || "";
+                    gcvSuccess = true;
+                    console.log("Google Cloud Vision trích xuất thành công văn bản thô!");
+                } else {
+                    console.error("Lỗi phản hồi Google Cloud Vision:", await gcvResponse.text());
+                }
+            } catch (gcvErr) {
+                console.error("Lỗi khi kết nối Google Cloud Vision API:", gcvErr.message);
+            }
+        } else {
+            console.warn("Chưa cấu hình GOOGLE_CLOUD_API_KEY. Bỏ qua Cloud Vision và chuyển thẳng sang AI OCR.");
+        }
+
+        // ========================================================
+        // GIAI ĐOẠN 2: BỘ LỌC THÔNG MINH HEURISTICS (TIẾT KIỆM AI)
+        // ========================================================
+        if (gcvSuccess && rawText.trim().length > 0) {
+            const hasMathOrStats = checkHasMathOrStats(rawText);
+            
+            // Nếu là văn bản thường thuần túy, không có ký hiệu toán học/số liệu -> Trả về luôn!
+            if (!hasMathOrStats) {
+                console.log("-> [Hybrid OCR] Phát hiện văn bản thuần túy. Trả ngay kết quả, bỏ qua AI.");
+                return NextResponse.json({
+                    content: rawText.trim(),
+                    suggested_solution: ""
+                });
+            }
+            console.log("-> [Hybrid OCR] Phát hiện công thức/số liệu. Chuyển sang AI để định dạng LaTeX.");
+        }
+
+        // ========================================================
+        // GIAI ĐOẠN 3: AI OCR (GEMINI / OPENROUTER FALLBACK)
+        // ========================================================
         const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
         const genAI = new GoogleGenerativeAI(apiKey);
-        const base64Data = image.split(",")[1] || image;
 
         const imagePart = {
             inlineData: {
                 data: base64Data,
-                mimeType: "image/png",
+                mimeType: "image/jpeg",
             },
         };
 
+        // Prompt được tinh chỉnh chuyên sâu để đối chiếu ảnh và text gợi ý của Cloud Vision
         const prompt = `
-      Bạn là chuyên gia số hóa đề thi chuyên nghiệp hàng đầu. Hãy phân tích hình ảnh câu hỏi và công thức được cung cấp.
-      Nhiệm vụ của bạn là nhận diện chữ viết (tiếng Việt/tiếng Anh) và chuyển các công thức toán/lý/hóa thành mã LaTeX cực kỳ chính xác.
-      
-      Yêu cầu nghiêm ngặt:
-      1. Quét và chuyển toàn bộ văn bản trong ảnh thành chữ thuần túy, giữ nguyên định dạng xuống dòng của đề bài nếu có.
-      2. Chuyển CHÍNH XÁC các ký hiệu, biểu thức toán học sang định dạng mã LaTeX chuẩn (ví dụ: \\frac{a}{b}, \\sqrt{x}, x^2, \\int) và bao bọc chúng bằng duy nhất một cặp ký tự $ (Ví dụ: $x^2 - 4 = 0$, $\\frac{a}{b}$). KHÔNG bao bọc bằng ký tự $$ trừ khi đó là công thức lớn cần xuống dòng ở giữa câu.
-      3. Nếu trong ảnh có sẵn cả Đề bài và Lời giải mẫu chi tiết, hãy bóc tách riêng chúng ra.
-      4. Đảm bảo mã JSON đầu ra hợp lệ, không chứa ký tự lạ làm hỏng JSON.
-      
-      Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG bao bọc trong ký tự markdown \`\`\`json hay bất cứ thứ gì khác ngoài cặp ngoặc {}, tuân thủ đúng cấu trúc sau:
-      {
-        "content": "Nội dung đề bài sau khi quét và chuyển công thức thành định dạng LaTeX",
-        "suggested_solution": "Nội dung lời giải chi tiết nếu có trong ảnh, nếu không có hãy để chuỗi rỗng \"\""
-      }
-    `;
+Bạn là chuyên gia số hóa đề thi và tài liệu học tập chuyên nghiệp. 
+Nhiệm vụ của bạn là nhận diện chính xác đề bài từ ảnh và định dạng các công thức toán/lý/hóa thành mã LaTeX.
 
-        // Danh sách các mô hình AI tiên tiến nhất hiện có trên Google Generative AI API (Đã cập nhật Gemini 3.5/3.1 mới nhất của năm 2026)
+Dưới đây là văn bản gợi ý từ bộ quét OCR thô (có thể chứa lỗi chính tả hoặc lỗi ký hiệu):
+---
+OCR RAW TEXT SUGGESTION:
+${rawText || "(Không có văn bản gợi ý)"}
+---
+
+Yêu cầu nghiêm ngặt:
+1. Đối chiếu ảnh với văn bản gợi ý để sửa lại toàn bộ lỗi chính tả, lỗi xuống dòng và ký tự lỗi.
+2. Định dạng TOÀN BỘ các ký hiệu, biểu thức toán học, vật lý, hóa học sang mã LaTeX chuẩn (ví dụ: $x^2 - 4 = 0$, $\\frac{a}{b}$, $H_2SO_4$, $\\vec{v}$).
+   - Sử dụng duy nhất một cặp ký tự $ bao quanh biểu thức nằm cùng dòng (inline). Ví dụ: $a^2 + b^2 = c^2$.
+   - Sử dụng cặp ký tự $$ cho các công thức lớn hoặc công thức đứng riêng một dòng.
+3. Nếu ảnh chứa cả Đề bài và Lời giải mẫu chi tiết, hãy tách riêng chúng ra.
+4. Đảm bảo mã JSON đầu ra hợp lệ, không chứa ký tự lạ làm hỏng JSON.
+
+Hãy trả về kết quả dưới dạng một chuỗi JSON duy nhất, KHÔNG bao bọc trong ký tự markdown \`\`\`json hay bất cứ thứ gì khác ngoài cặp ngoặc {}, tuân thủ đúng cấu trúc sau:
+{
+  "content": "Nội dung đề bài sau khi quét và chuyển công thức thành định dạng LaTeX",
+  "suggested_solution": "Nội dung lời giải chi tiết nếu có trong ảnh, nếu không có hãy để chuỗi rỗng \"\""
+}
+`;
+
         const modelsToTry = [
-            "gemini-3.5-flash",
-            "gemini-3.1-pro",
             "gemini-2.5-flash",
+            "gemini-1.5-flash",
             "gemini-2.5-pro",
-            "gemini-2.0-flash",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash"
+            "gemini-1.5-pro"
         ];
 
         let responseText = "";
@@ -91,11 +176,10 @@ export async function POST(request) {
                 console.warn(`Model AI ${modelName} thất bại:`, err.message);
                 lastError = err;
                 
-                // Kiểm tra xem lỗi có phải do quá tải/hết quota (429) không
                 const msg = err.message?.toLowerCase() || "";
                 if (msg.includes("429") || msg.includes("too many requests") || msg.includes("quota") || msg.includes("exhausted")) {
                     isQuotaError = true;
-                    break; // Thoát vòng lặp Gemini để chuyển sang phao cứu sinh OpenRouter
+                    break;
                 }
             }
         }
@@ -104,14 +188,10 @@ export async function POST(request) {
         // --- PHAO CỨU SINH OPENROUTER ---
         if (!responseText && isQuotaError && process.env.OPENROUTER_API_KEY) {
             console.log("Kích hoạt phao cứu sinh OpenRouter do Google Gemini quá tải...");
-            // Sử dụng các mô hình 2026 mới nhất có trong API Key của bạn trên OpenRouter
             const orModels = [
-                "google/gemini-3.5-flash",
+                "google/gemini-2.5-flash",
                 "qwen/qwen-3.7-max",
-                "stepfun/step-3.7-flash",
-                "step/step-3.7-flash",
-                "meta-llama/llama-3.3-70b-instruct",
-                "google/gemini-2.5-flash"
+                "meta-llama/llama-3.3-70b-instruct"
             ];
             for (const orModel of orModels) {
                 try {
@@ -131,7 +211,7 @@ export async function POST(request) {
                                     role: "user",
                                     content: [
                                         { type: "text", text: prompt },
-                                        { type: "image_url", image_url: { url: `data:image/png;base64,${base64Data}` } }
+                                        { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Data}` } }
                                     ]
                                 }
                             ]
@@ -171,14 +251,12 @@ export async function POST(request) {
             throw lastError;
         }
 
-        // Tối ưu hóa quá trình bóc tách dữ liệu JSON từ chuỗi phản hồi bằng Biểu thức chính quy (Regex)
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error("Không tìm thấy định dạng JSON hợp lệ trong phản hồi của AI.");
         }
 
         const cleanJson = JSON.parse(jsonMatch[0]);
-
         return NextResponse.json(cleanJson);
     } catch (error) {
         console.error("Lỗi xử lý Gemini API:", error);

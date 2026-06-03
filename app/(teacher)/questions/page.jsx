@@ -23,25 +23,7 @@ export default function QuestionsPage() {
         toggleCollapse, handleDelete
     } = useQuestions();
 
-    if (loading || !currentUser) {
-        return (
-            <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    <div className="space-y-2">
-                        <Skeleton className="h-8 w-64" />
-                        <Skeleton className="h-4 w-48" />
-                    </div>
-                    <Skeleton className="h-10 w-40 rounded-xl" />
-                </div>
-                <Skeleton className="h-[200px] w-full rounded-2xl" />
-                <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-40 w-full rounded-2xl" />
-                    ))}
-                </div>
-            </div>
-        );
-    }
+    const isPageLoading = loading || !currentUser;
 
     return (
         <div className="p-4 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
@@ -61,26 +43,39 @@ export default function QuestionsPage() {
                 </Link>
             </div>
 
-            <QuestionFilter 
-                uniqueExamTitles={uniqueExamTitles}
-                uniqueTags={uniqueTags}
-            />
-
-            <div className="space-y-4">
-                {filteredQuestions.length > 0 ? (
-                    filteredQuestions.map((q) => (
-                        <QuestionCard key={q.id} q={q} toggleCollapse={toggleCollapse} handleDelete={handleDelete} />
-                    ))
-                ) : (
-                    <div className="bg-card border border-dashed border-border p-12 rounded-2xl text-center space-y-3">
-                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
-                            <HelpCircle className="w-6 h-6" />
-                        </div>
-                        <p className="text-sm font-bold text-foreground">Không tìm thấy câu hỏi nào phù hợp!</p>
-                        <p className="text-xs text-muted-foreground">Vui lòng điều chỉnh lại bộ lọc hoặc nhập nội dung tìm kiếm khác.</p>
+            {isPageLoading ? (
+                <>
+                    <Skeleton className="h-[200px] w-full rounded-2xl" />
+                    <div className="space-y-4">
+                        {[1, 2, 3].map((i) => (
+                            <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+                        ))}
                     </div>
-                )}
-            </div>
+                </>
+            ) : (
+                <>
+                    <QuestionFilter 
+                        uniqueExamTitles={uniqueExamTitles}
+                        uniqueTags={uniqueTags}
+                    />
+
+                    <div className="space-y-4">
+                        {filteredQuestions.length > 0 ? (
+                            filteredQuestions.map((q) => (
+                                <QuestionCard key={q.id} q={q} toggleCollapse={toggleCollapse} handleDelete={handleDelete} />
+                            ))
+                        ) : (
+                            <div className="bg-card border border-dashed border-border p-12 rounded-2xl text-center space-y-3">
+                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+                                    <HelpCircle className="w-6 h-6" />
+                                </div>
+                                <p className="text-sm font-bold text-foreground">Không tìm thấy câu hỏi nào phù hợp!</p>
+                                <p className="text-xs text-muted-foreground">Vui lòng điều chỉnh lại bộ lọc hoặc nhập nội dung tìm kiếm khác.</p>
+                            </div>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
