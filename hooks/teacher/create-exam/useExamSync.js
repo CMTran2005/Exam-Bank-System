@@ -4,6 +4,7 @@ import { doc, setDoc, getDoc, deleteDoc, writeBatch, collection, getDocs, query,
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { examCollaborationService } from "@/services/examCollaborationService";
+import { examService } from "@/services/examService";
 import { useExamDataStore } from "@/store/useExamDataStore";
 
 const runWithTimeout = (promise, ms = 1000) => {
@@ -107,9 +108,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
                     setEditId(id);
                     let examToEdit = null;
                     try {
-                        const examDocRef = doc(db, "exams", id);
-                        const examDoc = await runWithTimeout(getDoc(examDocRef), 1200);
-                        if (examDoc.exists()) examToEdit = examDoc.data();
+                        examToEdit = await examService.getExamDetails(id);
                     } catch (e) {
                         console.warn("Bỏ qua lỗi Firestore khi tải đề thi:", e.message);
                     }
