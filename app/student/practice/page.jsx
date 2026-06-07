@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { Loader2, BookOpen, Clock, Search, FileText, Play } from "lucide-react";
+import { Loader2, BookOpen, Clock, Search, FileText, Play, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 export default function PracticePage() {
     const { currentUser, loading: authLoading } = useAuth();
     const [exams, setExams] = useState([]);
+    const [attempts, setAttempts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterSubject, setFilterSubject] = useState("all");
@@ -48,6 +49,16 @@ export default function PracticePage() {
             // Sắp xếp danh sách đề thi theo thời gian mới nhất ở phía Client (Trình duyệt)
             list.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
             setExams(list);
+
+            if (currentUser?.uid) {
+                const aq = query(collection(db, "exam_attempts"), where("studentId", "==", currentUser.uid));
+                const attemptSnapshot = await getDocs(aq);
+                const attList = [];
+                attemptSnapshot.forEach((doc) => {
+                    attList.push(doc.data());
+                });
+                setAttempts(attList);
+            }
         } catch (error) {
             console.error("Lỗi khi tải đề luyện thi:", error);
             toast.error("Không thể tải danh sách đề thi.");
@@ -146,16 +157,23 @@ export default function PracticePage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {filteredExams.map((ex) => (
+                        {filteredExams.map((ex) => {
+                            const attemptCount = attempts.filter(att => att.examId === ex.id).length;
+                            return (
                             <div key={ex.id} className="group bg-card rounded-2xl border border-border shadow-sm hover:shadow-md transition-all flex flex-col relative overflow-hidden">
                                 <div className="p-5 flex-1 flex flex-col relative z-0">
-                                    <div className="flex flex-wrap gap-2 mb-3">
+                                    <div className="flex flex-wrap items-center gap-2 mb-3 w-full">
                                         <span className="text-[10px] font-bold text-blue-600 bg-blue-100 dark:bg-blue-900/40 dark:text-blue-400 px-2 py-1 rounded-md shadow-sm">
                                             {ex.subject || "Toán học"}
                                         </span>
                                         {ex.grade && (
                                             <span className="text-[10px] font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-400 px-2 py-1 rounded-md shadow-sm">
                                                 Lớp {ex.grade}
+                                            </span>
+                                        )}
+                                        {attemptCount > 0 && (
+                                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 dark:bg-emerald-950/40 dark:text-emerald-400 px-2.5 py-1 rounded-md shadow-sm flex items-center gap-1 ml-auto border border-emerald-200/50 dark:border-emerald-900/30">
+                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3]" /> Đã làm ({attemptCount} lần)
                                             </span>
                                         )}
                                     </div>
@@ -183,7 +201,7 @@ export default function PracticePage() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                        )})}
                     </div>
                 )}
             </div>

@@ -29,6 +29,47 @@ const slugify = (text) => {
         .replace(/-+/g, "-");
 };
 
+const makeUniqueCode = async (baseSlug, currentExamId) => {
+    if (!baseSlug) return "";
+    let candidate = baseSlug;
+    let counter = 1;
+    
+    // 1. Lấy danh sách code từ local
+    const savedExams = JSON.parse(localStorage.getItem("eb_exams") || "[]");
+    
+    // 2. Query nhanh Firestore xem có những đề nào trùng prefix
+    let dbCodes = [];
+    try {
+        const examsRef = collection(db, "exams");
+        const q = query(
+            examsRef, 
+            where("code", ">=", candidate), 
+            where("code", "<=", candidate + "\uf8ff")
+        );
+        const querySnapshot = await getDocs(q);
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            if (doc.id !== currentExamId) {
+                dbCodes.push(data.code);
+            }
+        });
+    } catch (e) {
+        console.warn("Lỗi kiểm tra trùng mã trên Firestore:", e);
+    }
+    
+    const allExistingCodes = new Set([
+        ...savedExams.filter(e => e.id !== currentExamId).map(e => e.code),
+        ...dbCodes
+    ]);
+    
+    while (allExistingCodes.has(candidate)) {
+        candidate = `${baseSlug}-${counter}`;
+        counter++;
+    }
+    
+    return candidate;
+};
+
 /**
  * Hàm useExamSync
  * Xử lý logic và chức năng liên quan.
@@ -41,6 +82,14 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
     const [editId, setEditId] = useState(null);
     const isCodeManuallyEdited = useRef(false);
     const isSyncingFromRemote = useRef(false);
+    const checkCodeTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (checkCodeTimeoutRef.current) clearTimeout(checkCodeTimeoutRef.current);
+        };
+    }, []);
+
     const {
         examInfo, setExamInfo,
         questionsList, setQuestionsList,
@@ -178,7 +227,24 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
             // Xử lý tự động tạo mã đề thi từ tiêu đề nếu người dùng chưa tự chỉnh sửa mã
             if (field === 'title' && !isCodeManuallyEdited.current) {
                 const slug = slugify(value);
-                updated.code = slug ? `${slug}-${Math.floor(1000 + Math.random() * 9000)}` : "";
+                updated.code = slug;
+
+                if (checkCodeTimeoutRef.current) clearTimeout(checkCodeTimeoutRef.current);
+                if (slug) {
+                    checkCodeTimeoutRef.current = setTimeout(async () => {
+                        const uniqueCode = await makeUniqueCode(slug, editId || examId);
+                        setExamInfo(p => {
+                            if (!isCodeManuallyEdited.current && slugify(p.title) === slug) {
+                                const newInfo = { ...p, code: uniqueCode };
+                                if (examId && !isSyncingFromRemote.current) {
+                                    examCollaborationService.updateExamInfo(examId, newInfo);
+                                }
+                                return newInfo;
+                            }
+                            return p;
+                        });
+                    }, 600);
+                }
             }
             
             // Đánh dấu là đã chỉnh sửa mã thủ công
@@ -204,7 +270,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
         if (questionsList.length === 0) return toast.error("Vui lòng thêm ít nhất một câu hỏi.");
 
         const savedExams = JSON.parse(localStorage.getItem("eb_exams") || "[]");
-        const finalId = editId || `exam_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        const finalId = examInfo.code || editId || `exam_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
 
         let existingExam = null;
         try {
@@ -221,7 +287,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
             title: examInfo.title, year: examInfo.year, grade: examInfo.grade,
             subject: examInfo.subject, province: examInfo.province, 
             duration: Number(examInfo.duration) || 90,
-            code: examInfo.code || finalId, 
+            code: finalId, 
             isPublic: examInfo.isPublic || false,
             total_questions: questionsList.length, 
             updatedAt: new Date().toISOString(),
@@ -235,11 +301,17 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
 
             // Thu hồi các câu hỏi cũ không còn tồn tại trong danh sách hiện tại (khi cập nhật)
             if (editId) {
-                const qSnap = await getDocs(query(collection(db, "questions"), where("examId", "==", finalId)));
+                // Query theo editId (mã cũ) để dọn dẹp câu hỏi cũ
+                const qSnap = await getDocs(query(collection(db, "questions"), where("examId", "==", editId)));
                 const currentQuestionIds = questionsList.map(q => String(q.id));
                 qSnap.docs.forEach(d => {
                     if (!currentQuestionIds.includes(d.id)) batch.delete(d.ref);
                 });
+
+                // Nếu đổi mã đề thi (editId !== finalId), ta cần xóa bản ghi cũ ở Firestore
+                if (editId !== finalId) {
+                    batch.delete(doc(db, "exams", editId));
+                }
             }
 
             // Lưu trữ thông tin từng câu hỏi hiện tại vào bộ sưu tập câu hỏi (questions collection)

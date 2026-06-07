@@ -104,7 +104,21 @@ export const examService = {
             }
             
             const originalData = docSnap.data();
-            const newExamId = `exam_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            const slugify = (text) => {
+                if (!text) return "";
+                return text
+                    .toString()
+                    .toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[đĐ]/g, "d")
+                    .replace(/([^a-z0-9\s-]|_)+/g, "")
+                    .trim()
+                    .replace(/\s+/g, "-")
+                    .replace(/-+/g, "-");
+            };
+            const baseSlug = slugify(originalData.title + " (Bản sao)");
+            const newExamId = `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
             
             // Lấy questions (nếu là cấu trúc mới thì fetch)
             let questionsToCopy = originalData.questions || [];
@@ -116,6 +130,7 @@ export const examService = {
             const forkedExam = {
                 ...originalData,
                 id: newExamId,
+                code: newExamId,
                 uid: newUid,
                 author: newAuthorName,
                 isPublic: false,
