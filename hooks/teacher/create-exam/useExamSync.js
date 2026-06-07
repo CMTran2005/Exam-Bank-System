@@ -102,7 +102,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
         const loadExamData = async () => {
             if (typeof window !== "undefined") {
                 const params = new URLSearchParams(window.location.search);
-                const id = params.get("editId");
+                const id = params.get("editId") || examId;
                 if (id) {
                     setEditId(id);
                     let examToEdit = null;
