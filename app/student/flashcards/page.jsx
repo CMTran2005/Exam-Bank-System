@@ -4,7 +4,11 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { flashcardService } from "@/services/flashcardService";
 import { Loader2, Brain, CheckCircle2, XCircle, RotateCw, BookOpen, AlertCircle, ArrowRight } from "lucide-react";
-import LatexRenderer from "@/components/shared/LatexRenderer";
+import dynamic from "next/dynamic";
+const LatexRenderer = dynamic(() => import("@/components/shared/LatexRenderer"), {
+    ssr: false,
+    loading: () => <span className="text-muted-foreground animate-pulse text-xs">đang tải...</span>
+});
 import { Button } from "@/components/ui/button";
 
 /**

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { LogOut, User, Bell, Home, BookOpen, GraduationCap, Settings } from "lucide-react";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
+import BlockedAccountScreen from "@/components/shared/BlockedAccountScreen";
 
 /**
  * Component ParentLayout
@@ -26,6 +27,10 @@ export default function ParentLayout({ children }) {
     }, [currentUser, loading, router]);
 
     if (loading || !currentUser) return null;
+
+    if (currentUser && currentUser.status === "suspended") {
+        return <BlockedAccountScreen status="suspended" />;
+    }
 
     return (
         <div className="min-h-screen flex flex-col bg-background text-foreground">

@@ -218,7 +218,8 @@ export function useStatistics() {
 
     const { segments: donutSegments } = difficultyStats.reduce((acc, item) => {
         const percent = item.percentage || 0;
-        const dashArray = `${(percent / 100) * 251.2} 251.2`;
+        const filled = percent > 0 ? Math.max(0, (percent / 100) * 251.2 - 3.5) : 0;
+        const dashArray = `${filled} 251.2`;
         const startAngle = (acc.cumulative / 100) * 360;
         acc.segments.push({ ...item, percent, dashArray, startAngle });
         acc.cumulative += percent;

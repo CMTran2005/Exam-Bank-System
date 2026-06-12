@@ -19,7 +19,8 @@ import {
     Bot,
     PenTool,
     BookOpen,
-    Globe
+    Globe,
+    Gamepad2
 } from "lucide-react";
 
 const navGroups = [
@@ -37,6 +38,7 @@ const navGroups = [
         label: "Trường Học",
         items: [
             { href: "/classes", icon: GraduationCap, label: "Lớp Thi" },
+            { href: "/my-exams/live", icon: Gamepad2, label: "Live Quiz" },
             { href: "/subjects", icon: BookOpen, label: "Môn Học" },
         ],
     },
@@ -51,6 +53,12 @@ const navGroups = [
         items: [
             { href: "/settings", icon: Settings, label: "Cài Đặt" },
             { href: "/recycle-bin", icon: Trash2, label: "Thùng Rác" },
+        ],
+    },
+    {
+        label: "Quản trị",
+        items: [
+            { href: "/admin/users", icon: Users, label: "Quản Lý Thành Viên" },
         ],
     },
 ];
@@ -74,6 +82,11 @@ export default function Sidebar({ isOpen, isMobile = false }) {
         
         // Admin has access to everything
         if (userRole === "admin") return group;
+        
+        // Hide Admin groups from non-admin users
+        if (group.label === "Quản trị" && userRole !== "admin") {
+            filteredItems = [];
+        }
         
         // Student role (demo) - only sees their classes and exams
         if (userRole === "student") {
@@ -119,17 +132,34 @@ export default function Sidebar({ isOpen, isMobile = false }) {
 
                             <div className="flex flex-col gap-0.5">
                                 {group.items.map((item) => {
-                                    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href + '/'));
+                                    const isQuizSession = pathname?.startsWith("/create-question") || pathname?.startsWith("/my-exams/live");
+                                    const targetHref = (item.href === "/" && isQuizSession) ? "/my-exams" : item.href;
+                                    
+                                    // Kiểm tra xem có mục nào trong sidebar khớp chính xác với pathname hiện tại không
+                                    const hasExactMatch = filteredNavGroups.some(g =>
+                                        g.items.some(i => pathname === i.href)
+                                    );
+
+                                    const isExactActive = pathname === item.href;
+                                    const isParentActive = item.href !== '/' && 
+                                                           pathname.startsWith(item.href + '/') &&
+                                                           !(item.href === '/my-exams' && pathname?.startsWith('/my-exams/live'));
+                                    
+                                    const isFullyActive = isExactActive || (isParentActive && !hasExactMatch);
+                                    const isPartiallyActive = isParentActive && hasExactMatch;
+
                                     return (
                                         <Link
                                             key={item.href}
-                                            href={item.href}
+                                            href={targetHref}
                                             title={(!isOpen && !isMobile) ? item.label : undefined}
                                             className={cn(
                                                 "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                                                isActive
+                                                isFullyActive
                                                     ? "bg-primary text-primary-foreground shadow-sm"
-                                                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                                                    : isPartiallyActive
+                                                        ? "text-primary bg-primary/10 dark:bg-primary/20"
+                                                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                             )}
                                         >
                                             <item.icon className="h-5 w-5 shrink-0" />
@@ -137,7 +167,7 @@ export default function Sidebar({ isOpen, isMobile = false }) {
                                             {(isOpen || isMobile) && (
                                                 <>
                                                     <span className="flex-1 truncate">{item.label}</span>
-                                                    {isActive && (
+                                                    {isFullyActive && (
                                                         <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-70" />
                                                     )}
                                                 </>

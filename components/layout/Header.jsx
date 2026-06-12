@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { BookOpen, Menu, User, LogOut, Settings2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -15,8 +16,12 @@ import { useAuth } from "@/context/AuthContext";
  */
 export default function Header({ onMenuToggle }) {
     const { currentUser, logout } = useAuth();
+    const pathname = usePathname();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
+
+    const isQuizSession = pathname?.startsWith("/create-question") || pathname?.startsWith("/my-exams/live");
+    const logoHref = isQuizSession ? "/my-exams" : "/";
 
     useEffect(() => {
         setMounted(true);
@@ -46,7 +51,7 @@ export default function Header({ onMenuToggle }) {
                     <Menu className="h-5 w-5" />
                 </Button>
 
-                <Link href="/" className="flex items-center gap-2.5 group">
+                <Link href={logoHref} className="flex items-center gap-2.5 group">
                     <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl shadow-sm group-hover:shadow-md transition-shadow">
                         <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
                     </div>

@@ -30,12 +30,14 @@ export default function CompleteProfilePage() {
         try {
             // Cập nhật lên Firestore
             const userRef = doc(db, "users", currentUser.uid);
+            const status = selectedRole === "teacher" ? "pending" : "active";
             await updateDoc(userRef, {
                 role: selectedRole,
+                status: status
             });
 
             // Cập nhật Context & LocalStorage
-            const updatedUser = { ...currentUser, role: selectedRole };
+            const updatedUser = { ...currentUser, role: selectedRole, status: status };
             setCurrentUser(updatedUser);
             localStorage.setItem("eb_user", JSON.stringify(updatedUser));
 

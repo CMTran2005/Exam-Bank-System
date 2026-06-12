@@ -11,7 +11,11 @@ import { examAttemptService } from "@/services/examAttemptService";
 import { flashcardService } from "@/services/flashcardService";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import LatexRenderer from "@/components/shared/LatexRenderer";
+import dynamic from "next/dynamic";
+const LatexRenderer = dynamic(() => import("@/components/shared/LatexRenderer"), {
+    ssr: false,
+    loading: () => <span className="text-muted-foreground animate-pulse text-xs">đang tải...</span>
+});
 import { useConfirm } from "@/context/ConfirmContext";
 import { getShuffleMap } from "@/lib/shuffleUtils";
 

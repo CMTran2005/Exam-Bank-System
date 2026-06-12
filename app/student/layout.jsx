@@ -4,9 +4,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain, Menu, X } from "lucide-react";
+import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain, Menu, X, Gamepad2 } from "lucide-react";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
+import BlockedAccountScreen from "@/components/shared/BlockedAccountScreen";
 
 /**
  * Component StudentLayout
@@ -43,6 +44,10 @@ export default function StudentLayout({ children }) {
         router.push("/login");
     };
 
+    if (currentUser && currentUser.status === "suspended") {
+        return <BlockedAccountScreen status="suspended" />;
+    }
+
     return (
         <div className="min-h-screen flex flex-col bg-background text-foreground">
             {/* Top Navigation Bar */}
@@ -69,6 +74,16 @@ export default function StudentLayout({ children }) {
                                 }`}
                             >
                                 <LayoutDashboard className="h-4 w-4" /> Lớp thi
+                            </Link>
+                            <Link 
+                                href="/student/live" 
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                    pathname.startsWith("/student/live") 
+                                    ? "bg-primary/10 text-primary" 
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                            >
+                                <Gamepad2 className="h-4 w-4" /> Đấu trường Live
                             </Link>
                             <Link 
                                 href="/student/practice" 
@@ -164,6 +179,7 @@ export default function StudentLayout({ children }) {
                         <nav className="flex flex-col p-4 gap-2">
                             {[
                                 { href: "/student", icon: LayoutDashboard, label: "Lớp thi" },
+                                { href: "/student/live", icon: Gamepad2, label: "Đấu trường Live" },
                                 { href: "/student/practice", icon: BookOpen, label: "Luyện thi" },
                                 { href: "/student/flashcards", icon: Brain, label: "Thẻ ghi nhớ" },
                                 { href: "/student/profile", icon: UserCircle, label: "Cá nhân" },

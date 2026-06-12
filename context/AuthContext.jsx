@@ -120,6 +120,7 @@ export function AuthProvider({ children }) {
                     birthDate: "",
                     graduationYear: "",
                     graduationGrade: "Chưa tốt nghiệp",
+                    status: "active",
                     ...cachedData
                 };
 
@@ -204,7 +205,8 @@ export function AuthProvider({ children }) {
                 name: firebaseUser.displayName || "Người dùng Google",
                 email: firebaseUser.email,
                 role: role,
-                school: "Chưa cập nhật"
+                school: "Chưa cập nhật",
+                status: role === "teacher" ? "pending" : "active"
             };
 
             try {
@@ -247,7 +249,8 @@ export function AuthProvider({ children }) {
                 name,
                 email,
                 role: role,
-                school: "Chưa cập nhật"
+                school: "Chưa cập nhật",
+                status: role === "teacher" ? "pending" : "active"
             };
 
             try {

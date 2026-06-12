@@ -13,11 +13,16 @@ import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "sonner";
-import LatexRenderer from "@/components/shared/LatexRenderer";
+import dynamic from "next/dynamic";
+const LatexRenderer = dynamic(() => import("@/components/shared/LatexRenderer"), {
+    ssr: false,
+    loading: () => <span className="text-muted-foreground animate-pulse text-xs">đang tải...</span>
+});
 import { studentService } from "@/services/studentService";
 import { badgeService } from "@/services/badgeService";
 import confetti from "canvas-confetti";
 import { getShuffleMap } from "@/lib/shuffleUtils";
+import VirtualizedItem from "@/components/shared/VirtualizedItem";
 
 const cleanAndNormalize = (text) => {
     if (text === undefined || text === null) return "";
@@ -480,7 +485,8 @@ export default function ExamResultPage({ params }) {
                             }
 
                             return (
-                                <div key={q.id} className="p-5 sm:p-8 hover:bg-muted/10 transition-colors">
+                                <VirtualizedItem key={q.id} height={200}>
+                                    <div className="p-5 sm:p-8 hover:bg-muted/10 transition-colors">
                                     <div className="flex items-start gap-4">
                                         <div className="shrink-0 mt-1">
                                             {isCorrect ? (
@@ -814,7 +820,8 @@ export default function ExamResultPage({ params }) {
                                             )}
                                         </div>
                                     </div>
-                                </div>
+                                    </div>
+                                </VirtualizedItem>
                             );
                         })}
                     </div>

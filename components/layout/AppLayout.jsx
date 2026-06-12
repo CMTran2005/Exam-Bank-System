@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import Footer from "@/components/layout/Footer";
+import BlockedAccountScreen from "@/components/shared/BlockedAccountScreen";
 
 /**
  * Component AppLayout
@@ -47,10 +48,10 @@ export default function AppLayout({ children }) {
         };
         checkMobile();
         window.addEventListener("resize", checkMobile);
-        
+
         const handleZenMode = (e) => setZenMode(e.detail);
         window.addEventListener("toggle-zen-mode", handleZenMode);
-        
+
         return () => {
             window.removeEventListener("resize", checkMobile);
             window.removeEventListener("toggle-zen-mode", handleZenMode);
@@ -70,8 +71,15 @@ export default function AppLayout({ children }) {
         );
     }
 
+    if (currentUser && (currentUser.status === "pending" || currentUser.status === "suspended")) {
+        return <BlockedAccountScreen status={currentUser.status} />;
+    }
+
     return (
-        <div className="flex min-h-screen flex-col bg-background text-foreground">
+        <div className={cn(
+            "flex flex-col bg-background text-foreground",
+            zenMode ? "h-screen overflow-hidden" : "min-h-screen"
+        )}>
 
             {!zenMode && <Header onMenuToggle={handleMenuToggle} />}
 
@@ -90,15 +98,15 @@ export default function AppLayout({ children }) {
                 <main
                     className={cn(
                         "flex flex-col flex-1 min-h-0 transition-all duration-300 ease-in-out overflow-x-hidden",
-                        zenMode 
-                            ? "ml-0" 
+                        zenMode
+                            ? "ml-0"
                             : (isMobile ? "ml-0" : sidebarOpen ? "ml-60" : "ml-16")
                     )}
                 >
                     <div className="flex-1">
                         {children}
                     </div>
-                    <Footer />
+                    {!zenMode && <Footer />}
                 </main>
 
             </div>

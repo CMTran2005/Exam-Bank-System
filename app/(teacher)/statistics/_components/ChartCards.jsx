@@ -98,14 +98,15 @@ export function SubjectCoverageCard({ subjectStats }) {
  */
 export function DifficultyChartCard({ totalQuestions, difficultyStats, donutSegments }) {
     return (
-        <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4 flex flex-col justify-between">
-            <div className="flex items-center gap-2 border-b border-border/40 pb-2.5">
+        <div className="h-full bg-card border border-border shadow-sm rounded-2xl p-5 flex flex-col justify-between">
+            <div className="flex items-center gap-2 border-b border-border/40 pb-2.5 shrink-0">
                 <PieChart className="w-4 h-4 text-primary" />
                 <h2 className="text-base font-bold text-foreground">Phân bổ theo Mức độ nhận thức</h2>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-around gap-6 py-2">
-                <div className="relative w-28 h-28 shrink-0">
+            {/* Central Donut Chart Section */}
+            <div className="flex-1 flex items-center justify-center py-6 min-h-[220px]">
+                <div className="relative w-44 h-44 shrink-0 flex items-center justify-center z-10 bg-background/80 dark:bg-background/90 rounded-full p-2 border border-border/60 shadow-md">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                         {totalQuestions === 0 && (
                             <circle cx="50" cy="50" r="40" fill="transparent" stroke="currentColor" className="text-muted-foreground/20" strokeWidth="10" />
@@ -120,28 +121,24 @@ export function DifficultyChartCard({ totalQuestions, difficultyStats, donutSegm
                             );
                         })}
                     </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xl font-black text-foreground">{totalQuestions}</span>
-                        <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">câu hỏi</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
+                        <span className="text-3xl font-black text-foreground">{totalQuestions}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">câu hỏi</span>
                     </div>
                 </div>
+            </div>
 
-                <div className="space-y-2 flex-1 w-full">
-                    {difficultyStats.map((item) => (
-                        <div key={item.name} className="flex flex-col space-y-0.5">
-                            <div className="flex justify-between items-center text-[11px]">
-                                <span className="font-bold text-muted-foreground flex items-center gap-1.5">
-                                    <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                                    {item.name}
-                                </span>
-                                <span className="font-extrabold text-foreground">{item.count} câu ({item.percentage}%)</span>
-                            </div>
-                            <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-                                <div className={`h-full ${item.color}`} style={{ width: `${item.percentage}%` }} />
-                            </div>
-                        </div>
-                    ))}
-                </div>
+            {/* Bottom 2x2 Grid of Stats - Cohesive & modern */}
+            <div className="grid grid-cols-2 gap-3 mt-2 shrink-0">
+                {difficultyStats.map((item) => (
+                    <div key={item.name} className="bg-muted/30 dark:bg-muted/10 p-3 rounded-xl border border-border/40 flex flex-col items-center text-center space-y-1 hover:bg-muted/50 dark:hover:bg-muted/20 hover:scale-[1.02] transition-all duration-300">
+                        <span className="text-xs font-bold text-muted-foreground flex items-center gap-2 select-none">
+                            <span className={`w-2 h-2 rounded-full ${item.color}`} />
+                            {item.name}
+                        </span>
+                        <span className="text-sm font-extrabold text-foreground">{item.count} câu <span className="text-xs font-bold text-muted-foreground">({item.percentage}%)</span></span>
+                    </div>
+                ))}
             </div>
         </div>
     );
@@ -156,13 +153,13 @@ export function DifficultyChartCard({ totalQuestions, difficultyStats, donutSegm
  */
 export function QuestionTypeCard({ typeStats }) {
     return (
-        <div className="bg-card border border-border shadow-sm rounded-2xl p-5 space-y-4">
-            <div className="flex items-center gap-2 border-b border-border/40 pb-2.5">
+        <div className="h-full bg-card border border-border shadow-sm rounded-2xl p-5 flex flex-col">
+            <div className="flex items-center gap-2 border-b border-border/40 pb-2.5 shrink-0">
                 <BarChart3 className="w-4 h-4 text-violet-500" />
                 <h2 className="text-base font-bold text-foreground">Phân bổ Dạng câu hỏi</h2>
             </div>
 
-            <div className="space-y-3.5">
+            <div className="space-y-3.5 flex-1 flex flex-col justify-center mt-4">
                 {typeStats.map((item) => (
                     <div key={item.type} className="space-y-1">
                         <div className="flex justify-between items-center text-[11px] font-bold">

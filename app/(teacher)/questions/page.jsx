@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useQuestions } from "@/hooks/teacher/useQuestions";
 import { QuestionFilter } from "./_components/QuestionFilter";
 import { QuestionCard } from "./_components/QuestionCard";
+import VirtualizedItem from "@/components/shared/VirtualizedItem";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -62,7 +63,9 @@ export default function QuestionsPage() {
                     <div className="space-y-4">
                         {filteredQuestions.length > 0 ? (
                             filteredQuestions.map((q) => (
-                                <QuestionCard key={q.id} q={q} toggleCollapse={toggleCollapse} handleDelete={handleDelete} />
+                                <VirtualizedItem key={q.id}>
+                                    <QuestionCard q={q} toggleCollapse={toggleCollapse} handleDelete={handleDelete} />
+                                </VirtualizedItem>
                             ))
                         ) : (
                             <div className="bg-card border border-dashed border-border p-12 rounded-2xl text-center space-y-3">

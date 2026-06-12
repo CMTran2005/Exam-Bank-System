@@ -23,6 +23,11 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
+    // Kiểm tra xem người dùng có vai trò Giáo viên hoặc Admin không
+    function isTeacherOrAdmin() {
+      return getUserRole() == "teacher" || getUserRole() == "admin";
+    }
+
     // ---------------------------------------------------------
     // QUY TẮC BẢO MẬT THEO TỪNG BẢNG (COLLECTIONS)
     // ---------------------------------------------------------
@@ -41,23 +46,23 @@ service cloud.firestore {
     match /exams/{examId} {
       // Học sinh và phụ huynh được phép ĐỌC đề thi
       allow read: if isAuthenticated();
-      // CHỈ GIÁO VIÊN mới được tạo, sửa, xóa đề thi của chính mình
-      allow create: if isAuthenticated() && getUserRole() == "teacher" && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && getUserRole() == "teacher" && resource.data.uid == request.auth.uid;
+      // CHỈ GIÁO VIÊN/ADMIN mới được tạo, sửa, xóa đề thi của chính mình
+      allow create: if isAuthenticated() && isTeacherOrAdmin() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.uid == request.auth.uid;
     }
 
     // BẢNG QUESTIONS (Câu hỏi trong đề thi)
     match /questions/{questionId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && getUserRole() == "teacher" && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && getUserRole() == "teacher" && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && isTeacherOrAdmin() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.uid == request.auth.uid;
     }
 
     // BẢNG FOLDERS (Thư mục đề thi)
     match /folders/{folderId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && getUserRole() == "teacher" && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && getUserRole() == "teacher" && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && isTeacherOrAdmin() && request.resource.data.uid == request.auth.uid;
+      allow update, delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.uid == request.auth.uid;
     }
 
     // 3. BẢNG EXAM_ATTEMPTS (Lượt thi / Bài làm)
@@ -70,12 +75,12 @@ service cloud.firestore {
     // 4. BẢNG CLASSES (Lớp học)
     match /classes/{classId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && getUserRole() == "teacher";
+      allow create: if isAuthenticated() && isTeacherOrAdmin();
       allow update: if isAuthenticated() && (
-        (getUserRole() == "teacher" && resource.data.teacherId == request.auth.uid) || 
+        (isTeacherOrAdmin() && resource.data.teacherId == request.auth.uid) || 
         (getUserRole() == "student") // Cho phép học sinh update studentCount khi join
       );
-      allow delete: if isAuthenticated() && getUserRole() == "teacher" && resource.data.teacherId == request.auth.uid;
+      allow delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.teacherId == request.auth.uid;
     }
 
     // 5. BẢNG FLASHCARDS
@@ -87,7 +92,7 @@ service cloud.firestore {
 
     // 6. BẢNG EXAM_SESSIONS (Phiên soạn thảo chung)
     match /exam_sessions/{sessionId} {
-      allow read, write: if isAuthenticated() && getUserRole() == "teacher";
+      allow read, write: if isAuthenticated() && isTeacherOrAdmin();
     }
 
     // 7. BẢNG DRAFTS (Bản nháp cục bộ trên Cloud)
@@ -104,7 +109,7 @@ service cloud.firestore {
     // 9. BẢNG SYSTEM (Cấu hình hệ thống chung)
     match /system/{document=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && getUserRole() == "teacher";
+      allow write: if isAuthenticated() && isTeacherOrAdmin();
     }
 
     // 10. BẢNG BADGES (Huy hiệu)
@@ -114,8 +119,8 @@ service cloud.firestore {
 
     // 11. BẢNG TRASH_EXAMS (Thùng rác đề thi)
     match /trash_exams/{examId} {
-      allow create: if isAuthenticated() && getUserRole() == "teacher" && request.resource.data.uid == request.auth.uid;
-      allow read, update, delete: if isAuthenticated() && getUserRole() == "teacher" && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && isTeacherOrAdmin() && request.resource.data.uid == request.auth.uid;
+      allow read, update, delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.uid == request.auth.uid;
     }
   }
 }
