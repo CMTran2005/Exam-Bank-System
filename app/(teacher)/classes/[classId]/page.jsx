@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { ArrowLeft, Users, Search, Mail, Phone, Loader2, CheckCircle2, XCircle, Clock, BookOpen, FileText, Trophy, AlertTriangle, BarChart2, Eye, EyeOff, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export default function ClassDetailsPage({ params }) {
     const [attempts, setAttempts] = useState([]);
     const [selectedExamDetails, setSelectedExamDetails] = useState(null);
     const [isLoadingExamDetails, setIsLoadingExamDetails] = useState(false);
+    const [expandedQuestionId, setExpandedQuestionId] = useState(null);
 
     useEffect(() => {
         if (selectedExamId && selectedExamId !== "none") {
@@ -49,6 +50,7 @@ export default function ClassDetailsPage({ params }) {
         } else {
             setSelectedExamDetails(null);
         }
+        setExpandedQuestionId(null);
     }, [selectedExamId]);
 
     const [isUpdatingExams, setIsUpdatingExams] = useState(false);
@@ -656,6 +658,8 @@ export default function ClassDetailsPage({ params }) {
                                 }
                             });
 
+                            const hasMultipleChoice = flatQuestions.some(q => q.type === 'multiple_choice' || !q.type);
+
                             // 1. Chuẩn hóa tất cả điểm số về hệ 10 để vẽ phổ điểm chung
                             const scoresNormalized = completedAttempts.map(a => {
                                 const scoreVal = a.score !== undefined ? a.score : 0;
@@ -772,10 +776,14 @@ export default function ClassDetailsPage({ params }) {
                                                 <tr>
                                                     <th className="px-4 py-3 text-center">Câu</th>
                                                     <th className="px-4 py-3 text-center">Tỉ lệ Đúng</th>
-                                                    <th className="px-4 py-3 text-center">Lượt chọn A</th>
-                                                    <th className="px-4 py-3 text-center">Lượt chọn B</th>
-                                                    <th className="px-4 py-3 text-center">Lượt chọn C</th>
-                                                    <th className="px-4 py-3 text-center">Lượt chọn D</th>
+                                                    {hasMultipleChoice && (
+                                                        <>
+                                                            <th className="px-4 py-3 text-center">Lượt chọn A</th>
+                                                            <th className="px-4 py-3 text-center">Lượt chọn B</th>
+                                                            <th className="px-4 py-3 text-center">Lượt chọn C</th>
+                                                            <th className="px-4 py-3 text-center">Lượt chọn D</th>
+                                                        </>
+                                                    )}
                                                     <th className="px-4 py-3 text-center">Bỏ qua</th>
                                                 </tr>
                                             </thead>
@@ -807,29 +815,240 @@ export default function ClassDetailsPage({ params }) {
 
                                                     const correctRate = Math.round((correctCount / completedAttempts.length) * 100) || 0;
                                                     const isMultipleChoice = q.type === 'multiple_choice' || !q.type;
+                                                    const isExpanded = expandedQuestionId === q.id;
+
+                                                    const getTypeBadge = (type) => {
+                                                        switch (type) {
+                                                            case 'true_false': 
+                                                                return <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20 ml-2">Đúng/Sai</span>;
+                                                            case 'fill_blank': 
+                                                                return <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 ml-2">Điền từ</span>;
+                                                            case 'essay': 
+                                                                return <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20 ml-2">Tự luận</span>;
+                                                            default: 
+                                                                return <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 ml-2">Trắc nghiệm</span>;
+                                                        }
+                                                    };
                                                     
                                                     return (
-                                                        <tr key={q.id} className="hover:bg-muted/20 transition-colors">
-                                                            <td className="px-4 py-3 text-center font-bold">{q.label}</td>
-                                                            <td className="px-4 py-3 text-center">
-                                                                <span className={`px-2 py-1 rounded font-bold text-xs ${correctRate >= 50 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-                                                                    {correctRate}%
-                                                                </span>
-                                                            </td>
-                                                            <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 0 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
-                                                                {isMultipleChoice ? choiceCounts[0] : "-"}
-                                                            </td>
-                                                            <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 1 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
-                                                                {isMultipleChoice ? choiceCounts[1] : "-"}
-                                                            </td>
-                                                            <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 2 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
-                                                                {isMultipleChoice ? choiceCounts[2] : "-"}
-                                                            </td>
-                                                            <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 3 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
-                                                                {isMultipleChoice ? choiceCounts[3] : "-"}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-center text-muted-foreground">{skippedCount}</td>
-                                                        </tr>
+                                                        <React.Fragment key={q.id}>
+                                                            <tr 
+                                                                className={`hover:bg-muted/30 transition-colors cursor-pointer ${isExpanded ? 'bg-muted/20' : ''}`}
+                                                                onClick={() => setExpandedQuestionId(isExpanded ? null : q.id)}
+                                                            >
+                                                                <td className="px-4 py-3 text-center font-bold">
+                                                                    <div className="flex items-center justify-center gap-1">
+                                                                        <span>{q.label}</span>
+                                                                        {getTypeBadge(q.type)}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-4 py-3 text-center">
+                                                                    <span className={`px-2 py-1 rounded font-bold text-xs ${correctRate >= 50 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                                                        {correctRate}%
+                                                                    </span>
+                                                                </td>
+                                                                {hasMultipleChoice && (
+                                                                    <>
+                                                                        <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 0 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
+                                                                            {isMultipleChoice ? choiceCounts[0] : "-"}
+                                                                        </td>
+                                                                        <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 1 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
+                                                                            {isMultipleChoice ? choiceCounts[1] : "-"}
+                                                                        </td>
+                                                                        <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 2 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
+                                                                            {isMultipleChoice ? choiceCounts[2] : "-"}
+                                                                        </td>
+                                                                        <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 3 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
+                                                                            {isMultipleChoice ? choiceCounts[3] : "-"}
+                                                                        </td>
+                                                                    </>
+                                                                )}
+                                                                <td className="px-4 py-3 text-center text-muted-foreground">{skippedCount}</td>
+                                                            </tr>
+                                                            {isExpanded && (
+                                                                <tr className="bg-muted/5">
+                                                                    <td colSpan={hasMultipleChoice ? 7 : 3} className="px-6 py-4 border-t border-b border-border/50">
+                                                                        <div className="space-y-4 text-left">
+                                                                            {/* Question Content rendering */}
+                                                                            <div className="p-4 bg-muted/40 rounded-xl border border-border/60 text-xs sm:text-sm">
+                                                                                <div className="font-bold text-muted-foreground mb-1.5 uppercase tracking-wider text-[10px]">Nội dung câu hỏi:</div>
+                                                                                <div 
+                                                                                    className="prose prose-sm dark:prose-invert max-w-none text-foreground font-medium" 
+                                                                                    dangerouslySetInnerHTML={{ __html: q.content }} 
+                                                                                />
+                                                                            </div>
+
+                                                                            {/* Breakdown */}
+                                                                            <div className="space-y-2">
+                                                                                <div className="font-bold text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Thống kê trả lời chi tiết:</div>
+                                                                                
+                                                                                {/* Case 1: Multiple choice */}
+                                                                                {isMultipleChoice && q.options && (
+                                                                                    <div className="space-y-2.5 max-w-xl">
+                                                                                        {q.options.map((opt, optIdx) => {
+                                                                                            const count = choiceCounts[optIdx] || 0;
+                                                                                            const pct = Math.round((count / completedAttempts.length) * 100) || 0;
+                                                                                            const isCorrectOpt = optIdx === actualCorrectIndex;
+                                                                                            return (
+                                                                                                <div key={optIdx} className="flex items-center gap-4 text-xs sm:text-sm">
+                                                                                                    <span className={`w-7 h-7 shrink-0 flex items-center justify-center rounded-full font-bold text-xs ${isCorrectOpt ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-500/30' : 'bg-muted text-muted-foreground'}`}>
+                                                                                                        {alphabet[optIdx]}
+                                                                                                    </span>
+                                                                                                    <div className="flex-1">
+                                                                                                        <div className="flex justify-between mb-1 font-semibold text-xs text-muted-foreground">
+                                                                                                            <span className={isCorrectOpt ? "text-emerald-600 font-bold" : ""} dangerouslySetInnerHTML={{ __html: opt }} />
+                                                                                                            <span>{count} lượt ({pct}%)</span>
+                                                                                                        </div>
+                                                                                                        <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                                                                                                            <div className={`h-full rounded-full ${isCorrectOpt ? 'bg-emerald-500' : 'bg-blue-500'}`} style={{ width: `${pct}%` }} />
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            );
+                                                                                        })}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Case 2: True/False */}
+                                                                                {q.type === 'true_false' && q.statements && (
+                                                                                    <div className="space-y-3">
+                                                                                        {q.statements.map((stmt, stmtIdx) => {
+                                                                                            let trueCount = 0;
+                                                                                            let falseCount = 0;
+                                                                                            completedAttempts.forEach(a => {
+                                                                                                const ans = q.parentId ? a.answers?.[q.parentId]?.[q.id] : a.answers?.[q.id];
+                                                                                                if (ans && ans[stmtIdx] === true) trueCount++;
+                                                                                                else if (ans && ans[stmtIdx] === false) falseCount++;
+                                                                                            });
+                                                                                            const totalAnswers = trueCount + falseCount;
+                                                                                            const truePct = totalAnswers > 0 ? Math.round((trueCount / totalAnswers) * 100) : 0;
+                                                                                            const falsePct = totalAnswers > 0 ? Math.round((falseCount / totalAnswers) * 100) : 0;
+                                                                                            
+                                                                                            return (
+                                                                                                <div key={stmtIdx} className="border border-border/40 p-3 rounded-xl bg-muted/20 max-w-2xl">
+                                                                                                    <div className="font-semibold text-xs sm:text-sm mb-2 flex items-center justify-between">
+                                                                                                        <span>Ý {stmtIdx + 1}: {stmt.text}</span>
+                                                                                                        <span className="text-[11px] text-muted-foreground">Đáp án: <strong className="text-primary">{stmt.correct ? 'Đúng' : 'Sai'}</strong></span>
+                                                                                                    </div>
+                                                                                                    <div className="grid grid-cols-2 gap-3 text-xs">
+                                                                                                        <div className="bg-muted/30 p-2 rounded flex flex-col justify-between">
+                                                                                                            <div className="flex justify-between font-bold mb-1 text-emerald-600">
+                                                                                                                <span>Đúng</span>
+                                                                                                                <span>{trueCount} ({truePct}%)</span>
+                                                                                                            </div>
+                                                                                                            <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
+                                                                                                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${truePct}%` }} />
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                        <div className="bg-muted/30 p-2 rounded flex flex-col justify-between">
+                                                                                                            <div className="flex justify-between font-bold mb-1 text-rose-600">
+                                                                                                                <span>Sai</span>
+                                                                                                                <span>{falseCount} ({falsePct}%)</span>
+                                                                                                            </div>
+                                                                                                            <div className="w-full bg-muted h-1 rounded-full overflow-hidden">
+                                                                                                                <div className="h-full bg-rose-500 rounded-full" style={{ width: `${falsePct}%` }} />
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            );
+                                                                                        })}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Case 3: Fill blank */}
+                                                                                {q.type === 'fill_blank' && (
+                                                                                    <div className="space-y-3 max-w-2xl">
+                                                                                        {(() => {
+                                                                                            const regex = /\[\[(.*?)\]\]/g;
+                                                                                            const correctAnswers = [];
+                                                                                            let match;
+                                                                                            while ((match = regex.exec(q.content || "")) !== null) {
+                                                                                                correctAnswers.push(match[1]);
+                                                                                            }
+                                                                                            
+                                                                                            if (correctAnswers.length === 0) {
+                                                                                                return <p className="text-xs text-muted-foreground italic">Không có ô trống được thiết lập trong câu hỏi.</p>;
+                                                                                            }
+
+                                                                                            return correctAnswers.map((correctVal, blankIdx) => {
+                                                                                                const submissions = {};
+                                                                                                completedAttempts.forEach(a => {
+                                                                                                    const ans = q.parentId ? a.answers?.[q.parentId]?.[q.id] : a.answers?.[q.id];
+                                                                                                    const textAns = ans?.[blankIdx];
+                                                                                                    if (textAns !== undefined && textAns !== null && textAns.trim() !== "") {
+                                                                                                        const cleaned = textAns.trim();
+                                                                                                        submissions[cleaned] = (submissions[cleaned] || 0) + 1;
+                                                                                                    }
+                                                                                                });
+                                                                                                const sortedSubs = Object.entries(submissions).sort((a, b) => b[1] - a[1]);
+
+                                                                                                return (
+                                                                                                    <div key={blankIdx} className="border border-border/40 p-3 rounded-xl bg-muted/20">
+                                                                                                        <div className="font-semibold text-xs sm:text-sm mb-2 flex items-center justify-between">
+                                                                                                            <span>Ô trống số {blankIdx + 1}</span>
+                                                                                                            <span className="text-[11px] text-muted-foreground">Đáp án đúng: <strong className="text-emerald-600">{correctVal}</strong></span>
+                                                                                                        </div>
+                                                                                                        {sortedSubs.length === 0 ? (
+                                                                                                            <p className="text-xs text-muted-foreground italic">Chưa có câu trả lời nào được học sinh điền.</p>
+                                                                                                        ) : (
+                                                                                                            <div className="space-y-1">
+                                                                                                                {sortedSubs.map(([ansStr, count], sIdx) => {
+                                                                                                                    const isAnsCorrect = ansStr.toLowerCase().replace(/,/g, ".") === correctVal.toLowerCase().replace(/,/g, ".");
+                                                                                                                    return (
+                                                                                                                        <div key={sIdx} className="flex justify-between items-center text-xs p-1.5 rounded bg-muted/40 border border-border/20">
+                                                                                                                            <span className={isAnsCorrect ? "text-emerald-600 font-bold" : "text-foreground"}>
+                                                                                                                                &quot;{ansStr}&quot; {isAnsCorrect && "(Chính xác)"}
+                                                                                                                            </span>
+                                                                                                                            <span className="font-bold text-muted-foreground">{count} học sinh</span>
+                                                                                                                        </div>
+                                                                                                                    );
+                                                                                                                })}
+                                                                                                            </div>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                );
+                                                                                            });
+                                                                                        })()}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Case 4: Essay */}
+                                                                                {q.type === 'essay' && (
+                                                                                    <div className="space-y-3 max-w-2xl">
+                                                                                        <div className="text-xs text-muted-foreground mb-1">
+                                                                                            Đáp án tham khảo: <strong className="text-foreground">{q.final_answer || "(Chưa cấu hình)"}</strong>
+                                                                                        </div>
+                                                                                        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                                                                                            {(() => {
+                                                                                                const essayAnswers = [];
+                                                                                                completedAttempts.forEach(a => {
+                                                                                                    const ans = q.parentId ? a.answers?.[q.parentId]?.[q.id] : a.answers?.[q.id];
+                                                                                                    if (ans !== undefined && ans !== null && ans.trim() !== "") {
+                                                                                                        essayAnswers.push({ studentName: a.studentName || "Ẩn danh", answer: ans });
+                                                                                                    }
+                                                                                                });
+                                                                                                
+                                                                                                if (essayAnswers.length === 0) {
+                                                                                                    return <p className="text-xs text-muted-foreground italic">Chưa có bài nộp tự luận nào được ghi nhận.</p>;
+                                                                                                }
+                                                                                                
+                                                                                                return essayAnswers.map((ea, eaIdx) => (
+                                                                                                    <div key={eaIdx} className="p-2.5 rounded-xl bg-muted/30 border border-border/40 text-xs">
+                                                                                                        <div className="font-bold text-primary mb-1">{ea.studentName}</div>
+                                                                                                        <div className="whitespace-pre-wrap text-muted-foreground italic font-medium">&quot;{ea.answer}&quot;</div>
+                                                                                                    </div>
+                                                                                                ));
+                                                                                            })()}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </React.Fragment>
                                                     );
                                                 })}
                                             </tbody>
