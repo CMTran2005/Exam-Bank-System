@@ -536,18 +536,112 @@ export default function ClassDetailsPage({ params }) {
                                 );
                             }
 
+                            // 1. Chuẩn hóa tất cả điểm số về hệ 10 để vẽ phổ điểm chung
+                            const scoresNormalized = completedAttempts.map(a => {
+                                const scoreVal = a.score !== undefined ? a.score : 0;
+                                const maxScoreVal = a.maxScore !== undefined && a.maxScore > 0 ? a.maxScore : 10;
+                                return (scoreVal / maxScoreVal) * 10;
+                            });
+
+                            const totalCount = completedAttempts.length;
+                            const maxScoreInExam = completedAttempts[0]?.maxScore || 10;
+
+                            const rawScores = completedAttempts.map(a => a.score || 0);
+                            const highestScoreRaw = Math.max(...rawScores);
+                            const lowestScoreRaw = Math.min(...rawScores);
+                            const avgScoreRaw = rawScores.reduce((acc, s) => acc + s, 0) / totalCount;
+
+                            // 2. Tính tỉ lệ đạt (Điểm quy chuẩn >= 5.0)
+                            const passedCount = scoresNormalized.filter(s => s >= 5).length;
+                            const passRate = Math.round((passedCount / totalCount) * 100);
+
+                            // 3. Phân chia phổ điểm thang 10 (10 cột: 0-1, 1-2, ..., 9-10)
+                            const bins = Array(10).fill(0);
+                            scoresNormalized.forEach(s => {
+                                let binIdx = Math.floor(s);
+                                if (binIdx >= 10) binIdx = 9; // Xử lý điểm 10 tuyệt đối
+                                if (binIdx < 0) binIdx = 0;
+                                bins[binIdx]++;
+                            });
+
+                            const maxBinCount = Math.max(...bins) || 1;
+
                             return (
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/30">
-                                            <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Số lượt nộp bài</p>
-                                            <p className="text-3xl font-black text-foreground">{completedAttempts.length}</p>
+                                <div className="space-y-8">
+                                    {/* Thẻ thống kê tổng quan */}
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-5 rounded-2xl border border-blue-100 dark:border-blue-800/30 shadow-sm">
+                                            <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-1 uppercase tracking-wider">Số lượt nộp</p>
+                                            <p className="text-3xl font-black text-foreground">{totalCount}</p>
                                         </div>
-                                        <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
-                                            <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mb-1">Điểm trung bình</p>
+                                        <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-800/30 shadow-sm">
+                                            <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mb-1 uppercase tracking-wider">Điểm trung bình</p>
                                             <p className="text-3xl font-black text-foreground">
-                                                {(completedAttempts.reduce((acc, a) => acc + (a.score || 0), 0) / completedAttempts.length).toFixed(2)}
+                                                {avgScoreRaw.toFixed(2)}
+                                                <span className="text-xs font-semibold text-muted-foreground ml-1">/ {maxScoreInExam}</span>
                                             </p>
+                                        </div>
+                                        <div className="bg-violet-50/50 dark:bg-violet-900/10 p-5 rounded-2xl border border-violet-100 dark:border-violet-800/30 shadow-sm">
+                                            <p className="text-[10px] font-bold text-violet-600 dark:text-violet-400 mb-1 uppercase tracking-wider">Điểm cao nhất</p>
+                                            <p className="text-3xl font-black text-foreground">
+                                                {highestScoreRaw.toFixed(2)}
+                                                <span className="text-xs font-semibold text-muted-foreground ml-1">/ {maxScoreInExam}</span>
+                                            </p>
+                                        </div>
+                                        <div className="bg-amber-50/50 dark:bg-amber-900/10 p-5 rounded-2xl border border-amber-100 dark:border-amber-800/30 shadow-sm">
+                                            <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mb-1 uppercase tracking-wider">Điểm thấp nhất</p>
+                                            <p className="text-3xl font-black text-foreground">
+                                                {lowestScoreRaw.toFixed(2)}
+                                                <span className="text-xs font-semibold text-muted-foreground ml-1">/ {maxScoreInExam}</span>
+                                            </p>
+                                        </div>
+                                        <div className={`${passRate >= 50 ? 'bg-teal-50/50 dark:bg-teal-900/10 border-teal-100 dark:border-teal-800/30' : 'bg-red-50/50 dark:bg-red-900/10 border-red-100 dark:border-red-800/30'} p-5 rounded-2xl border shadow-sm`}>
+                                            <p className={`text-[10px] font-bold ${passRate >= 50 ? 'text-teal-600 dark:text-teal-400' : 'text-red-600 dark:text-red-400'} mb-1 uppercase tracking-wider`}>Tỉ lệ đạt</p>
+                                            <p className="text-3xl font-black text-foreground">{passRate}%</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Biểu đồ Phổ điểm */}
+                                    <div className="bg-card border border-border/80 rounded-2xl p-5 md:p-6 shadow-sm">
+                                        <h4 className="font-bold text-sm mb-6 flex items-center gap-2">
+                                            <span className="w-2.5 h-4 bg-primary rounded-full" />
+                                            Biểu đồ phổ điểm lớp học (Quy chuẩn hệ điểm 10)
+                                        </h4>
+                                        <div className="relative h-64 w-full mt-4">
+                                            {/* Đường kẻ phụ */}
+                                            <div className="absolute top-4 bottom-8 left-0 right-0 flex flex-col justify-between pointer-events-none">
+                                                <div className="border-b border-border/30 w-full" />
+                                                <div className="border-b border-border/30 w-full" />
+                                                <div className="border-b border-border/30 w-full" />
+                                                <div className="border-b border-border/60 w-full" />
+                                            </div>
+
+                                            {/* Cột dữ liệu */}
+                                            <div className="absolute inset-0 flex justify-between px-2 sm:px-6">
+                                                {bins.map((count, binIdx) => {
+                                                    const pctHeight = (count / maxBinCount) * 100;
+                                                    const binLabel = binIdx === 9 ? "9-10" : `${binIdx}-${binIdx+1}`;
+                                                    return (
+                                                        <div key={binIdx} className="flex flex-col items-center h-full flex-1 group mx-0.5 sm:mx-1">
+                                                            <div className="w-full relative mt-4 flex-1">
+                                                                <div
+                                                                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 sm:w-10 bg-gradient-to-t from-primary/70 to-primary rounded-t-lg transition-all duration-500 group-hover:from-violet-500 group-hover:to-violet-600 shadow-sm"
+                                                                    style={{ height: `${pctHeight}%`, minHeight: count > 0 ? "4px" : "0px" }}
+                                                                >
+                                                                    {count > 0 && (
+                                                                        <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded transition-all duration-300 transform group-hover:scale-105 opacity-0 group-hover:opacity-100 whitespace-nowrap z-20 shadow-sm">
+                                                                            {count} HS
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="h-8 flex items-center justify-center shrink-0">
+                                                                <span className="text-[10px] sm:text-xs font-bold text-muted-foreground">{binLabel}</span>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
                                     
