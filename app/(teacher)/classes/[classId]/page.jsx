@@ -31,6 +31,26 @@ export default function ClassDetailsPage({ params }) {
     const [allEligibleExams, setAllEligibleExams] = useState([]);
     const [selectedExamId, setSelectedExamId] = useState("");
     const [attempts, setAttempts] = useState([]);
+    const [selectedExamDetails, setSelectedExamDetails] = useState(null);
+    const [isLoadingExamDetails, setIsLoadingExamDetails] = useState(false);
+
+    useEffect(() => {
+        if (selectedExamId && selectedExamId !== "none") {
+            setIsLoadingExamDetails(true);
+            import('@/services/examService').then(m => {
+                m.examService.getExamDetails(selectedExamId).then(details => {
+                    setSelectedExamDetails(details);
+                    setIsLoadingExamDetails(false);
+                }).catch(err => {
+                    console.error("Lỗi lấy chi tiết đề thi:", err);
+                    setIsLoadingExamDetails(false);
+                });
+            });
+        } else {
+            setSelectedExamDetails(null);
+        }
+    }, [selectedExamId]);
+
     const [isUpdatingExams, setIsUpdatingExams] = useState(false);
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
 
@@ -518,7 +538,16 @@ export default function ClassDetailsPage({ params }) {
                         </div>
                         
                         {(() => {
-                            const selectedExam = exams.find(e => e.id === selectedExamId);
+                            if (isLoadingExamDetails) {
+                                return (
+                                    <div className="flex flex-col items-center justify-center py-16 gap-4">
+                                        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                                        <p className="text-sm text-muted-foreground font-medium animate-pulse">Đang tải câu hỏi và phân tích dữ liệu...</p>
+                                    </div>
+                                );
+                            }
+
+                            const selectedExam = selectedExamDetails;
                             if (!selectedExam || !selectedExam.questions || selectedExam.questions.length === 0) {
                                 return (
                                     <div className="text-center py-12 text-muted-foreground">
