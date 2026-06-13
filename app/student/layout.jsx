@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain, Menu, X, Gamepad2, BookMarked } from "lucide-react";
+import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain, Menu, X, Gamepad2, BookMarked, ChevronDown } from "lucide-react";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
 import BlockedAccountScreen from "@/components/shared/BlockedAccountScreen";
@@ -22,6 +22,12 @@ export default function StudentLayout({ children }) {
     const pathname = usePathname();
     const [isMounted, setIsMounted] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+    const getInitials = (name) => {
+        if (!name) return "U";
+        return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    };
 
     useEffect(() => {
         setIsMounted(true);
@@ -115,36 +121,6 @@ export default function StudentLayout({ children }) {
                             >
                                 <Brain className="h-4 w-4" /> Thẻ ghi nhớ
                             </Link>
-                            <Link 
-                                href="/student/profile" 
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                                    pathname === "/student/profile" 
-                                    ? "bg-primary/10 text-primary" 
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                }`}
-                            >
-                                <UserCircle className="h-4 w-4" /> Cá nhân
-                            </Link>
-                            <Link 
-                                href="/student/badges" 
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                                    pathname === "/student/badges" 
-                                    ? "bg-primary/10 text-primary" 
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                }`}
-                            >
-                                <Medal className="h-4 w-4" /> Huy hiệu
-                            </Link>
-                            <Link 
-                                href="/student/settings" 
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                                    pathname === "/student/settings" 
-                                    ? "bg-primary/10 text-primary" 
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                }`}
-                            >
-                                <Settings className="h-4 w-4" /> Cài đặt
-                            </Link>
                         </nav>
                     </div>
 
@@ -155,19 +131,86 @@ export default function StudentLayout({ children }) {
                         
                         <div className="hidden sm:flex items-center gap-3">
                             {(!loading && currentUser) ? (
-                                <>
-                                    <div className="hidden sm:block text-right">
-                                        <p className="text-sm font-bold leading-none">{currentUser.name}</p>
-                                        <p className="text-[10px] text-muted-foreground mt-1 uppercase font-semibold">Học sinh</p>
-                                    </div>
-                                    <button 
-                                        onClick={handleLogout}
-                                        className="p-2 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors"
-                                        title="Đăng xuất"
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setUserDropdownOpen((prev) => !prev)}
+                                        className="flex items-center gap-2.5 p-1.5 rounded-full hover:bg-accent transition-colors focus:outline-none"
                                     >
-                                        <LogOut className="h-5 w-5" />
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-primary to-violet-600 text-xs font-bold text-primary-foreground shadow-sm overflow-hidden shrink-0">
+                                            {currentUser.avatarUrl ? (
+                                                <img src={currentUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                                            ) : (
+                                                getInitials(currentUser.name)
+                                            )}
+                                        </div>
+                                        <div className="hidden md:block text-left max-w-[120px]">
+                                            <p className="text-sm font-bold leading-none truncate">{currentUser.name}</p>
+                                            <p className="text-[10px] text-muted-foreground mt-1 uppercase font-semibold">Học sinh</p>
+                                        </div>
+                                        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                                     </button>
-                                </>
+
+                                    {userDropdownOpen && (
+                                        <>
+                                            <div
+                                                className="fixed inset-0 z-40"
+                                                onClick={() => setUserDropdownOpen(false)}
+                                            />
+                                            <div className="absolute right-0 mt-2 w-56 rounded-xl border border-border bg-popover p-2 text-popover-foreground shadow-lg ring-1 ring-black/5 z-50 animate-in fade-in-50 slide-in-from-top-1 duration-150">
+                                                <div className="px-3 py-2 border-b border-border/60">
+                                                    <p className="text-xs font-semibold text-muted-foreground">Tài khoản</p>
+                                                    <p className="text-sm font-bold text-foreground truncate">{currentUser.name}</p>
+                                                    <p className="text-xs text-muted-foreground truncate">{currentUser.email}</p>
+                                                </div>
+                                                <div className="mt-1 space-y-0.5">
+                                                    <Link
+                                                        href="/student/profile"
+                                                        onClick={() => setUserDropdownOpen(false)}
+                                                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                                                            pathname === "/student/profile"
+                                                            ? "bg-primary/10 text-primary font-bold"
+                                                            : "text-foreground hover:bg-accent"
+                                                        }`}
+                                                    >
+                                                        <UserCircle className="h-4 w-4" />
+                                                        <span>Cá nhân</span>
+                                                    </Link>
+                                                    <Link
+                                                        href="/student/badges"
+                                                        onClick={() => setUserDropdownOpen(false)}
+                                                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                                                            pathname === "/student/badges"
+                                                            ? "bg-primary/10 text-primary font-bold"
+                                                            : "text-foreground hover:bg-accent"
+                                                        }`}
+                                                    >
+                                                        <Medal className="h-4 w-4" />
+                                                        <span>Huy hiệu</span>
+                                                    </Link>
+                                                    <Link
+                                                        href="/student/settings"
+                                                        onClick={() => setUserDropdownOpen(false)}
+                                                        className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                                                            pathname === "/student/settings"
+                                                            ? "bg-primary/10 text-primary font-bold"
+                                                            : "text-foreground hover:bg-accent"
+                                                        }`}
+                                                    >
+                                                        <Settings className="h-4 w-4" />
+                                                        <span>Cài đặt</span>
+                                                    </Link>
+                                                    <button
+                                                        onClick={handleLogout}
+                                                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                                                    >
+                                                        <LogOut className="h-4 w-4" />
+                                                        <span>Đăng xuất</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="w-24 h-8 bg-muted animate-pulse rounded-lg"></div>
                             )}
