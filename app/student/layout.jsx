@@ -83,7 +83,7 @@ export default function StudentLayout({ children }) {
                                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                                 }`}
                             >
-                                <Gamepad2 className="h-4 w-4" /> Đấu trường Live
+                                <Gamepad2 className="h-4 w-4" /> Live Quiz
                             </Link>
                             <Link 
                                 href="/student/practice" 
@@ -179,7 +179,7 @@ export default function StudentLayout({ children }) {
                         <nav className="flex flex-col p-4 gap-2">
                             {[
                                 { href: "/student", icon: LayoutDashboard, label: "Lớp thi" },
-                                { href: "/student/live", icon: Gamepad2, label: "Đấu trường Live" },
+                                { href: "/student/live", icon: Gamepad2, label: "Live Quiz" },
                                 { href: "/student/practice", icon: BookOpen, label: "Luyện thi" },
                                 { href: "/student/flashcards", icon: Brain, label: "Thẻ ghi nhớ" },
                                 { href: "/student/profile", icon: UserCircle, label: "Cá nhân" },

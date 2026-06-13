@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { liveQuizService } from "@/services/liveQuizService";
@@ -13,13 +13,16 @@ import { toast } from "sonner";
 export default function StudentLivePinPage() {
     const { currentUser } = useAuth();
     const router = useRouter();
-    
-    const [pin, setPin] = useState("");
+
+    const [pinValues, setPinValues] = useState(["", "", "", "", "", ""]);
+    const inputRefs = useRef([]);
     const [loading, setLoading] = useState(false);
+
+    const pin = pinValues.join("");
 
     const handleJoin = async (e) => {
         e.preventDefault();
-        
+
         const cleanPin = pin.trim();
         if (cleanPin.length !== 6 || isNaN(cleanPin)) {
             toast.error("Vui lòng nhập mã PIN hợp lệ gồm 6 chữ số!");
@@ -40,7 +43,7 @@ export default function StudentLivePinPage() {
                 currentUser.uid,
                 currentUser.name || "Học sinh"
             );
-            
+
             toast.success(`Đã tham gia phòng chơi: ${sessionData.examTitle}`);
             router.push(`/student/live/${sessionData.id}`);
         } catch (error) {
@@ -49,6 +52,41 @@ export default function StudentLivePinPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleCodeChange = (index, value) => {
+        const val = value.slice(-1).replace(/\D/g, "");
+        const newVals = [...pinValues];
+        newVals[index] = val;
+        setPinValues(newVals);
+        
+        if (val && index < 5) {
+            inputRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleKeyDown = (index, e) => {
+        if (e.key === "Backspace" && !pinValues[index] && index > 0) {
+            inputRefs.current[index - 1]?.focus();
+        }
+    };
+
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData("text").trim();
+        if (!pastedData) return;
+        
+        const cleanData = pastedData.replace(/\D/g, '').slice(0, 6);
+        if (!cleanData) return;
+        
+        const newVals = [...pinValues];
+        for (let i = 0; i < cleanData.length; i++) {
+            newVals[i] = cleanData[i];
+        }
+        setPinValues(newVals);
+        
+        const nextIndex = Math.min(cleanData.length, 5);
+        inputRefs.current[nextIndex]?.focus();
     };
 
     return (
@@ -61,8 +99,7 @@ export default function StudentLivePinPage() {
                     </div>
                     <div className="space-y-1">
                         <h1 className="text-3xl font-black tracking-tight text-foreground flex items-center justify-center gap-2">
-                            Đấu Trường Live Quiz
-                            <Sparkles className="w-5 h-5 text-yellow-500 fill-current animate-bounce" />
+                            Live Quiz
                         </h1>
                         <p className="text-sm text-muted-foreground font-medium">
                             Nhập mã PIN do Giáo viên cung cấp để tham gia trận đấu
@@ -73,19 +110,26 @@ export default function StudentLivePinPage() {
                 {/* PIN Form card */}
                 <Card className="p-8 rounded-3xl border-border/80 shadow-lg bg-card/50 backdrop-blur-sm space-y-6">
                     <form onSubmit={handleJoin} className="space-y-5">
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block text-center">
                                 Mã PIN Trận Đấu (6 chữ số)
                             </label>
-                            <Input
-                                type="text"
-                                maxLength={6}
-                                value={pin}
-                                onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-                                placeholder="000 000"
-                                disabled={loading}
-                                className="h-16 text-center text-3xl font-black tracking-widest font-mono rounded-2xl border-2 border-border focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all uppercase placeholder:opacity-40"
-                            />
+                            <div className="flex justify-center gap-2 sm:gap-3">
+                                {pinValues.map((v, i) => (
+                                    <Input 
+                                        key={i}
+                                        ref={el => inputRefs.current[i] = el}
+                                        value={v}
+                                        onChange={(e) => handleCodeChange(i, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(i, e)}
+                                        onPaste={handlePaste}
+                                        className="w-12 h-14 sm:w-14 sm:h-16 text-center text-2xl font-black rounded-xl bg-background border-border shadow-sm focus-visible:ring-primary focus-visible:ring-offset-1 transition-all placeholder:opacity-40"
+                                        maxLength={1}
+                                        disabled={loading}
+                                        placeholder="-"
+                                    />
+                                ))}
+                            </div>
                         </div>
 
                         <Button
