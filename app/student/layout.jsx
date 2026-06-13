@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain, Menu, X, Gamepad2 } from "lucide-react";
+import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, UserCircle, Brain, Menu, X, Gamepad2, BookMarked } from "lucide-react";
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
 import BlockedAccountScreen from "@/components/shared/BlockedAccountScreen";
@@ -96,6 +96,16 @@ export default function StudentLayout({ children }) {
                                 <BookOpen className="h-4 w-4" /> Luyện thi
                             </Link>
                             <Link 
+                                href="/student/error-notebook" 
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                                    pathname.startsWith("/student/error-notebook") 
+                                    ? "bg-primary/10 text-primary" 
+                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                }`}
+                            >
+                                <BookMarked className="h-4 w-4" /> Sổ tay câu sai
+                            </Link>
+                            <Link 
                                 href="/student/flashcards" 
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
                                     pathname === "/student/flashcards" 
@@ -181,6 +191,7 @@ export default function StudentLayout({ children }) {
                                 { href: "/student", icon: LayoutDashboard, label: "Lớp thi" },
                                 { href: "/student/live", icon: Gamepad2, label: "Live Quiz" },
                                 { href: "/student/practice", icon: BookOpen, label: "Luyện thi" },
+                                { href: "/student/error-notebook", icon: BookMarked, label: "Sổ tay câu sai" },
                                 { href: "/student/flashcards", icon: Brain, label: "Thẻ ghi nhớ" },
                                 { href: "/student/profile", icon: UserCircle, label: "Cá nhân" },
                                 { href: "/student/badges", icon: Medal, label: "Huy hiệu" },

@@ -342,7 +342,7 @@ export default function LiveQuizHostPage() {
     const dist = getAnswerDistribution();
 
     return (
-        <div className="h-full w-full bg-slate-950 text-slate-100 flex flex-col selection:bg-purple-500/30 overflow-hidden">
+        <div className="min-h-screen md:h-screen md:overflow-hidden bg-slate-950 text-slate-100 flex flex-col selection:bg-purple-500/30">
             {/* Main Area */}
             <main className="flex-1 flex flex-col p-6 items-center justify-center relative overflow-hidden">
                 {/* Floating controls in top-right */}
@@ -364,15 +364,14 @@ export default function LiveQuizHostPage() {
 
                 {/* 1. SETUP GAME SETTINGS SCREEN */}
                 {gameState === "settings" && (
-                    <div className="max-w-2xl w-full space-y-5 animate-in fade-in duration-350">
+                    <div className="max-w-2xl w-full space-y-4 animate-in fade-in duration-350">
                         <div className="text-center space-y-1">
                             <span className="text-[10px] font-bold tracking-widest uppercase text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full">Thiết lập trận đấu</span>
-                            <h2 className="text-xl font-black text-white">Cấu hình Đấu Trường Live Quiz</h2>
-                            <p className="text-xs text-slate-400">Tùy chỉnh nhịp độ thi đấu phù hợp nhất cho lớp học của bạn.</p>
+                            <h2 className="text-lg font-black text-white">Cấu hình Đấu Trường Live Quiz</h2>
                         </div>
 
-                        <Card className="bg-slate-900 border-slate-850 p-5 rounded-2xl space-y-5 shadow-xl">
-                            <div className="space-y-5">
+                        <Card className="bg-slate-900 border-slate-850 p-4 rounded-2xl space-y-4 shadow-xl">
+                            <div className="space-y-4">
                                 {/* Grid of 3 Dropdowns */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <CustomSelect
@@ -414,45 +413,45 @@ export default function LiveQuizHostPage() {
 
                                 {/* Grid of 3 Switches */}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div className="flex items-center justify-between bg-slate-850/40 p-3 rounded-xl border border-slate-800/60">
+                                    <div className="flex items-center justify-between bg-slate-850/40 p-2.5 rounded-xl border border-slate-800/60">
                                         <div className="space-y-0.5">
                                             <h4 className="text-xs font-bold text-slate-200">Tráo đổi câu hỏi</h4>
                                             <p className="text-[9px] text-slate-400">Xáo trộn thứ tự các câu.</p>
                                         </div>
-                                        <Switch checked={shuffleQuestions} onCheckedChange={setShuffleQuestions} className="scale-90" />
+                                        <Switch checked={shuffleQuestions} onCheckedChange={setShuffleQuestions} className="scale-80" />
                                     </div>
 
-                                    <div className="flex items-center justify-between bg-slate-850/40 p-3 rounded-xl border border-slate-800/60">
+                                    <div className="flex items-center justify-between bg-slate-850/40 p-2.5 rounded-xl border border-slate-800/60">
                                         <div className="space-y-0.5">
                                             <h4 className="text-xs font-bold text-slate-200">Tráo đổi đáp án</h4>
                                             <p className="text-[9px] text-slate-400">Xáo trộn các phương án.</p>
                                         </div>
-                                        <Switch checked={shuffleAnswers} onCheckedChange={setShuffleAnswers} className="scale-90" />
+                                        <Switch checked={shuffleAnswers} onCheckedChange={setShuffleAnswers} className="scale-80" />
                                     </div>
 
-                                    <div className="flex items-center justify-between bg-slate-850/40 p-3 rounded-xl border border-slate-800/60">
+                                    <div className="flex items-center justify-between bg-slate-850/40 p-2.5 rounded-xl border border-slate-800/60">
                                         <div className="space-y-0.5">
                                             <h4 className="text-xs font-bold text-slate-200">Hiện đáp án</h4>
                                             <p className="text-[9px] text-slate-400">Hiện giải thích sau câu.</p>
                                         </div>
-                                        <Switch checked={revealAnswers} onCheckedChange={setRevealAnswers} className="scale-90" />
+                                        <Switch checked={revealAnswers} onCheckedChange={setRevealAnswers} className="scale-80" />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-3 pt-1">
                                 <Button
                                     variant="outline"
-                                    onClick={() => router.push("/my-exams/live")}
-                                    className="flex-1 border-slate-800 hover:bg-slate-900 bg-transparent text-slate-355 font-bold h-11 rounded-xl text-xs hover:text-white"
+                                    onClick={() => router.push("/my-exams")}
+                                    className="flex-1 border-slate-800 hover:bg-slate-900 bg-transparent text-slate-355 font-bold h-9 rounded-xl text-xs hover:text-white"
                                 >
                                     Hủy
                                 </Button>
                                 <Button
                                     onClick={handleInitSession}
-                                    className="flex-[2] bg-purple-600 hover:bg-purple-700 text-white font-bold h-11 rounded-xl text-xs"
+                                    className="flex-[2] bg-purple-600 hover:bg-purple-700 text-white font-bold h-9 rounded-xl text-xs"
                                 >
-                                    <Play className="w-4 h-4 mr-2 fill-current" />
+                                    <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
                                     Khởi tạo phòng đấu
                                 </Button>
                             </div>
@@ -506,7 +505,7 @@ export default function LiveQuizHostPage() {
                         <div className="pt-6 flex justify-center gap-4">
                             <Button
                                 variant="outline"
-                                onClick={() => router.push("/my-exams/live")}
+                                onClick={() => router.push("/my-exams")}
                                 className="border-slate-800 hover:bg-slate-900 bg-transparent text-slate-300 font-bold h-12 px-6 rounded-xl text-xs hover:text-white"
                             >
                                 Hủy phòng

@@ -40,6 +40,11 @@ service cloud.firestore {
       // Mở quyền update để Phụ huynh có thể cập nhật trường linkedParents của Học sinh khi liên kết tài khoản
       allow update: if isAuthenticated();
       allow delete: if false; // Không cho phép xóa user trực tiếp từ client
+
+      // Sổ tay câu sai (Error Notebook)
+      match /error_notebook/{questionId} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      }
     }
 
     // 2. BẢNG EXAMS (Đề thi)

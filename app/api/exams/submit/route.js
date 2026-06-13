@@ -143,6 +143,69 @@ export async function POST(request) {
             }
         });
 
+        // Bước 2.5: Lưu trữ các câu hỏi trả lời sai vào Sổ tay câu sai (Error Notebook)
+        const wrongQuestions = [];
+        const subject = examData.subject || "Khác";
+
+        questions.forEach(q => {
+            const studentAns = answers[q.id];
+            
+            if (q.type && q.type.startsWith('group_')) {
+                if (q.subQuestions && q.subQuestions.length > 0) {
+                    q.subQuestions.forEach(subQ => {
+                        const subAns = (studentAns !== undefined && studentAns !== null) ? studentAns[subQ.id] : undefined;
+                        const earned = gradeSingleQuestion(subQ, subAns);
+                        const maxQScore = parseFloat(subQ.points || "1");
+                        if (earned < maxQScore) {
+                            wrongQuestions.push({
+                                id: subQ.id,
+                                questionData: {
+                                    ...subQ,
+                                    parentContent: q.content,
+                                    isSubQuestion: true,
+                                    parentId: q.id
+                                },
+                                studentAnswer: subAns !== undefined ? subAns : null
+                            });
+                        }
+                    });
+                }
+            } else {
+                const earned = (studentAns !== undefined && studentAns !== null) ? gradeSingleQuestion(q, studentAns) : 0;
+                const maxQScore = parseFloat(q.points || "1");
+                if (earned < maxQScore) {
+                    wrongQuestions.push({
+                        id: q.id,
+                        questionData: q,
+                        studentAnswer: studentAns !== undefined ? studentAns : null
+                    });
+                }
+            }
+        });
+
+        if (wrongQuestions.length > 0) {
+            try {
+                const userNotebookRef = adminDb.collection("users").doc(studentId).collection("error_notebook");
+                const batch = adminDb.batch();
+
+                wrongQuestions.forEach(wq => {
+                    const docRef = userNotebookRef.doc(wq.id);
+                    batch.set(docRef, {
+                        questionData: wq.questionData,
+                        subject: subject,
+                        addedAt: new Date().toISOString(),
+                        correctAttempts: 0,
+                        lastReviewed: new Date().toISOString(),
+                        studentAnswer: wq.studentAnswer
+                    }, { merge: true });
+                });
+
+                await batch.commit();
+            } catch (err) {
+                console.error("Lỗi lưu sổ tay câu sai trong submit route:", err);
+            }
+        }
+
         // Bước 3: Cập nhật điểm số vào bản ghi bài làm thông qua quyền ưu tiên (Admin SDK) nhằm vượt qua hệ thống Security Rules
         const attemptRef = adminDb.collection("exam_attempts").doc(attemptId);
         await attemptRef.update({
