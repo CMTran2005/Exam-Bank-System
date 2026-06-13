@@ -565,6 +565,97 @@ export default function ClassDetailsPage({ params }) {
                                 );
                             }
 
+                            // Helper function to check if a student's answer is correct
+                            const checkIsCorrect = (item, studentAns) => {
+                                if (studentAns === undefined || studentAns === null) return false;
+
+                                const cleanAndNormalize = (text) => {
+                                    if (text === undefined || text === null) return "";
+                                    let cleaned = text
+                                        .toString()
+                                        .replace(/<[^>]*>/g, "")
+                                        .replace(/&nbsp;/g, " ")
+                                        .replace(/&lt;/g, "<")
+                                        .replace(/&gt;/g, ">")
+                                        .replace(/&amp;/g, "&")
+                                        .replace(/&quot;/g, '"')
+                                        .replace(/&#39;/g, "'")
+                                        .replace(/\$/g, "")
+                                        .trim()
+                                        .toLowerCase()
+                                        .replace(/,/g, ".");
+
+                                    if (/[\d\+\-\*\/=]/.test(cleaned)) {
+                                        cleaned = cleaned.replace(/\s+/g, "");
+                                    } else {
+                                        cleaned = cleaned.replace(/\s+/g, " ");
+                                    }
+                                    return cleaned;
+                                };
+
+                                if (item.type === 'true_false') {
+                                    const stmts = item.statements || [];
+                                    let stmtCorrectCount = 0;
+                                    stmts.forEach((stmt, idx) => {
+                                        if (studentAns[idx] === stmt.correct) stmtCorrectCount++;
+                                    });
+                                    return stmtCorrectCount === stmts.length && stmts.length > 0;
+                                } else if (item.type === 'fill_blank') {
+                                    const regex = /\[\[(.*?)\]\]/g;
+                                    const correctAnswers = [];
+                                    let match;
+                                    while ((match = regex.exec(item.content || "")) !== null) {
+                                        correctAnswers.push(cleanAndNormalize(match[1]));
+                                    }
+                                    let blankCorrectCount = 0;
+                                    correctAnswers.forEach((correct, idx) => {
+                                        const ansStr = cleanAndNormalize(studentAns[idx]);
+                                        if (ansStr === correct) blankCorrectCount++;
+                                    });
+                                    return blankCorrectCount === correctAnswers.length && correctAnswers.length > 0;
+                                } else if (item.type === 'essay') {
+                                    const finalAns = cleanAndNormalize(item.final_answer || "");
+                                    const ansStr = cleanAndNormalize(studentAns || "");
+                                    return finalAns && ansStr === finalAns;
+                                } else {
+                                    const alphabet = ["A", "B", "C", "D", "E", "F"];
+                                    const actualCorrectIndex = alphabet.indexOf(item.correct_answer);
+                                    return studentAns === actualCorrectIndex;
+                                }
+                            };
+
+                            // Flatten the exam questions list, splitting grouped questions into sub-questions
+                            const flatQuestions = [];
+                            selectedExam.questions.forEach((q, qIdx) => {
+                                if (q.type && q.type.startsWith('group_') && q.subQuestions && q.subQuestions.length > 0) {
+                                    q.subQuestions.forEach((subQ, subIdx) => {
+                                        flatQuestions.push({
+                                            id: subQ.id,
+                                            label: `Câu ${qIdx + 1}.${subIdx + 1}`,
+                                            type: subQ.type || 'multiple_choice',
+                                            correct_answer: subQ.correct_answer,
+                                            points: subQ.points,
+                                            parentId: q.id,
+                                            statements: subQ.statements,
+                                            content: subQ.content,
+                                            final_answer: subQ.final_answer
+                                        });
+                                    });
+                                } else {
+                                    flatQuestions.push({
+                                        id: q.id,
+                                        label: `Câu ${qIdx + 1}`,
+                                        type: q.type || 'multiple_choice',
+                                        correct_answer: q.correct_answer,
+                                        points: q.points,
+                                        parentId: null,
+                                        statements: q.statements,
+                                        content: q.content,
+                                        final_answer: q.final_answer
+                                    });
+                                }
+                            });
+
                             // 1. Chuẩn hóa tất cả điểm số về hệ 10 để vẽ phổ điểm chung
                             const scoresNormalized = completedAttempts.map(a => {
                                 const scoreVal = a.score !== undefined ? a.score : 0;
@@ -689,7 +780,7 @@ export default function ClassDetailsPage({ params }) {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border/60">
-                                                {selectedExam.questions.map((q, idx) => {
+                                                {flatQuestions.map((q) => {
                                                     const alphabet = ["A", "B", "C", "D", "E", "F"];
                                                     const actualCorrectIndex = alphabet.indexOf(q.correct_answer);
                                                     
@@ -698,29 +789,45 @@ export default function ClassDetailsPage({ params }) {
                                                     let skippedCount = 0;
 
                                                     completedAttempts.forEach(a => {
-                                                        const ansIdx = a.answers?.[q.id];
-                                                        if (ansIdx === undefined || ansIdx === null) {
+                                                        const studentAns = q.parentId 
+                                                            ? a.answers?.[q.parentId]?.[q.id]
+                                                            : a.answers?.[q.id];
+
+                                                        if (studentAns === undefined || studentAns === null || (typeof studentAns === 'string' && studentAns.trim() === "")) {
                                                             skippedCount++;
                                                         } else {
-                                                            if (choiceCounts[ansIdx] !== undefined) choiceCounts[ansIdx]++;
-                                                            if (ansIdx === actualCorrectIndex) correctCount++;
+                                                            if (q.type === 'multiple_choice' || !q.type) {
+                                                                if (choiceCounts[studentAns] !== undefined) choiceCounts[studentAns]++;
+                                                            }
+                                                            if (checkIsCorrect(q, studentAns)) {
+                                                                correctCount++;
+                                                            }
                                                         }
                                                     });
 
                                                     const correctRate = Math.round((correctCount / completedAttempts.length) * 100) || 0;
+                                                    const isMultipleChoice = q.type === 'multiple_choice' || !q.type;
                                                     
                                                     return (
                                                         <tr key={q.id} className="hover:bg-muted/20 transition-colors">
-                                                            <td className="px-4 py-3 text-center font-bold">Câu {idx + 1}</td>
+                                                            <td className="px-4 py-3 text-center font-bold">{q.label}</td>
                                                             <td className="px-4 py-3 text-center">
                                                                 <span className={`px-2 py-1 rounded font-bold text-xs ${correctRate >= 50 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                                                                     {correctRate}%
                                                                 </span>
                                                             </td>
-                                                            <td className={`px-4 py-3 text-center ${actualCorrectIndex === 0 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>{choiceCounts[0]}</td>
-                                                            <td className={`px-4 py-3 text-center ${actualCorrectIndex === 1 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>{choiceCounts[1]}</td>
-                                                            <td className={`px-4 py-3 text-center ${actualCorrectIndex === 2 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>{choiceCounts[2]}</td>
-                                                            <td className={`px-4 py-3 text-center ${actualCorrectIndex === 3 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>{choiceCounts[3]}</td>
+                                                            <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 0 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
+                                                                {isMultipleChoice ? choiceCounts[0] : "-"}
+                                                            </td>
+                                                            <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 1 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
+                                                                {isMultipleChoice ? choiceCounts[1] : "-"}
+                                                            </td>
+                                                            <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 2 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
+                                                                {isMultipleChoice ? choiceCounts[2] : "-"}
+                                                            </td>
+                                                            <td className={`px-4 py-3 text-center ${isMultipleChoice && actualCorrectIndex === 3 ? 'bg-emerald-50 dark:bg-emerald-900/10 font-bold text-emerald-600' : ''}`}>
+                                                                {isMultipleChoice ? choiceCounts[3] : "-"}
+                                                            </td>
                                                             <td className="px-4 py-3 text-center text-muted-foreground">{skippedCount}</td>
                                                         </tr>
                                                     );
