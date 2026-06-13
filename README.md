@@ -6,7 +6,7 @@
 
 [![Vercel Deployment](https://img.shields.io/badge/Live_Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://exam-bank-system.vercel.app/)
 
-![Version](https://img.shields.io/badge/version-1.3.2-gray)
+![Version](https://img.shields.io/badge/version-1.3.3-gray)
 ![Language](https://img.shields.io/badge/JavaScript-96.2%25-fff2b2)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3.4%25-bbf7d0)
 ![CSS](https://img.shields.io/badge/CSS-0.4%25-e9d5ff)
