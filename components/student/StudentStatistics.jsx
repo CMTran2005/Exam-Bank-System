@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { examAttemptService } from "@/services/examAttemptService";
-import { Flame, Trophy, Target, TrendingUp, CalendarDays } from "lucide-react";
+import { Flame, Trophy, Target, TrendingUp, CalendarDays, BookOpen, Sword } from "lucide-react";
 import { classService } from "@/services/classService";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 /**
  * Component StudentStatistics
@@ -16,7 +18,8 @@ import { classService } from "@/services/classService";
 export default function StudentStatistics({ studentUid, classes = [] }) {
     const [attempts, setAttempts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [radarData, setRadarData] = useState([]);
+    const [officialRadarData, setOfficialRadarData] = useState([]);
+    const [practiceRadarData, setPracticeRadarData] = useState([]);
     const [streak, setStreak] = useState(0);
     const [stats, setStats] = useState({ totalExams: 0, avgScore: 0, totalPractice: 0 });
 
@@ -86,50 +89,72 @@ export default function StudentStatistics({ studentUid, classes = [] }) {
             }
             setStreak(currentStreak);
 
-            // 3. Prepare Radar Chart Data (Subjects)
-            // Mock map of classId to subject for now if not available
-            const subjectScores = {};
-            const subjectCounts = {};
+            // 3. Lấy môn học cho các bài luyện tập
+            const practiceAttempts = completed.filter(a => a.classId === "practice");
+            const uniqueExamIds = [...new Set(practiceAttempts.map(a => a.examId).filter(Boolean))];
+            const examSubjectsMap = {};
+            
+            await Promise.all(uniqueExamIds.map(async (examId) => {
+                try {
+                    const snap = await getDoc(doc(db, "exams", examId));
+                    if (snap.exists()) {
+                        examSubjectsMap[examId] = snap.data().subject || "Chưa phân loại";
+                    } else {
+                        examSubjectsMap[examId] = "Đề đã xóa";
+                    }
+                } catch (e) {
+                    examSubjectsMap[examId] = "Chưa phân loại";
+                }
+            }));
+
+            // 4. Prepare Radar Chart Data (Split into Official and Practice)
+            const officialScores = {};
+            const officialCounts = {};
+            const practiceScores = {};
+            const practiceCounts = {};
             
             completed.forEach(a => {
                 if (a.score !== null && a.score !== undefined) {
-                    let subjectName = "Khác";
                     if (a.classId === "practice") {
-                        subjectName = "Tự do";
+                        const subjectName = examSubjectsMap[a.examId] || "Chưa phân loại";
+                        if (!practiceScores[subjectName]) { practiceScores[subjectName] = 0; practiceCounts[subjectName] = 0; }
+                        practiceScores[subjectName] += parseFloat(a.score);
+                        practiceCounts[subjectName] += 1;
                     } else {
+                        let subjectName = "Chưa phân loại";
                         const classData = classes.find(c => c.id === a.classId);
                         if (classData && classData.subject) {
                             subjectName = classData.subject;
                         }
+                        if (!officialScores[subjectName]) { officialScores[subjectName] = 0; officialCounts[subjectName] = 0; }
+                        officialScores[subjectName] += parseFloat(a.score);
+                        officialCounts[subjectName] += 1;
                     }
-                    
-                    if (!subjectScores[subjectName]) {
-                        subjectScores[subjectName] = 0;
-                        subjectCounts[subjectName] = 0;
-                    }
-                    subjectScores[subjectName] += parseFloat(a.score);
-                    subjectCounts[subjectName] += 1;
                 }
             });
             
-            const rData = Object.keys(subjectScores).map(subject => ({
-                subject: subject,
-                score: parseFloat((subjectScores[subject] / subjectCounts[subject]).toFixed(1)),
-                fullMark: 10
-            }));
+            const formatRadarData = (scores, counts) => {
+                const rData = Object.keys(scores).map(subject => ({
+                    subject: subject,
+                    score: parseFloat((scores[subject] / counts[subject]).toFixed(1)),
+                    fullMark: 10
+                }));
+                
+                // Cần ít nhất 3-4 trục để biểu đồ Radar vẽ thành đa giác thay vì 1 đường thẳng
+                const defaultPadding = ["Toán học", "Vật lý", "Hóa học", "Tiếng Anh", "Ngữ Văn"];
+                let i = 0;
+                while (rData.length < 3 && i < defaultPadding.length) {
+                    const subj = defaultPadding[i];
+                    if (!rData.find(d => d.subject === subj)) {
+                        rData.push({ subject: subj, score: 0, fullMark: 10 });
+                    }
+                    i++;
+                }
+                return rData;
+            };
             
-            // Default data if new student
-            if (rData.length === 0) {
-                rData.push({ subject: "Toán", score: 0, fullMark: 10 });
-                rData.push({ subject: "Lý", score: 0, fullMark: 10 });
-                rData.push({ subject: "Hóa", score: 0, fullMark: 10 });
-                rData.push({ subject: "Anh", score: 0, fullMark: 10 });
-            } else if (rData.length < 3) {
-                rData.push({ subject: "Môn khác", score: 0, fullMark: 10 });
-                rData.push({ subject: "Năng lực", score: 0, fullMark: 10 });
-            }
-            
-            setRadarData(rData);
+            setOfficialRadarData(formatRadarData(officialScores, officialCounts));
+            setPracticeRadarData(formatRadarData(practiceScores, practiceCounts));
 
         } catch (error) {
             console.error("Lỗi tải thống kê:", error);
@@ -181,25 +206,50 @@ export default function StudentStatistics({ studentUid, classes = [] }) {
                 </div>
             </div>
 
-            {/* Cột 2: Radar Chart Năng lực */}
-            <div className="lg:col-span-2 bg-card border border-border rounded-3xl shadow-sm p-6 flex flex-col">
-                <h3 className="font-black text-lg mb-4 flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-amber-500" />
-                    Biểu Đồ Năng Lực (Điểm Trung Bình)
-                </h3>
-                <div className="flex-1 w-full flex justify-center">
-                    <ResponsiveContainer width="100%" height={300}>
-                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                            <PolarGrid stroke="var(--border)" />
-                            <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--foreground)', fontSize: 12, fontWeight: 700 }} />
-                            <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fill: 'var(--muted-foreground)' }} />
-                            <Radar name="Điểm TB" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
-                            <Tooltip 
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                itemStyle={{ fontWeight: 'bold' }}
-                            />
-                        </RadarChart>
-                    </ResponsiveContainer>
+            {/* Cột 2: Radar Charts Năng lực */}
+            <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Biểu đồ Thi Chính Thức */}
+                <div className="bg-card border border-border rounded-3xl shadow-sm p-6 flex flex-col">
+                    <h3 className="font-black text-lg mb-4 flex items-center gap-2">
+                        <Sword className="w-5 h-5 text-indigo-500" />
+                        Năng Lực Thi Thật
+                    </h3>
+                    <div className="flex-1 w-full flex justify-center">
+                        <ResponsiveContainer width="100%" height={260}>
+                            <RadarChart cx="50%" cy="50%" outerRadius="75%" data={officialRadarData}>
+                                <PolarGrid stroke="var(--border)" />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--foreground)', fontSize: 11, fontWeight: 700 }} />
+                                <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fill: 'var(--muted-foreground)' }} />
+                                <Radar name="Điểm TB Thi Thật" dataKey="score" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.4} />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    itemStyle={{ fontWeight: 'bold' }}
+                                />
+                            </RadarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Biểu đồ Luyện Thi */}
+                <div className="bg-card border border-border rounded-3xl shadow-sm p-6 flex flex-col">
+                    <h3 className="font-black text-lg mb-4 flex items-center gap-2">
+                        <BookOpen className="w-5 h-5 text-emerald-500" />
+                        Năng Lực Luyện Tập
+                    </h3>
+                    <div className="flex-1 w-full flex justify-center">
+                        <ResponsiveContainer width="100%" height={260}>
+                            <RadarChart cx="50%" cy="50%" outerRadius="75%" data={practiceRadarData}>
+                                <PolarGrid stroke="var(--border)" />
+                                <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--foreground)', fontSize: 11, fontWeight: 700 }} />
+                                <PolarRadiusAxis angle={30} domain={[0, 10]} tick={{ fill: 'var(--muted-foreground)' }} />
+                                <Radar name="Điểm TB Luyện Tập" dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.4} />
+                                <Tooltip 
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    itemStyle={{ fontWeight: 'bold' }}
+                                />
+                            </RadarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,5 +1,7 @@
 import { collection, doc, setDoc, getDocs, query, where, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { expCalculator } from "@/lib/expCalculator";
+import { leagueService } from "@/services/leagueService";
 
 export const flashcardService = {
     /**
@@ -146,7 +148,14 @@ export const flashcardService = {
         try {
             const docRef = doc(db, "flashcards", flashcard.id);
             await updateDoc(docRef, updatedData);
-            return updatedData;
+
+            // Thưởng EXP sau khi ôn tập
+            const earnedExp = expCalculator.calcFlashcardExp(quality);
+            if (earnedExp > 0 && flashcard.uid) {
+                leagueService.addWeeklyExp(flashcard.uid, earnedExp).catch(e => console.error("Lỗi cộng EXP Flashcard:", e));
+            }
+
+            return { ...updatedData, earnedExp };
         } catch (error) {
             console.error("Lỗi cập nhật flashcard:", error);
             throw error;

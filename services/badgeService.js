@@ -11,7 +11,7 @@ export const badgeService = {
         const badgesRef = collection(db, "badges");
         const snapshot = await getDocs(badgesRef);
         // Tự động khởi tạo dữ liệu nếu danh sách huy hiệu chưa đầy đủ
-        if (snapshot.empty || snapshot.docs.length < 58) {
+        if (snapshot.empty || snapshot.docs.length < 66) {
             return await this.seedBadges();
         }
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -140,6 +140,24 @@ export const badgeService = {
             { id: "persistent_learner", name: "Bại Binh Phục Hận", desc: "Thi trượt nhưng thi đỗ lại sau đó", iconStr: "ShieldCheck", tier: TIERS.SILVER, rule: { type: "fail_then_pass" } },
             { id: "awakened", name: "Thức Tỉnh", desc: "Bị dưới 5 điểm, nhưng bài ngay sau đó đạt 10", iconStr: "Dna", tier: TIERS.PLATINUM, rule: { type: "awakened" } },
             { id: "iron_chin", name: "Vua Lì Đòn", desc: "Bị điểm dưới 5 liên tục 3 lần, lần thứ 4 đạt >= 8", iconStr: "ShieldAlert", tier: TIERS.DIAMOND, rule: { type: "iron_chin" } },
+
+            // ==========================================
+            // NHÓM 10: TỐC ĐỘ (Speed)
+            // ==========================================
+            { id: "flash_bronze", name: "Tia Chớp Nhỏ", desc: "Hoàn thành 1 bài thi xuất sắc (>=8đ) dưới 5 phút", iconStr: "Timer", tier: TIERS.BRONZE, rule: { type: "speed_count", count: 1, maxMinutes: 5, minScore: 8 } },
+            { id: "flash_silver", name: "Tia Chớp Bạc", desc: "Hoàn thành 5 bài thi xuất sắc (>=8đ) dưới 5 phút", iconStr: "Timer", tier: TIERS.SILVER, rule: { type: "speed_count", count: 5, maxMinutes: 5, minScore: 8 } },
+            { id: "flash_gold", name: "Tia Chớp Vàng", desc: "Hoàn thành 15 bài thi xuất sắc (>=8đ) dưới 5 phút", iconStr: "Timer", tier: TIERS.GOLD, rule: { type: "speed_count", count: 15, maxMinutes: 5, minScore: 8 } },
+            { id: "flash_platinum", name: "Tia Chớp Bạch Kim", desc: "Hoàn thành 30 bài thi xuất sắc (>=8đ) dưới 5 phút", iconStr: "Zap", tier: TIERS.PLATINUM, rule: { type: "speed_count", count: 30, maxMinutes: 5, minScore: 8 } },
+            { id: "flash_diamond", name: "Tia Chớp Kim Cương", desc: "Hoàn thành 100 bài thi xuất sắc (>=8đ) dưới 5 phút", iconStr: "Zap", tier: TIERS.DIAMOND, rule: { type: "speed_count", count: 100, maxMinutes: 5, minScore: 8 } },
+            // ==========================================
+            // NHÓM 11: LEO RANK (Giải đấu)
+            // ==========================================
+            { id: "rank_bronze", name: "Chiến Binh Mới", desc: "Đạt Hạng Đồng (Tier 2+)", iconStr: "Shield", tier: TIERS.BRONZE, rule: { type: "min_rank", value: 2 } },
+            { id: "rank_silver", name: "Chiến Binh Bạc", desc: "Đạt Hạng Bạc (Tier 5+)", iconStr: "ShieldCheck", tier: TIERS.SILVER, rule: { type: "min_rank", value: 5 } },
+            { id: "rank_gold", name: "Chinh Phục Đỉnh Cao", desc: "Đạt Hạng Vàng (Tier 8+)", iconStr: "Gem", tier: TIERS.GOLD, rule: { type: "min_rank", value: 8 } },
+            { id: "rank_platinum", name: "Huyền Thoại Trỗi Dậy", desc: "Đạt Hạng Bạch Kim (Tier 11+)", iconStr: "Sparkles", tier: TIERS.PLATINUM, rule: { type: "min_rank", value: 11 } },
+            { id: "rank_diamond", name: "Kẻ Thách Thức", desc: "Đạt Hạng Kim Cương (Tier 14+)", iconStr: "Rocket", tier: TIERS.DIAMOND, rule: { type: "min_rank", value: 14 } },
+            { id: "rank_master", name: "Đỉnh Cao Vinh Quang", desc: "Đạt Hạng Thách Đấu (Tier 15)", iconStr: "Crown", tier: TIERS.DIAMOND, rule: { type: "min_rank", value: 15 } },
         ];
 
         const badgesRef = collection(db, "badges");
@@ -153,24 +171,39 @@ export const badgeService = {
     /**
      * Đánh giá xem học sinh có đủ điều kiện nhận một huy hiệu cụ thể hay không
      * @param {Object} badge - Thông tin cấu hình của huy hiệu cần xét
-     * @param {Array} rawAttempts - Danh sách toàn bộ các bài thi học sinh đã làm
-     * @param {Array} classes - Danh sách các lớp học sinh đang tham gia
+     * @param {Object} contextData - Dữ liệu bối cảnh gồm attempts, classes, leagueRank
      * @returns {boolean} - Trả về true nếu học sinh đạt điều kiện nhận huy hiệu
      */
-    evaluateCondition(badge, rawAttempts, classes) {
+    evaluateCondition(badge, contextData) {
         if (!badge.rule) return false;
 
-        const allowPracticeRules = [
-            "min_attempts", "min_classes", "diverse_subjects", "night_owl", 
-            "vampire", "early_bird", "weekend_warrior", "active_days", "consecutive_days"
-        ];
+        // Tương thích ngược: Nếu gọi kiểu cũ truyền 3 tham số (badge, attempts, classes)
+        let rawAttempts = [];
+        let classes = [];
+        let leagueRank = 1;
         
+        if (Array.isArray(contextData)) {
+            rawAttempts = arguments[1] || [];
+            classes = arguments[2] || [];
+        } else if (contextData) {
+            rawAttempts = contextData.attempts || [];
+            classes = contextData.classes || [];
+            leagueRank = contextData.leagueRank || 1;
+        }
+
+        const allowPracticeRules = [
+            "min_attempts", "min_classes", "diverse_subjects", "night_owl",
+            "vampire", "early_bird", "weekend_warrior", "active_days", "consecutive_days", "min_rank"
+        ];
+
         // Lọc bài thi: Nếu luật không áp dụng cho Luyện tập tự do, loại bỏ các bài thi có classId là 'practice'
-        const attempts = allowPracticeRules.includes(badge.rule.type) 
-            ? rawAttempts 
+        const attempts = allowPracticeRules.includes(badge.rule.type)
+            ? rawAttempts
             : rawAttempts.filter(a => a.classId && a.classId !== "practice");
 
         switch (badge.rule.type) {
+            case "min_rank":
+                return leagueRank >= badge.rule.value;
             case "min_attempts":
                 return attempts.length >= badge.rule.value;
             case "min_score_count":
@@ -336,6 +369,15 @@ export const badgeService = {
                     }
                 }
                 return dayStreak >= badge.rule.value;
+
+            case "speed_count":
+                const fastAttempts = attempts.filter(a => {
+                    if (a.score < badge.rule.minScore) return false;
+                    if (!a.startTime || !a.submitTime) return false;
+                    const durationMinutes = (new Date(a.submitTime) - new Date(a.startTime)) / (1000 * 60);
+                    return durationMinutes > 0 && durationMinutes <= badge.rule.maxMinutes;
+                });
+                return fastAttempts.length >= badge.rule.count;
 
             default:
                 return false;

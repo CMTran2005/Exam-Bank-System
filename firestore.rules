@@ -127,5 +127,14 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isTeacherOrAdmin() && request.resource.data.uid == request.auth.uid;
       allow read, update, delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.uid == request.auth.uid;
     }
+
+    // 12. BẢNG LEAGUE_GROUPS (Giải đấu tuần)
+    match /leagueGroups/{groupId} {
+      allow read, write: if isAuthenticated();
+      
+      match /leaderboard/{userId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
   }
 }

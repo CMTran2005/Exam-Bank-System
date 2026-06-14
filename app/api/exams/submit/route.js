@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { expCalculator } from "@/lib/expCalculator";
+import { addWeeklyExpServer } from "@/lib/serverLeagueService";
 
 /**
  * Component POST
@@ -208,6 +210,9 @@ export async function POST(request) {
 
         // Bước 3: Cập nhật điểm số vào bản ghi bài làm thông qua quyền ưu tiên (Admin SDK) nhằm vượt qua hệ thống Security Rules
         const attemptRef = adminDb.collection("exam_attempts").doc(attemptId);
+        const attemptDoc = await attemptRef.get();
+        const attemptData = attemptDoc.exists ? attemptDoc.data() : {};
+        
         await attemptRef.update({
             answers: answers || {},
             score: totalPoints,
@@ -216,7 +221,29 @@ export async function POST(request) {
             submitTime: new Date().toISOString()
         });
 
-        return NextResponse.json({ success: true, score: totalPoints, maxScore: maxPossibleScore });
+        // Bước 4: Tính toán và Thưởng EXP cho hệ thống Gamification / Leagues
+        const isPractice = attemptData.classId === 'practice';
+        let attemptCount = 1;
+
+        if (isPractice) {
+            // Đếm số lần nộp bài Luyện thi trước đó để áp dụng Repetition Decay
+            const prevAttemptsSnap = await adminDb.collection("exam_attempts")
+                .where("studentId", "==", studentId)
+                .where("examId", "==", examId)
+                .where("classId", "==", "practice")
+                .where("status", "==", "completed")
+                .get();
+            attemptCount = prevAttemptsSnap.docs.length + 1; // Tính cả lần này
+        }
+
+        const normalizedScore = maxPossibleScore > 0 ? (totalPoints / maxPossibleScore) * 10 : 0;
+        const earnedExp = expCalculator.calcExamExp(normalizedScore, isPractice, attemptCount);
+
+        if (earnedExp > 0) {
+            await addWeeklyExpServer(studentId, earnedExp);
+        }
+
+        return NextResponse.json({ success: true, score: totalPoints, maxScore: maxPossibleScore, earnedExp });
 
     } catch (error) {
         console.error("Lỗi khi chấm điểm trên Server:", error);

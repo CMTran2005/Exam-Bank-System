@@ -7,7 +7,7 @@ import { examAttemptService } from "@/services/examAttemptService";
 import { badgeService } from "@/services/badgeService";
 import * as Icons from "lucide-react";
 import { toast } from "sonner";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 // Global cache để giữ dữ liệu khi chuyển trang (SWR pattern)
@@ -23,6 +23,7 @@ export default function BadgesPage() {
     const { currentUser } = useAuth();
     const [allBadges, setAllBadges] = useState([]);
     const [badges, setBadges] = useState([]);
+    const [showcasedBadges, setShowcasedBadges] = useState([]);
     const [loading, setLoading] = useState(!badgesCache);
     const [showLocked, setShowLocked] = useState(false);
     const [stats, setStats] = useState({ attempts: 0, classes: 0 });
@@ -37,6 +38,7 @@ export default function BadgesPage() {
         if (badgesCache && badgesCache.uid === currentUser.uid) {
             setAllBadges(badgesCache.allBadges);
             setBadges(badgesCache.badges);
+            setShowcasedBadges(badgesCache.showcased || []);
             setStats(badgesCache.stats);
             setLoading(false); // Hiện UI ngay lập tức
         } else {
@@ -44,11 +46,14 @@ export default function BadgesPage() {
         }
 
         try {
-            const [data, attempts, fetchedBadges] = await Promise.all([
+            const [data, attempts, fetchedBadges, userSnap] = await Promise.all([
                 studentService.getJoinedClasses(currentUser.uid),
                 examAttemptService.getStudentAttempts(currentUser.uid),
-                badgeService.getBadges()
+                badgeService.getBadges(),
+                getDoc(doc(db, "users", currentUser.uid))
             ]);
+            
+            const userDoc = userSnap.exists() ? userSnap.data() : {};
             
             setAllBadges(fetchedBadges);
 
@@ -59,9 +64,15 @@ export default function BadgesPage() {
 
             // Tính toán huy hiệu thông minh qua badgeService
             const earnedBadgeIds = [];
+            const contextData = {
+                attempts: attempts,
+                classes: data,
+                leagueRank: userDoc.leagueRank || 1
+            };
+            
             fetchedBadges.forEach(badge => {
                 try {
-                    if (badgeService.evaluateCondition(badge, attempts, data)) {
+                    if (badgeService.evaluateCondition(badge, contextData)) {
                         earnedBadgeIds.push(badge.id);
                     }
                 } catch (e) {
@@ -70,11 +81,15 @@ export default function BadgesPage() {
             });
             
             setBadges(earnedBadgeIds);
+            
+            const showcased = userDoc?.showcasedBadges || [];
+            setShowcasedBadges(showcased);
 
             badgesCache = {
                 uid: currentUser.uid,
                 allBadges: fetchedBadges,
                 badges: earnedBadgeIds,
+                showcased: showcased,
                 stats: { attempts: attempts.length, classes: data.length }
             };
 
@@ -104,6 +119,8 @@ export default function BadgesPage() {
         if (id.startsWith("consistent_")) return "consistent";
         if (id.startsWith("polymath_")) return "polymath";
         if (id.startsWith("streak_")) return "streak_days"; 
+        if (id.startsWith("flash_")) return "flash_speed"; 
+        if (id.startsWith("rank_")) return "rank_climbing";
         return id; // single badges
     };
 
@@ -167,6 +184,32 @@ export default function BadgesPage() {
         return { displayList: filteredList, totalFamilies: Object.keys(grouped).length, earnedFamiliesCount };
     };
 
+    const toggleShowcase = async (badgeId, isEarned) => {
+        if (!isEarned) return;
+        
+        let newShowcased = [...showcasedBadges];
+        if (newShowcased.includes(badgeId)) {
+            newShowcased = newShowcased.filter(id => id !== badgeId);
+        } else {
+            if (newShowcased.length >= 3) {
+                toast.error("Chỉ được ghim tối đa 3 huy hiệu lên Bảng Xếp Hạng!");
+                return;
+            }
+            newShowcased.push(badgeId);
+        }
+        
+        setShowcasedBadges(newShowcased);
+        if (badgesCache) badgesCache.showcased = newShowcased;
+        
+        try {
+            await updateDoc(doc(db, "users", currentUser.uid), { showcasedBadges: newShowcased });
+            toast.success(newShowcased.includes(badgeId) ? "Đã ghim huy hiệu!" : "Đã bỏ ghim huy hiệu!");
+        } catch (e) {
+            console.error(e);
+            toast.error("Lỗi khi cập nhật ghim huy hiệu.");
+        }
+    };
+
     const { displayList, totalFamilies, earnedFamiliesCount } = processBadges();
 
     return (
@@ -211,9 +254,20 @@ export default function BadgesPage() {
                             const Icon = Icons[b.iconStr] || Icons.Medal;
                             
                             if (isEarned) {
+                                const isPinned = showcasedBadges.includes(b.id);
                                 return (
-                                    <div key={b.id} className={`p-6 rounded-3xl border ${b.tier.color} flex flex-col items-center justify-center text-center hover:-translate-y-1.5 transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden`}>
+                                    <div key={b.id} className={`p-6 rounded-3xl border ${isPinned ? 'border-primary ring-2 ring-primary/20 scale-[1.02]' : b.tier.color} flex flex-col items-center justify-center text-center hover:-translate-y-1.5 transition-all duration-300 shadow-sm hover:shadow-md group relative overflow-hidden bg-card`}>
                                         <div className="absolute top-0 right-0 w-24 h-24 bg-white/20 dark:bg-white/5 blur-2xl rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
+                                        
+                                        {/* Nút Ghim */}
+                                        <button 
+                                            onClick={() => toggleShowcase(b.id, isEarned)}
+                                            className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-200 z-10 ${isPinned ? 'bg-primary text-primary-foreground shadow-md' : 'bg-background/50 text-muted-foreground hover:bg-muted hover:text-foreground opacity-0 group-hover:opacity-100'}`}
+                                            title={isPinned ? "Bỏ ghim khỏi Bảng Xếp Hạng" : "Ghim lên Bảng Xếp Hạng (Tối đa 3)"}
+                                        >
+                                            <Icons.Pin className={`w-4 h-4 ${isPinned ? 'fill-current' : ''}`} />
+                                        </button>
+
                                         <div className="p-4 bg-background/50 rounded-2xl mb-3 backdrop-blur-sm border border-white/10 dark:border-white/5 group-hover:scale-110 transition-transform duration-300 shadow-sm">
                                             <Icon className="w-10 h-10 drop-shadow-sm" />
                                         </div>
@@ -223,9 +277,9 @@ export default function BadgesPage() {
                                         
                                         {/* Hiển thị mục tiêu tiếp theo nếu có */}
                                         {b.nextTarget && (
-                                            <div className="mt-3 pt-3 border-t border-white/10 w-full text-center">
-                                                <p className="text-[9px] opacity-70 uppercase tracking-widest mb-1">Mục tiêu tiếp theo</p>
-                                                <p className="text-[10px] font-medium">{b.nextTarget.desc}</p>
+                                            <div className="mt-3 pt-3 border-t border-border w-full text-center">
+                                                <p className="text-[9px] text-muted-foreground uppercase tracking-widest mb-1">Mục tiêu tiếp theo</p>
+                                                <p className="text-[10px] text-foreground font-medium">{b.nextTarget.desc}</p>
                                             </div>
                                         )}
                                     </div>

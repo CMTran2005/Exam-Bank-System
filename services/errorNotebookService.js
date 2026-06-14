@@ -1,5 +1,7 @@
 import { collection, doc, getDocs, deleteDoc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { expCalculator } from "@/lib/expCalculator";
+import { leagueService } from "@/services/leagueService";
 
 /**
  * Service quản lý Sổ Tay Câu Sai (Error Notebook) của học sinh
@@ -47,18 +49,23 @@ export const errorNotebookService = {
 
             const data = docSnap.data();
             let newAttempts = isCorrect ? (data.correctAttempts || 0) + 1 : 0;
+            const earnedExp = expCalculator.calcNotebookExp(isCorrect, newAttempts);
+
+            if (earnedExp > 0) {
+                leagueService.addWeeklyExp(studentId, earnedExp).catch(err => console.error("Lỗi cộng EXP Notebook:", err));
+            }
 
             if (newAttempts >= 3) {
                 // Đạt 3 lần đúng liên tiếp -> Xóa khỏi sổ tay
                 await deleteDoc(docRef);
-                return { deleted: true, correctAttempts: newAttempts };
+                return { deleted: true, correctAttempts: newAttempts, earnedExp };
             } else {
                 const updatedData = {
                     correctAttempts: newAttempts,
                     lastReviewed: new Date().toISOString()
                 };
                 await updateDoc(docRef, updatedData);
-                return { deleted: false, correctAttempts: newAttempts, ...updatedData };
+                return { deleted: false, correctAttempts: newAttempts, earnedExp, ...updatedData };
             }
         } catch (error) {
             console.error("Lỗi cập nhật luyện tập câu sai:", error);
