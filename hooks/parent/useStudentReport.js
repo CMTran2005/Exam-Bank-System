@@ -41,13 +41,19 @@ export function useStudentReport(currentUser, studentId, router) {
                 return timeB - timeA;
             });
 
-        // Lấy tên đề thi cho các bản ghi cũ không lưu examTitle
+        // Lấy tên đề thi cho các bản ghi cũ không lưu examTitle và lấy subject cho luyện tập
         const examIds = [...new Set(attempts.map(a => a.examId))].filter(Boolean);
         const examTitleMap = {};
+        const examSubjectsMap = {};
         if (examIds.length > 0) {
             const examSnaps = await Promise.all(examIds.map(eid => getDoc(doc(db, "exams", eid))));
             examSnaps.forEach(snap => {
-                if (snap.exists()) examTitleMap[snap.id] = snap.data().title;
+                if (snap.exists()) {
+                    examTitleMap[snap.id] = snap.data().title;
+                    examSubjectsMap[snap.id] = snap.data().subject || "Chưa phân loại";
+                } else {
+                    examSubjectsMap[snap.id] = "Đề đã xóa";
+                }
             });
         }
         
@@ -59,23 +65,32 @@ export function useStudentReport(currentUser, studentId, router) {
 
         let total = 0;
         let count = 0;
-        const subjectDataMap = {};
+        const officialScores = {};
+        const officialCounts = {};
+        const practiceScores = {};
+        const practiceCounts = {};
 
         attempts.forEach(a => {
-            if (a.score !== null && a.score !== undefined) {
+            if (a.score !== null && a.score !== undefined && a.status === "completed") {
                 const score = parseFloat(a.score);
                 total += score;
                 count++;
 
-                let sub = "Khác";
-                if (a.classId === "practice") sub = "Tự do";
-                else {
+                if (a.classId === "practice") {
+                    const subjectName = examSubjectsMap[a.examId] || "Chưa phân loại";
+                    if (!practiceScores[subjectName]) { practiceScores[subjectName] = 0; practiceCounts[subjectName] = 0; }
+                    practiceScores[subjectName] += score;
+                    practiceCounts[subjectName]++;
+                } else {
+                    let subjectName = "Chưa phân loại";
                     const matched = classes.find(c => c.id === a.classId);
-                    if (matched) sub = matched.subject || "Khác";
+                    if (matched && matched.subject) {
+                        subjectName = matched.subject;
+                    }
+                    if (!officialScores[subjectName]) { officialScores[subjectName] = 0; officialCounts[subjectName] = 0; }
+                    officialScores[subjectName] += score;
+                    officialCounts[subjectName]++;
                 }
-                if (!subjectDataMap[sub]) subjectDataMap[sub] = { name: sub, total: 0, count: 0 };
-                subjectDataMap[sub].total += score;
-                subjectDataMap[sub].count++;
             }
         });
 
@@ -129,14 +144,31 @@ export function useStudentReport(currentUser, studentId, router) {
             }
         }
 
-        const radarData = Object.values(subjectDataMap).map(s => ({
-            subject: s.name,
-            score: parseFloat((s.total / s.count).toFixed(1))
-        }));
+        const formatChartData = (scoresObj, countsObj) => {
+            const rData = Object.keys(scoresObj).map(subject => ({
+                subject: subject,
+                score: parseFloat((scoresObj[subject] / countsObj[subject]).toFixed(1))
+            }));
+            
+            // Padding
+            const defaultPadding = ["Toán học", "Vật lý", "Hóa học", "Tiếng Anh", "Ngữ Văn"];
+            let i = 0;
+            while (rData.length < 3 && i < defaultPadding.length) {
+                const subj = defaultPadding[i];
+                if (!rData.find(d => d.subject === subj)) {
+                    rData.push({ subject: subj, score: 0 });
+                }
+                i++;
+            }
+            return rData;
+        };
+
+        const officialRadarData = formatChartData(officialScores, officialCounts);
+        const practiceRadarData = formatChartData(practiceScores, practiceCounts);
 
         const avgScore = count > 0 ? (total / count).toFixed(1) : 0;
 
-        return { studentData, classes, attempts, radarData, trendData, avgScore };
+        return { studentData, classes, attempts, officialRadarData, practiceRadarData, trendData, avgScore };
     };
 
     // Verify parent-child access permissions
@@ -161,7 +193,8 @@ export function useStudentReport(currentUser, studentId, router) {
         studentData: data?.studentData || null, 
         classes: data?.classes || [], 
         attempts: data?.attempts || [], 
-        radarData: data?.radarData || [], 
+        officialRadarData: data?.officialRadarData || [], 
+        practiceRadarData: data?.practiceRadarData || [], 
         trendData: data?.trendData || [], 
         avgScore: data?.avgScore || 0, 
         loading: isLoading 

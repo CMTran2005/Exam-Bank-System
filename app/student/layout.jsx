@@ -8,6 +8,7 @@ import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, User
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
 import BlockedAccountScreen from "@/components/shared/BlockedAccountScreen";
+import EncouragementPopup from "@/components/student/EncouragementPopup";
 
 /**
  * Component StudentLayout
@@ -283,7 +284,10 @@ export default function StudentLayout({ children }) {
                         <p className="text-sm text-muted-foreground font-medium animate-pulse">Đang tải không gian học tập...</p>
                     </div>
                 ) : (
-                    children
+                    <>
+                        {children}
+                        <EncouragementPopup />
+                    </>
                 )}
             </main>
 

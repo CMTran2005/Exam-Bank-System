@@ -9,18 +9,18 @@ import { Target, TrendingUp } from "lucide-react";
  * @param {Object}  radarData - Tham số đầu vào
  * @returns {JSX.Element}
  */
-export default function StudentCharts({ radarData, trendData }) {
+export default function StudentCharts({ officialRadarData, practiceRadarData, trendData }) {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-            {/* Biểu đồ Phổ điểm */}
+            {/* Biểu đồ Năng Lực Thi Thật */}
             <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
                 <h3 className="text-lg font-black text-foreground mb-4 flex items-center gap-2">
-                    <Target className="w-5 h-5 text-primary" /> Điểm Trung Bình Từng Môn
+                    <Target className="w-5 h-5 text-indigo-500" /> Năng Lực Thi Thật
                 </h3>
                 <div className="h-[300px] w-full min-w-0" style={{ position: 'relative' }}>
-                    {radarData.length > 0 ? (
+                    {officialRadarData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={1}>
-                            <BarChart data={radarData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                            <BarChart data={officialRadarData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                                 <XAxis dataKey="subject" tick={{ fill: "#64748b", fontSize: 12, fontWeight: "bold" }} axisLine={false} tickLine={false} />
                                 <YAxis domain={[0, 10]} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -30,20 +30,50 @@ export default function StudentCharts({ radarData, trendData }) {
                                     labelStyle={{ fontWeight: 'bold', color: '#0f172a' }}
                                 />
                                 <Bar dataKey="score" name="Điểm TB" radius={[6, 6, 0, 0]} maxBarSize={50}>
-                                    {radarData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.subject === "Tự do" ? "#10b981" : "#0ea5e9"} />
+                                    {officialRadarData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill="#6366f1" />
                                     ))}
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Chưa có đủ dữ liệu môn học</div>
+                        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Chưa có bài thi nào</div>
+                    )}
+                </div>
+            </div>
+
+            {/* Biểu đồ Năng Lực Luyện Tập */}
+            <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
+                <h3 className="text-lg font-black text-foreground mb-4 flex items-center gap-2">
+                    <Target className="w-5 h-5 text-emerald-500" /> Năng Lực Luyện Tập
+                </h3>
+                <div className="h-[300px] w-full min-w-0" style={{ position: 'relative' }}>
+                    {practiceRadarData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={300} minWidth={1} minHeight={1}>
+                            <BarChart data={practiceRadarData} margin={{ top: 20, right: 0, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis dataKey="subject" tick={{ fill: "#64748b", fontSize: 12, fontWeight: "bold" }} axisLine={false} tickLine={false} />
+                                <YAxis domain={[0, 10]} tick={{ fill: "#64748b", fontSize: 12 }} axisLine={false} tickLine={false} />
+                                <Tooltip 
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    labelStyle={{ fontWeight: 'bold', color: '#0f172a' }}
+                                />
+                                <Bar dataKey="score" name="Điểm TB" radius={[6, 6, 0, 0]} maxBarSize={50}>
+                                    {practiceRadarData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill="#10b981" />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">Chưa có bài luyện tập nào</div>
                     )}
                 </div>
             </div>
 
             {/* Biểu đồ Tiến độ */}
-            <div className="bg-card p-6 rounded-2xl border border-border shadow-sm">
+            <div className="bg-card p-6 rounded-2xl border border-border shadow-sm lg:col-span-2">
                 <h3 className="text-lg font-black text-foreground mb-4 flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-emerald-500" /> Tần Suất Học Tập (Gần Đây)
                 </h3>

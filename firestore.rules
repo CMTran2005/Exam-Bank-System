@@ -45,6 +45,11 @@ service cloud.firestore {
       match /error_notebook/{questionId} {
         allow read, write: if isAuthenticated() && request.auth.uid == userId;
       }
+
+      // Lời chúc động viên (Encouragements - Phase 5)
+      match /encouragements/{messageId} {
+        allow read, write: if isAuthenticated();
+      }
     }
 
     // 2. BẢNG EXAMS (Đề thi)
