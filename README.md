@@ -7,8 +7,8 @@
 [![Vercel Deployment](https://img.shields.io/badge/Live_Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://exam-bank-system.vercel.app/)
 
 ![Version](https://img.shields.io/badge/version-1.5.1-gray)
-![Language](https://img.shields.io/badge/JavaScript-96.4%25-fff2b2)
-![TypeScript](https://img.shields.io/badge/TypeScript-3.2%25-bbf7d0)
+![Language](https://img.shields.io/badge/JavaScript-96.2%25-fff2b2)
+![TypeScript](https://img.shields.io/badge/TypeScript-3.4%25-bbf7d0)
 ![CSS](https://img.shields.io/badge/CSS-0.4%25-e9d5ff)
 
 **[Tiếng Việt](#vietnamese) | [English](#english)**
@@ -25,7 +25,7 @@
 
 **Exam Bank System** là nền tảng web hiện đại được thiết kế toàn diện cho hệ sinh thái giáo dục bao gồm Giáo viên, Học sinh và Phụ huynh. Hệ thống giúp quản lý bài kiểm tra và câu hỏi một cách thông minh, từ việc tạo đề thi đến chấm bài tự động.
 
-Ứng dụng không chỉ là nơi lưu trữ câu hỏi, mà còn tích hợp các công nghệ tiên tiến nhất: AI (Gemini Vision) và OCR thông minh để tự động số hóa đề thi, hệ thống Flashcards với thuật toán Spaced Repetition, Gamification để tăng tính hứng thú học tập, và hệ thống Anti-Cheat bảo mật tuyệt đối.
+Ứng dụng không chỉ là nơi lưu trữ câu hỏi, mà còn tích hợp các công nghệ tiên tiến nhất: AI (Gemini Vision) và OCR thông minh để tự động số hóa đề thi, hệ thống Flashcards với thuật toán Spaced Repetition, Gamification để tăng tính hứng thú học tập, và hệ thống Anti-Cheat bảo mật tuyệt đối. Đặc biệt, hệ thống đã được tái cấu trúc (Modular Architecture) tối đa nhằm mang lại hiệu suất xuất sắc nhất.
 
 ### Tính Năng Nổi Bật
 
@@ -40,6 +40,7 @@
 - **Cộng Đồng Chia Sẻ (Community)**: Chia sẻ đề thi công khai lên thư viện chung. Giáo viên khác có thể tìm kiếm, lọc theo khối lớp/môn học và Nhân bản (Clone) vào tài khoản của mình chỉ với một lần nhấp.
 
 #### 2. Cổng Học Sinh (Student Portal) & Thi Trực Tuyến
+- **Giao diện làm bài chuyên nghiệp (Modular UI)**: Thiết kế phân tách rõ ràng Header (Bộ đếm giờ), Sidebar (Menu điều hướng câu hỏi), và Question Renderer. Tích hợp đọc câu hỏi (Text-to-Speech) mượt mà.
 - **Hệ Thống Anti-Cheat Tiên Tiến (Chống Gian Lận)**: 
   - Phát hiện hành vi chuyển Tab (Visibility API) hoặc mất Focus cửa sổ.
   - Vô hiệu hóa phím tắt hệ thống: F12, Sao chép (Ctrl+C), Dán (Ctrl+V), In ấn (Ctrl+P), Xem mã nguồn (Ctrl+U).
@@ -53,17 +54,17 @@
 
 #### 4. Cổng Phụ Huynh (Parent Portal)
 - **Theo Dõi Con Em**: Phụ huynh có thể nhập Mã học sinh hoặc Email để liên kết tài khoản con em vào bảng điều khiển.
-- **Báo Cáo Học Tập (Analytics)**: Biểu đồ Radar đa chiều đánh giá năng lực của học sinh theo từng môn học và mức độ nhận thức (Nhận biết, Thông hiểu, Áp dụng, Tư duy cấp cao).
+- **Báo Cáo Học Tập (Analytics)**: Cấu trúc lưới (Grid) kết hợp Biểu đồ Năng lực học tập (Thi thật & Luyện tập) và Tần suất làm bài giúp phụ huynh dễ dàng đánh giá đa chiều tiến độ của con em một cách trực quan.
 
 #### 5. Bảng Điều Khiển (Dashboard) & Thống Kê
-- Theo dõi sự tăng trưởng số lượng câu hỏi và đề thi theo từng tháng.
-- Biểu đồ Donut Chart phân bố các loại câu hỏi (Trắc nghiệm, Đúng/Sai, Tự luận).
+- **Thống kê chi tiết câu hỏi nâng cao**: Bảng phân tích với khả năng đóng/mở hàng (Collapsible Rows), tích hợp biểu đồ tỷ lệ lựa chọn cho mỗi đáp án trực quan. Hệ thống tự động ẩn cột thông minh dựa trên cấu trúc đề thi.
+- Theo dõi sự tăng trưởng số lượng câu hỏi và đề thi theo từng tháng bằng đồ thị hiện đại.
 - Đo lường hiệu suất của hệ thống AI (Tỷ lệ chính xác OCR Confidence Rate, Độ trễ Latency).
 
 #### 6. Kiến Trúc Bảo Mật & Hệ Thống
 - **Server-Side Grading**: Toàn bộ logic chấm điểm, đối chiếu đáp án được chuyển từ trình duyệt của học sinh lên Server API (`/api/exams/submit`). Sử dụng **Firebase Admin SDK** để ghi kết quả chấm điểm an toàn.
 - **Firestore Security Rules**: Áp dụng các quy tắc bảo mật nghiêm ngặt (`firestore.rules`), chỉ cho phép User đọc dữ liệu thuộc quyền sở hữu của mình, chặn ghi dữ liệu từ phía client.
-- **Đồng Bộ Dữ Liệu**: Tự động đồng bộ hóa thông tin hồ sơ chuyên sâu (Học vị, Môn giảng dạy) giữa Local Storage và Firestore.
+- **Đồng Bộ Dữ Liệu & Xác Thực**: Tự động đồng bộ hóa thông tin hồ sơ chuyên sâu. Giải quyết triệt để lỗi treo UI khi xử lý xác thực Google OAuth.
 
 ### Tech Stack
 
@@ -218,7 +219,7 @@ npm run lint             # Kiểm tra code quality
 
 **Exam Bank System** is a modern, comprehensive web platform designed for the educational ecosystem including Teachers, Students, and Parents. The system enables seamless management, creation, execution, and grading of exams with intelligent question management.
 
-The application goes beyond simple question storage by integrating cutting-edge technologies: AI (Gemini Vision) and intelligent OCR for automated exam digitization, Spaced Repetition algorithms for enhanced learning, Gamification features to boost engagement, and advanced Anti-Cheat mechanisms for secure assessment.
+The application goes beyond simple question storage by integrating cutting-edge technologies: AI (Gemini Vision) and intelligent OCR for automated exam digitization, Spaced Repetition algorithms for enhanced learning, Gamification features to boost engagement, and advanced Anti-Cheat mechanisms for secure assessment. Most recently, the system has been fundamentally refactored (Modular Architecture) to deliver peak performance.
 
 ### Key Features
 
@@ -233,6 +234,7 @@ The application goes beyond simple question storage by integrating cutting-edge 
 - **Exam Community**: Share exams publicly to a shared library. Other educators can search, filter by grade/subject, and Clone/Fork exams into their own accounts with a single click.
 
 #### 2. Student Portal & Online Exams
+- **Professional Exam Interface (Modular UI)**: Clearly separated components for the Timer Header, Question Navigation Sidebar, and Question Renderer. Features smooth Text-to-Speech integration.
 - **Advanced Anti-Cheat System**: 
   - Detects Tab switching (Visibility API) and window focus loss.
   - Disables system shortcuts: F12, Copy (Ctrl+C), Paste (Ctrl+V), Print (Ctrl+P), View Source (Ctrl+U).
@@ -246,17 +248,17 @@ The application goes beyond simple question storage by integrating cutting-edge 
 
 #### 4. Parent Portal
 - **Child Monitoring**: Parents can input a Student ID or Email to link their child's account to the dashboard.
-- **Learning Analytics**: Multi-dimensional Radar charts evaluate student competencies across different subjects and cognitive levels (Remembering, Understanding, Applying, High-Order Thinking).
+- **Learning Analytics**: Uses a 2-column grid layout to merge Academic Competency Radar Charts (Official vs. Practice) and Practice Frequency Area Charts, providing an intuitive, multi-dimensional view of student progress.
 
 #### 5. Dashboard & Statistics
-- Track monthly growth of questions and exams.
-- Donut Charts visualizing the distribution of question types.
+- **Advanced Question Analytics**: Interactive tables with collapsible rows and integrated option-selection progress bars. Features smart column hiding based on the underlying exam structure.
+- Track monthly growth of questions and exams using modern charts.
 - AI System performance metrics (OCR Confidence Rate, Latency).
 
 #### 6. Security Architecture & System
 - **Server-Side Grading**: All grading and answer verification logic is moved from the student's browser to a Server API (`/api/exams/submit`). Uses **Firebase Admin SDK** to securely write scores.
 - **Firestore Security Rules**: Strict security rules (`firestore.rules`) implemented to restrict data reads to owners only and block sensitive writes from the client.
-- **Data Synchronization**: Automatic syncing of in-depth profile information (Academic Degree, Teaching Subjects) between Local Storage and Firestore.
+- **Data Synchronization & Authentication**: Automatic syncing of in-depth profile information. Thoroughly resolved infinite UI hangs during Google OAuth authentication flows.
 
 ### Tech Stack
 

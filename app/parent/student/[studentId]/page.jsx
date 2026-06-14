@@ -24,7 +24,7 @@ export default function ParentStudentDetail() {
     const { currentUser } = useAuth();
     const studentId = params?.studentId;
     
-    const { studentData, classes, attempts, officialRadarData, practiceRadarData, trendData, avgScore, loading } = useStudentReport(currentUser, studentId, router);
+    const { studentData, classes, attempts, combinedRadarData, trendData, avgScore, loading } = useStudentReport(currentUser, studentId, router);
 
     if (loading) {
         return (
@@ -75,7 +75,7 @@ export default function ParentStudentDetail() {
             <StudentSummaryCards avgScore={avgScore} attempts={attempts} />
 
             {/* KHU VỰC BIỂU ĐỒ TRỰC QUAN */}
-            <StudentCharts officialRadarData={officialRadarData} practiceRadarData={practiceRadarData} trendData={trendData} />
+            <StudentCharts combinedRadarData={combinedRadarData} trendData={trendData} />
 
             {/* Chi tiết Bài Thi và Bài Luyện */}
             <StudentExamHistory attempts={attempts} classes={classes} />

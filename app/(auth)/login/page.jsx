@@ -76,6 +76,9 @@ export default function LoginPage() {
         } catch (err) {
             setError(err.message || "Đăng nhập bằng Google thất bại, vui lòng thử lại!");
             setLoading(false);
+        } finally {
+            // Ensure loading is reset in case of any edge case
+            setLoading(false);
         }
     };
 

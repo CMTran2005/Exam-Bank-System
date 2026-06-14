@@ -144,31 +144,23 @@ export function useStudentReport(currentUser, studentId, router) {
             }
         }
 
-        const formatChartData = (scoresObj, countsObj) => {
-            const rData = Object.keys(scoresObj).map(subject => ({
-                subject: subject,
-                score: parseFloat((scoresObj[subject] / countsObj[subject]).toFixed(1))
-            }));
-            
-            // Padding
-            const defaultPadding = ["Toán học", "Vật lý", "Hóa học", "Tiếng Anh", "Ngữ Văn"];
-            let i = 0;
-            while (rData.length < 3 && i < defaultPadding.length) {
-                const subj = defaultPadding[i];
-                if (!rData.find(d => d.subject === subj)) {
-                    rData.push({ subject: subj, score: 0 });
-                }
-                i++;
-            }
-            return rData;
-        };
-
-        const officialRadarData = formatChartData(officialScores, officialCounts);
-        const practiceRadarData = formatChartData(practiceScores, practiceCounts);
+        const combinedSubjects = new Set([...Object.keys(officialScores), ...Object.keys(practiceScores)]);
+        const combinedRadarData = Array.from(combinedSubjects).map(subject => ({
+            subject: subject,
+            officialScore: officialCounts[subject] ? parseFloat((officialScores[subject] / officialCounts[subject]).toFixed(1)) : 0,
+            practiceScore: practiceCounts[subject] ? parseFloat((practiceScores[subject] / practiceCounts[subject]).toFixed(1)) : 0,
+        }));
+        
+        // Padding if empty
+        if (combinedRadarData.length === 0) {
+            combinedRadarData.push({ subject: "Toán học", officialScore: 0, practiceScore: 0 });
+            combinedRadarData.push({ subject: "Ngữ Văn", officialScore: 0, practiceScore: 0 });
+            combinedRadarData.push({ subject: "Tiếng Anh", officialScore: 0, practiceScore: 0 });
+        }
 
         const avgScore = count > 0 ? (total / count).toFixed(1) : 0;
 
-        return { studentData, classes, attempts, officialRadarData, practiceRadarData, trendData, avgScore };
+        return { studentData, classes, attempts, combinedRadarData, trendData, avgScore };
     };
 
     // Verify parent-child access permissions
@@ -193,8 +185,7 @@ export function useStudentReport(currentUser, studentId, router) {
         studentData: data?.studentData || null, 
         classes: data?.classes || [], 
         attempts: data?.attempts || [], 
-        officialRadarData: data?.officialRadarData || [], 
-        practiceRadarData: data?.practiceRadarData || [], 
+        combinedRadarData: data?.combinedRadarData || [], 
         trendData: data?.trendData || [], 
         avgScore: data?.avgScore || 0, 
         loading: isLoading 

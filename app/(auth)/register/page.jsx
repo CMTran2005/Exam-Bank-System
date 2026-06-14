@@ -67,6 +67,8 @@ export default function RegisterPage() {
         } catch (err) {
             setError(err.message || "Đăng ký bằng Google thất bại, vui lòng thử lại!");
             setLoading(false);
+        } finally {
+            setLoading(false);
         }
     };
 

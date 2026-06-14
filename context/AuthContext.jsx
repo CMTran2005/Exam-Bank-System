@@ -155,7 +155,6 @@ export function AuthProvider({ children }) {
 
     // Hàm xử lý Đăng nhập qua Firebase Auth (Email/Password)
     const login = async (email, password) => {
-        setLoading(true);
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
@@ -182,17 +181,14 @@ export function AuthProvider({ children }) {
 
             setCurrentUser(userData);
             localStorage.setItem("eb_user", JSON.stringify(userData));
-            setLoading(false);
             return userData;
         } catch (error) {
-            setLoading(false);
             throw new Error(translateFirebaseError(error.code));
         }
     };
 
     // Hàm xử lý Đăng nhập / Đăng ký cực nhanh bằng Tài khoản Google
     const loginWithGoogle = async (role = "guest") => {
-        setLoading(true);
         try {
             const provider = new GoogleAuthProvider();
             provider.setCustomParameters({ prompt: "select_account" });
@@ -226,17 +222,14 @@ export function AuthProvider({ children }) {
 
             setCurrentUser(userData);
             localStorage.setItem("eb_user", JSON.stringify(userData));
-            setLoading(false);
             return userData;
         } catch (error) {
-            setLoading(false);
             throw new Error(translateFirebaseError(error.code));
         }
     };
 
     // Hàm xử lý Đăng ký tài khoản giáo viên/học sinh mới qua Firebase Auth & Firestore
     const register = async (name, email, password, role = "teacher") => {
-        setLoading(true);
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const firebaseUser = userCredential.user;
@@ -263,10 +256,8 @@ export function AuthProvider({ children }) {
 
             setCurrentUser(userData);
             localStorage.setItem("eb_user", JSON.stringify(userData));
-            setLoading(false);
             return userData;
         } catch (error) {
-            setLoading(false);
             throw new Error(translateFirebaseError(error.code));
         }
     };
