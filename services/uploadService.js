@@ -4,8 +4,8 @@
  * giải quyết vấn đề đầy bộ nhớ Firestore do lưu Base64.
  */
 
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dfseun0dm";
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "exam_bank_preset";
+const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
 /**
  * Uploads a file (image or audio) to Cloudinary and returns its secure URL.
