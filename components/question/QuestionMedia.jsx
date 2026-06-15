@@ -9,17 +9,17 @@ import { ImagePlus, X } from "lucide-react";
  * @param {Object}  label - Tham số đầu vào
  * @returns {JSX.Element}
  */
-export default function QuestionMedia({ label, images = [], targetField, handleImageChange, removeImage }) {
+export default function QuestionMedia({ label, images = [], targetField, handleImageChange, removeImage, uploadingMedia = false }) {
     return (
         <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground block">
                 {label}
             </label>
             <div className="flex flex-wrap gap-3 items-center">
-                <label className="h-20 w-20 flex flex-col items-center justify-center border border-dashed border-border rounded-lg cursor-pointer hover:bg-accent transition-colors bg-background">
+                <label className={`h-20 w-20 flex flex-col items-center justify-center border border-dashed border-border rounded-lg transition-colors bg-background ${uploadingMedia ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-accent'}`}>
                     <ImagePlus className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-[10px] text-muted-foreground mt-1 font-medium">Thêm ảnh</span>
-                    <input type="file" multiple accept="image/*" className="hidden" onChange={(e) => handleImageChange(e, targetField)} />
+                    <span className="text-[10px] text-muted-foreground mt-1 font-medium">{uploadingMedia ? "Đang tải..." : "Thêm ảnh"}</span>
+                    <input type="file" multiple accept="image/*" className="hidden" disabled={uploadingMedia} onChange={(e) => handleImageChange(e, targetField)} />
                 </label>
                 {images.map((img, idx) => (
                     <div key={idx} className="relative h-20 w-20 border border-border rounded-lg overflow-hidden bg-muted group shadow-sm">

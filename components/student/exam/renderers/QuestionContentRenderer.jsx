@@ -1,4 +1,5 @@
 import dynamic from "next/dynamic";
+import ExamAudioPlayer from "./ExamAudioPlayer";
 
 const LatexRenderer = dynamic(() => import("@/components/shared/LatexRenderer"), {
     ssr: false,
@@ -49,6 +50,22 @@ export function QuestionContentRenderer({ currentQuestion, answers, handleFillBl
                 <div className="mt-6 space-y-4">
                     {currentQuestion.images.map((img, i) => (
                         img ? <img key={i} src={img} alt={`Hình ảnh minh họa ${i + 1}`} className="max-h-[400px] mx-auto rounded-xl border border-border object-contain shadow-sm" /> : null
+                    ))}
+                </div>
+            )}
+
+            {/* Render question audios */}
+            {currentQuestion?.audios && currentQuestion.audios.length > 0 && (
+                <div className="mt-6 space-y-4">
+                    {currentQuestion.audios.map((audioSrc, i) => (
+                        audioSrc ? (
+                            <ExamAudioPlayer 
+                                key={i} 
+                                src={audioSrc} 
+                                maxPlaybacks={currentQuestion.maxPlaybacks} 
+                                title={`Bài nghe phần ${i + 1}`}
+                            />
+                        ) : null
                     ))}
                 </div>
             )}

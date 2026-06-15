@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { uploadMediaToCloudinary } from "@/services/uploadService";
 
 const compressImage = (base64Str, maxWidth = 1280, maxHeight = 720, quality = 0.8) => {
     return new Promise((resolve) => {
@@ -110,23 +111,60 @@ export function useQuestionForm(question, onChangeData) {
         onChangeData({ ...question, tags: currentTags.filter(t => t !== tagToRemove) });
     };
 
-    const handleImageChange = (e, targetField) => {
+    const [uploadingMedia, setUploadingMedia] = useState(false);
+
+    const handleImageChange = async (e, targetField) => {
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
-        files.forEach((file) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onloadend = () => {
-                const currentImages = question[targetField] || [];
-                updateField(targetField, [...currentImages, reader.result]);
-            };
-        });
-        e.target.value = "";
+        
+        setUploadingMedia(true);
+        const toastId = toast.loading("Đang tải ảnh lên máy chủ...");
+        
+        try {
+            const uploadPromises = files.map(file => uploadMediaToCloudinary(file));
+            const newImageUrls = await Promise.all(uploadPromises);
+            
+            const currentImages = question[targetField] || [];
+            updateField(targetField, [...currentImages, ...newImageUrls]);
+            toast.success("Tải ảnh lên thành công!", { id: toastId });
+        } catch (error) {
+            toast.error(error.message || "Lỗi khi tải ảnh", { id: toastId });
+        } finally {
+            setUploadingMedia(false);
+            e.target.value = "";
+        }
     };
 
     const removeImage = (indexToRemove, targetField) => {
         const currentImages = question[targetField] || [];
         updateField(targetField, currentImages.filter((_, idx) => idx !== indexToRemove));
+    };
+
+    const handleAudioChange = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        
+        setUploadingMedia(true);
+        const toastId = toast.loading("Đang tải file âm thanh lên máy chủ (Có thể mất vài giây)...");
+        
+        try {
+            const uploadPromises = files.map(file => uploadMediaToCloudinary(file));
+            const newAudioUrls = await Promise.all(uploadPromises);
+            
+            const currentAudios = question.audios || [];
+            updateField("audios", [...currentAudios, ...newAudioUrls]);
+            toast.success("Tải âm thanh lên thành công!", { id: toastId });
+        } catch (error) {
+            toast.error(error.message || "Lỗi khi tải âm thanh", { id: toastId });
+        } finally {
+            setUploadingMedia(false);
+            e.target.value = "";
+        }
+    };
+
+    const removeAudio = (indexToRemove) => {
+        const currentAudios = question.audios || [];
+        updateField("audios", currentAudios.filter((_, idx) => idx !== indexToRemove));
     };
 
     const createPasteHandler = (targetField, customUpdateCallback = null) => async (e) => {
@@ -269,8 +307,8 @@ export function useQuestionForm(question, onChangeData) {
     };
 
     return {
-        loading, tagInput, setTagInput, aiTaggingLoading, aiGeneratingSolution,
+        loading, tagInput, setTagInput, aiTaggingLoading, aiGeneratingSolution, uploadingMedia,
         updateField, handleAITagging, handleAddManualTag, handleRemoveTag,
-        handleImageChange, removeImage, createPasteHandler, handleGenerateSolution
+        handleImageChange, removeImage, handleAudioChange, removeAudio, createPasteHandler, handleGenerateSolution
     };
 }

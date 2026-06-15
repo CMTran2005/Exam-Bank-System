@@ -22,6 +22,7 @@ import GroupQuestionForm from "./GroupQuestionForm";
 import LatexRenderer from "@/components/shared/LatexRenderer";
 import QuestionTags from "./QuestionTags";
 import QuestionMedia from "./QuestionMedia";
+import QuestionAudio from "./QuestionAudio";
 import { useQuestionForm } from "@/hooks/shared/useQuestionForm";
 
 const TYPE_CONFIG = {
@@ -53,9 +54,9 @@ const isGroupType = (type) => type?.startsWith("group_");
  */
 export default function QuestionForm({ question, onChangeData }) {
     const {
-        loading, tagInput, setTagInput, aiTaggingLoading, aiGeneratingSolution,
+        loading, tagInput, setTagInput, aiTaggingLoading, aiGeneratingSolution, uploadingMedia,
         updateField, handleAITagging, handleAddManualTag, handleRemoveTag,
-        handleImageChange, removeImage, createPasteHandler, handleGenerateSolution
+        handleImageChange, removeImage, handleAudioChange, removeAudio, createPasteHandler, handleGenerateSolution
     } = useQuestionForm(question, onChangeData);
 
     const isGroup = isGroupType(question.type);
@@ -177,6 +178,16 @@ export default function QuestionForm({ question, onChangeData }) {
                     targetField="images"
                     handleImageChange={handleImageChange}
                     removeImage={removeImage}
+                    uploadingMedia={uploadingMedia}
+                />
+
+                <QuestionAudio
+                    audios={question.audios}
+                    maxPlaybacks={question.maxPlaybacks}
+                    handleAudioChange={handleAudioChange}
+                    removeAudio={removeAudio}
+                    uploadingMedia={uploadingMedia}
+                    updateField={updateField}
                 />
 
                 <div className="border-t border-dashed border-border pt-4">
@@ -248,6 +259,7 @@ export default function QuestionForm({ question, onChangeData }) {
                             targetField="answer_images"
                             handleImageChange={handleImageChange}
                             removeImage={removeImage}
+                            uploadingMedia={uploadingMedia}
                         />
 
                         <div className="w-full pt-2 border-t border-emerald-200/40 dark:border-emerald-850/30">

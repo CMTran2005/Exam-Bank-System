@@ -436,7 +436,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
     };
 
     return {
-        exam, attempt, answers, reviewMarks, currentQuestionIdx, currentSubQuestionIdx, 
+        exam, attempt, answers, reviewMarks, currentQuestionIdx, currentSubQuestionIdx, pastAttemptsCount,
         practiceResults, isTimerEnabled, isSubmitting, timeLeft, loading, isSpeaking, showQuestionMap, shuffleMap,
         setCurrentQuestionIdx, setCurrentSubQuestionIdx, setIsTimerEnabled, setShowQuestionMap,
         handleSelectAnswer, handleSelectTrueFalse, handleTextAnswer, handleFillBlankAnswer, handleGroupAnswer,

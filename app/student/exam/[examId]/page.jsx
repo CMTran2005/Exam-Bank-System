@@ -39,9 +39,11 @@ export default function ExamInterface({ params }) {
     const { currentUser } = useAuth();
     const router = useRouter();
     const confirmDialog = useConfirm();
+    
+    const isPracticeMode = searchParams.get("mode") === "practice";
 
     const {
-        exam, attempt, answers, reviewMarks, currentQuestionIdx, currentSubQuestionIdx, 
+        exam, attempt, answers, reviewMarks, currentQuestionIdx, currentSubQuestionIdx, pastAttemptsCount,
         practiceResults, isTimerEnabled, isSubmitting, timeLeft, loading, isSpeaking, showQuestionMap, shuffleMap,
         setCurrentQuestionIdx, setCurrentSubQuestionIdx, setIsTimerEnabled, setShowQuestionMap,
         handleSelectAnswer, handleSelectTrueFalse, handleTextAnswer, handleFillBlankAnswer, handleGroupAnswer,
