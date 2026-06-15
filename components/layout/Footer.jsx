@@ -47,7 +47,7 @@ export default function Footer() {
                         <span>GitHub</span>
                     </a>
                     <span className="text-border">|</span>
-                    <span>v1.5.2</span>
+                    <span>v1.6.0</span>
                 </div>
 
             </div>
