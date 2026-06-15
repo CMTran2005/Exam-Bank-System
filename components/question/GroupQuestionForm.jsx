@@ -14,6 +14,9 @@ import { Plus, Trash2, ChevronDown, ChevronUp, ImagePlus, X, Loader2, Wand2 } fr
 import MultipleChoiceForm from "./MultipleChoiceForm";
 import TrueFalseForm from "./TrueFalseForm";
 import EssayForm from "./EssayForm";
+import FillBlankForm from "./FillBlankForm";
+import MatchingForm from "./MatchingForm";
+import OrderingForm from "./OrderingForm";
 import LatexRenderer from "@/components/shared/LatexRenderer";
 import RichTextarea from "./RichTextarea";
 import RichInput from "./RichInput";
@@ -23,9 +26,13 @@ const BASE_TYPE_LABELS = {
     multiple_choice: "Trắc nghiệm",
     true_false: "Đúng / Sai",
     essay: "Tự luận",
+    fill_blank: "Điền khuyết",
+    matching: "Nối từ",
+    ordering: "Sắp xếp",
 };
 
-export const createDefaultSubQuestion = (baseType) => ({
+export const createDefaultSubQuestion = (baseType) => {
+    const defaultSub = {
     id: Date.now() + Math.random(),
     type: baseType,
     content: "",
@@ -40,7 +47,22 @@ export const createDefaultSubQuestion = (baseType) => ({
     final_answer: "",
     answer_images: [],
     isCollapsed: false,
-});
+    };
+
+    if (baseType === "matching") {
+        defaultSub.pairs = [
+            { id: Date.now().toString(), left: "", right: "" },
+            { id: (Date.now() + 1).toString(), left: "", right: "" }
+        ];
+    } else if (baseType === "ordering") {
+        defaultSub.items = [
+            { id: Date.now().toString(), text: "", correctIndex: 0 },
+            { id: (Date.now() + 1).toString(), text: "", correctIndex: 1 }
+        ];
+    }
+
+    return defaultSub;
+};
 
 /**
  * Component render từng câu hỏi con (Subquestion Item) nằm trong nhóm.
@@ -208,6 +230,17 @@ function SubQuestionItem({ subQ, subIndex, totalSubs, onChangeData, onRemove, cr
                         {subQ.type === "essay" && (
                             <EssayForm questionData={subQ} setQuestionData={onChangeData} />
                         )}
+                        {subQ.type === "fill_blank" && (
+                            <FillBlankForm questionData={subQ} setQuestionData={onChangeData} />
+                        )}
+                        {subQ.type === "matching" && (
+                            <MatchingForm questionData={subQ} setQuestionData={onChangeData} />
+                        )}
+                        {subQ.type === "ordering" && (
+                            <OrderingForm questionData={subQ} setQuestionData={onChangeData} />
+                        )}
+
+
                     </div>
 
                     <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-3 rounded-lg border border-emerald-100 dark:border-emerald-900/50 space-y-4">

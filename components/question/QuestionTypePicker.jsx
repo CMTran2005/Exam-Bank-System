@@ -1,6 +1,6 @@
 "use client";
 
-import { ListChecks, Layers, ToggleLeft, GitBranch, FileText, FilePlus2, X, TextCursorInput, Type } from "lucide-react";
+import { ListChecks, Layers, ToggleLeft, GitBranch, FileText, FilePlus2, X, TextCursorInput, Type, Link, ListOrdered } from "lucide-react";
 
 const TYPES = [
     {
@@ -90,6 +90,50 @@ const TYPES = [
         text: "text-fuchsia-700 dark:text-fuchsia-300",
         hover: "hover:bg-fuchsia-100 dark:hover:bg-fuchsia-900/50",
         iconColor: "text-fuchsia-500 dark:text-fuchsia-400",
+    },
+    {
+        value: "matching",
+        label: "Nối từ",
+        sub: "Đơn",
+        Icon: Link,
+        bg: "bg-cyan-50 dark:bg-cyan-950/40",
+        border: "border-cyan-300 dark:border-cyan-700",
+        text: "text-cyan-700 dark:text-cyan-300",
+        hover: "hover:bg-cyan-100 dark:hover:bg-cyan-900/50",
+        iconColor: "text-cyan-500 dark:text-cyan-400",
+    },
+    {
+        value: "group_matching",
+        label: "Nối từ",
+        sub: "Nhóm",
+        Icon: Link,
+        bg: "bg-sky-50 dark:bg-sky-950/40",
+        border: "border-sky-300 dark:border-sky-700",
+        text: "text-sky-700 dark:text-sky-300",
+        hover: "hover:bg-sky-100 dark:hover:bg-sky-900/50",
+        iconColor: "text-sky-500 dark:text-sky-400",
+    },
+    {
+        value: "ordering",
+        label: "Sắp xếp",
+        sub: "Đơn",
+        Icon: ListOrdered,
+        bg: "bg-indigo-50 dark:bg-indigo-950/40",
+        border: "border-indigo-300 dark:border-indigo-700",
+        text: "text-indigo-700 dark:text-indigo-300",
+        hover: "hover:bg-indigo-100 dark:hover:bg-indigo-900/50",
+        iconColor: "text-indigo-500 dark:text-indigo-400",
+    },
+    {
+        value: "group_ordering",
+        label: "Sắp xếp",
+        sub: "Nhóm",
+        Icon: ListOrdered,
+        bg: "bg-rose-50 dark:bg-rose-950/40",
+        border: "border-rose-300 dark:border-rose-700",
+        text: "text-rose-700 dark:text-rose-300",
+        hover: "hover:bg-rose-100 dark:hover:bg-rose-900/50",
+        iconColor: "text-rose-500 dark:text-rose-400",
     }
 ];
 

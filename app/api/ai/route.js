@@ -43,6 +43,7 @@ Yêu cầu nghiêm ngặt:
    - Trắc nghiệm (multiple_choice): Đáp số ngắn gọn (Ví dụ: "A", "B", "C", "D").
    - Đúng/Sai (true_false): Trả về mảng boolean tương ứng với tính Đúng/Sai của từng mệnh đề (Ví dụ: [true, false, true, true]).
    - Điền khuyết (fill_blank): Trả về mảng chuỗi chứa đáp án cho từng ô trống theo thứ tự (Ví dụ: ["12", "x^2", "vận tốc"]).
+   - Nối từ (matching) / Sắp xếp (ordering): Trả về chuỗi mô tả đáp án đúng hoặc mảng giá trị.
    - Tự luận (essay): Đáp số ngắn gọn cuối cùng (Ví dụ: "x = 2").
 5. Chỉ số đáp án (correct_choice_index): Dành riêng cho trắc nghiệm (multiple_choice). Trả về số nguyên 0, 1, 2, hoặc 3 tương ứng với phương án đúng (0 là A, 1 là B...). Các loại khác trả về null.
 

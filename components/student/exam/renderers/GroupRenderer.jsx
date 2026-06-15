@@ -7,6 +7,9 @@ const LatexRenderer = dynamic(() => import("@/components/shared/LatexRenderer"),
     loading: () => <span className="text-muted-foreground animate-pulse text-xs">đang tải...</span>
 });
 
+import MatchingRenderer from "./MatchingRenderer";
+import OrderingRenderer from "./OrderingRenderer";
+
 export function GroupRenderer({
     currentQuestion,
     currentSubQuestionIdx,
@@ -160,6 +163,26 @@ export function GroupRenderer({
                             );
                         })()}
                     </div>
+                )}
+
+                {subQ.type === "matching" && (
+                    <MatchingRenderer
+                        question={subQ}
+                        answer={subAns}
+                        shuffleMap={shuffleMap}
+                        practiceResult={practiceResults[`${currentQuestion.id}_${subQ.id}`]}
+                        onAnswerChange={(val) => handleGroupAnswer(currentQuestion.id, subQ.id, "matching", val)}
+                    />
+                )}
+
+                {subQ.type === "ordering" && (
+                    <OrderingRenderer
+                        question={subQ}
+                        answer={subAns}
+                        shuffleMap={shuffleMap}
+                        practiceResult={practiceResults[`${currentQuestion.id}_${subQ.id}`]}
+                        onAnswerChange={(val) => handleGroupAnswer(currentQuestion.id, subQ.id, "ordering", val)}
+                    />
                 )}
 
                 {/* Phần Luyện Tập cho Từng Câu Hỏi Con */}

@@ -112,6 +112,30 @@ export async function POST(request) {
                 const finalAns = cleanAndNormalize(qObj.final_answer);
                 const ans = cleanAndNormalize(sAns);
                 if (finalAns && ans === finalAns) isCorrect = true;
+            } else if (qObj.type === 'matching') {
+                if (!sAns || !Array.isArray(sAns)) return 0;
+                let correctCount = 0;
+                qObj.pairs?.forEach((pair, idx) => {
+                    if (sAns[idx] === pair.id) correctCount++;
+                });
+                
+                const basePoints = parseFloat(qObj.points || "1");
+                if (qObj.pairs && qObj.pairs.length > 0) {
+                    earnedPoints = (correctCount / qObj.pairs.length) * basePoints;
+                }
+                return earnedPoints;
+            } else if (qObj.type === 'ordering') {
+                if (!sAns || !Array.isArray(sAns)) return 0;
+                let correctCount = 0;
+                qObj.items?.forEach((item, idx) => {
+                    if (sAns[idx] === item.id) correctCount++;
+                });
+
+                const basePoints = parseFloat(qObj.points || "1");
+                if (qObj.items && qObj.items.length > 0) {
+                    earnedPoints = (correctCount / qObj.items.length) * basePoints;
+                }
+                return earnedPoints;
             } else {
                 const studentLetter = alphabet[sAns];
                 if (studentLetter === qObj.correct_answer) isCorrect = true;

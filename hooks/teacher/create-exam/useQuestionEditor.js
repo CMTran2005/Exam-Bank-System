@@ -10,6 +10,10 @@ export const TYPE_CONFIG = {
     group_fill_blank: { label: "Điền khuyết Nhóm", bg: "bg-fuchsia-100 dark:bg-fuchsia-900/40", text: "text-fuchsia-700 dark:text-fuchsia-300", border: "border-fuchsia-300 dark:border-fuchsia-700" },
     essay: { label: "Tự luận Đơn", bg: "bg-amber-100 dark:bg-amber-900/40", text: "text-amber-700 dark:text-amber-300", border: "border-amber-300 dark:border-amber-700" },
     group_essay: { label: "Tự luận Nhóm", bg: "bg-orange-100 dark:bg-orange-900/40", text: "text-orange-700 dark:text-orange-300", border: "border-orange-300 dark:border-orange-700" },
+    matching: { label: "Nối từ Đơn", bg: "bg-cyan-100 dark:bg-cyan-900/40", text: "text-cyan-700 dark:text-cyan-300", border: "border-cyan-300 dark:border-cyan-700" },
+    group_matching: { label: "Nối từ Nhóm", bg: "bg-sky-100 dark:bg-sky-900/40", text: "text-sky-700 dark:text-sky-300", border: "border-sky-300 dark:border-sky-700" },
+    ordering: { label: "Sắp xếp Đơn", bg: "bg-rose-100 dark:bg-rose-900/40", text: "text-rose-700 dark:text-rose-300", border: "border-rose-300 dark:border-rose-700" },
+    group_ordering: { label: "Sắp xếp Nhóm", bg: "bg-red-100 dark:bg-red-900/40", text: "text-red-700 dark:text-red-300", border: "border-red-300 dark:border-red-700" },
 };
 
 /**
@@ -38,7 +42,7 @@ export const createDefaultQuestion = (type = "multiple_choice") => {
         };
     }
 
-    return {
+    const defaultQuestion = {
         ...base,
         options: ["", "", "", ""],
         options_images: ["", "", "", ""],
@@ -50,6 +54,20 @@ export const createDefaultQuestion = (type = "multiple_choice") => {
         final_answer: "",
         answer_images: [],
     };
+
+    if (baseType === "matching") {
+        defaultQuestion.pairs = [
+            { id: Date.now().toString(), left: "", right: "" },
+            { id: (Date.now() + 1).toString(), left: "", right: "" }
+        ];
+    } else if (baseType === "ordering") {
+        defaultQuestion.items = [
+            { id: Date.now().toString(), text: "", correctIndex: 0 },
+            { id: (Date.now() + 1).toString(), text: "", correctIndex: 1 }
+        ];
+    }
+
+    return defaultQuestion;
 };
 
 /**

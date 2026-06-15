@@ -6,6 +6,8 @@ import { EssayRenderer } from "./renderers/EssayRenderer";
 import { GroupRenderer } from "./renderers/GroupRenderer";
 import { QuestionContentRenderer } from "./renderers/QuestionContentRenderer";
 import { PracticeModeRenderer } from "./renderers/PracticeModeRenderer";
+import MatchingRenderer from "./renderers/MatchingRenderer";
+import OrderingRenderer from "./renderers/OrderingRenderer";
 
 export function QuestionRenderer({
     exam,
@@ -100,6 +102,26 @@ export function QuestionRenderer({
                 answers={answers}
                 handleTextAnswer={handleTextAnswer}
             />
+
+            {currentQuestion.type === "matching" && (
+                <MatchingRenderer
+                    question={currentQuestion}
+                    answer={answers[currentQuestion.id]}
+                    shuffleMap={shuffleMap}
+                    practiceResult={practiceResults[currentQuestion.id]}
+                    onAnswerChange={(val) => handleSelectAnswer(currentQuestion.id, val)}
+                />
+            )}
+
+            {currentQuestion.type === "ordering" && (
+                <OrderingRenderer
+                    question={currentQuestion}
+                    answer={answers[currentQuestion.id]}
+                    shuffleMap={shuffleMap}
+                    practiceResult={practiceResults[currentQuestion.id]}
+                    onAnswerChange={(val) => handleSelectAnswer(currentQuestion.id, val)}
+                />
+            )}
 
             <GroupRenderer
                 currentQuestion={currentQuestion}

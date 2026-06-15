@@ -228,7 +228,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
             const currentQAns = prev[questionId] || {};
             let subAns = currentQAns[subQId];
             
-            if (subType === 'multiple_choice' || subType === 'essay') {
+            if (subType === 'multiple_choice' || subType === 'essay' || subType === 'matching' || subType === 'ordering') {
                 subAns = value;
             } else if (subType === 'true_false' || subType === 'fill_blank') {
                 subAns = subAns || {};
@@ -345,6 +345,20 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
                 const finalAns = cleanAndNormalize(qObj.final_answer || "");
                 const ansStr = cleanAndNormalize(sAns || "");
                 return (finalAns && ansStr === finalAns);
+            } else if (qObj.type === 'matching') {
+                if (!sAns || !Array.isArray(sAns)) return false;
+                let correctCount = 0;
+                qObj.pairs?.forEach((pair, idx) => {
+                    if (sAns[idx] === pair.id) correctCount++;
+                });
+                return (correctCount === qObj.pairs?.length && qObj.pairs?.length > 0);
+            } else if (qObj.type === 'ordering') {
+                if (!sAns || !Array.isArray(sAns)) return false;
+                let correctCount = 0;
+                qObj.items?.forEach((item, idx) => {
+                    if (sAns[idx] === item.id) correctCount++;
+                });
+                return (correctCount === qObj.items?.length && qObj.items?.length > 0);
             } else {
                 const alphabet = ["A", "B", "C", "D", "E", "F"];
                 const actualCorrectIndex = alphabet.indexOf(qObj.correct_answer);
