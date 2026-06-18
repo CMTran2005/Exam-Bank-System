@@ -161,6 +161,33 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
         return () => clearInterval(autoSaveTimerRef.current);
     }, [attempt, answers, isSubmitting]);
 
+    // Báo cáo Live Status
+    useEffect(() => {
+        if (!attempt || isSubmitting) return;
+
+        const reportStatus = () => {
+            examAttemptService.updateLiveStatus(attempt.id, {
+                currentQuestionIndex: currentQuestionIdx,
+                isOnline: navigator.onLine,
+                progress: exam?.questions?.length ? Math.round((Object.keys(answers).length / exam.questions.length) * 100) : 0
+            });
+        };
+
+        // Report on question change
+        reportStatus();
+
+        const handleOnline = () => reportStatus();
+        const handleOffline = () => reportStatus();
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [attempt, isSubmitting, currentQuestionIdx, answers, exam?.questions?.length]);
+
     const executeSubmit = async (aId = attempt?.id, ans = answers, ex = exam) => {
         setIsSubmitting(true);
         clearInterval(timerRef.current);

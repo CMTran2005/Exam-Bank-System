@@ -118,6 +118,12 @@ export function QuestionFilter({ uniqueExamTitles, uniqueTags }) {
                         <SelectItem value="group_true_false">Đúng / Sai Nhóm</SelectItem>
                         <SelectItem value="essay">Tự luận Đơn</SelectItem>
                         <SelectItem value="group_essay">Tự luận Nhóm</SelectItem>
+                        <SelectItem value="fill_blank">Điền khuyết Đơn</SelectItem>
+                        <SelectItem value="group_fill_blank">Điền khuyết Nhóm</SelectItem>
+                        <SelectItem value="matching">Nối từ Đơn</SelectItem>
+                        <SelectItem value="group_matching">Nối từ Nhóm</SelectItem>
+                        <SelectItem value="ordering">Sắp xếp Đơn</SelectItem>
+                        <SelectItem value="group_ordering">Sắp xếp Nhóm</SelectItem>
                     </SelectContent>
                 </Select>
 

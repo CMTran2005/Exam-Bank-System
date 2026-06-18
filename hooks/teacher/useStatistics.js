@@ -38,7 +38,11 @@ export function useStatistics() {
         { type: "Tự luận Đơn", count: 0, pct: 0, color: "bg-amber-600" },
         { type: "Tự luận Nhóm", count: 0, pct: 0, color: "bg-orange-600" },
         { type: "Điền khuyết Đơn", count: 0, pct: 0, color: "bg-pink-600" },
-        { type: "Điền khuyết Nhóm", count: 0, pct: 0, color: "bg-fuchsia-600" }
+        { type: "Điền khuyết Nhóm", count: 0, pct: 0, color: "bg-fuchsia-600" },
+        { type: "Nối từ Đơn", count: 0, pct: 0, color: "bg-cyan-600" },
+        { type: "Nối từ Nhóm", count: 0, pct: 0, color: "bg-sky-600" },
+        { type: "Sắp xếp Đơn", count: 0, pct: 0, color: "bg-rose-600" },
+        { type: "Sắp xếp Nhóm", count: 0, pct: 0, color: "bg-red-600" }
     ]);
 
     const [subjectStats, setSubjectStats] = useState([]);
@@ -129,7 +133,7 @@ export function useStatistics() {
                 ]);
 
                 // Thống kê dạng câu hỏi
-                let singleMC = 0, groupMC = 0, singleTF = 0, groupTF = 0, singleEssay = 0, groupEssay = 0, singleFillBlank = 0, groupFillBlank = 0;
+                let singleMC = 0, groupMC = 0, singleTF = 0, groupTF = 0, singleEssay = 0, groupEssay = 0, singleFillBlank = 0, groupFillBlank = 0, singleMatching = 0, groupMatching = 0, singleOrdering = 0, groupOrdering = 0;
                 questionsList.forEach(q => {
                     if (q.type === "multiple_choice") singleMC++;
                     else if (q.type === "group_multiple_choice") groupMC++;
@@ -139,16 +143,24 @@ export function useStatistics() {
                     else if (q.type === "group_essay") groupEssay++;
                     else if (q.type === "fill_blank") singleFillBlank++;
                     else if (q.type === "group_fill_blank") groupFillBlank++;
+                    else if (q.type === "matching") singleMatching++;
+                    else if (q.type === "group_matching") groupMatching++;
+                    else if (q.type === "ordering") singleOrdering++;
+                    else if (q.type === "group_ordering") groupOrdering++;
                     else {
                         if (q.type?.startsWith("group_")) {
                             if (q.type.includes("choice")) groupMC++;
                             else if (q.type.includes("true")) groupTF++;
                             else if (q.type.includes("blank") || q.type.includes("fill")) groupFillBlank++;
+                            else if (q.type.includes("matching")) groupMatching++;
+                            else if (q.type.includes("ordering")) groupOrdering++;
                             else groupEssay++;
                         } else {
                             if (q.type?.includes("choice")) singleMC++;
                             else if (q.type?.includes("true")) singleTF++;
                             else if (q.type?.includes("blank") || q.type?.includes("fill")) singleFillBlank++;
+                            else if (q.type?.includes("matching")) singleMatching++;
+                            else if (q.type?.includes("ordering")) singleOrdering++;
                             else singleEssay++;
                         }
                     }
@@ -163,7 +175,11 @@ export function useStatistics() {
                     { type: "Tự luận Đơn", count: singleEssay, pct: Math.round((singleEssay / totalTypes) * 100), color: "bg-amber-600" },
                     { type: "Tự luận Nhóm", count: groupEssay, pct: Math.round((groupEssay / totalTypes) * 100), color: "bg-orange-600" },
                     { type: "Điền khuyết Đơn", count: singleFillBlank, pct: Math.round((singleFillBlank / totalTypes) * 100), color: "bg-pink-600" },
-                    { type: "Điền khuyết Nhóm", count: groupFillBlank, pct: Math.round((groupFillBlank / totalTypes) * 100), color: "bg-fuchsia-600" }
+                    { type: "Điền khuyết Nhóm", count: groupFillBlank, pct: Math.round((groupFillBlank / totalTypes) * 100), color: "bg-fuchsia-600" },
+                    { type: "Nối từ Đơn", count: singleMatching, pct: Math.round((singleMatching / totalTypes) * 100), color: "bg-cyan-600" },
+                    { type: "Nối từ Nhóm", count: groupMatching, pct: Math.round((groupMatching / totalTypes) * 100), color: "bg-sky-600" },
+                    { type: "Sắp xếp Đơn", count: singleOrdering, pct: Math.round((singleOrdering / totalTypes) * 100), color: "bg-rose-600" },
+                    { type: "Sắp xếp Nhóm", count: groupOrdering, pct: Math.round((groupOrdering / totalTypes) * 100), color: "bg-red-600" }
                 ]);
 
                 // Độ phủ môn học

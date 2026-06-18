@@ -87,6 +87,23 @@ export const examAttemptService = {
     },
 
     /**
+     * Cập nhật trạng thái trực tiếp của học sinh (Dùng cho Giám sát phòng thi)
+     */
+    async updateLiveStatus(attemptId, payload) {
+        if (!attemptId) return;
+        try {
+            const docRef = doc(db, "exam_attempts", attemptId);
+            await updateDoc(docRef, {
+                ...payload,
+                lastActive: new Date().toISOString()
+            });
+        } catch (error) {
+            // Lỗi nhẹ, không cần throw để tránh làm phiền học sinh
+            console.error("Lỗi updateLiveStatus:", error);
+        }
+    },
+
+    /**
      * Ghi nhận các hành vi có dấu hiệu gian lận trong quá trình thi
      * @param {string} attemptId - ID của phiên làm bài
      * @param {string} cheatReason - Lý do hoặc loại vi phạm (VD: chuyển tab, mất focus)

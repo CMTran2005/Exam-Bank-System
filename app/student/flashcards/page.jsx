@@ -165,6 +165,34 @@ export default function FlashcardsPage() {
                                     ))}
                                 </div>
                             )}
+
+                            {qData.type === 'matching' && qData.pairs && (
+                                <div className="space-y-3">
+                                    {qData.pairs.map((pair, idx) => (
+                                        <div key={idx} className="flex justify-between items-center p-3 rounded-xl border border-border bg-muted/30 gap-4">
+                                            <div className="flex-1 font-medium bg-background p-2 rounded-lg border border-border/60">
+                                                <LatexRenderer content={pair.left} />
+                                            </div>
+                                            <div className="text-muted-foreground font-bold shrink-0">⟷</div>
+                                            <div className="flex-1 font-medium bg-background p-2 rounded-lg border border-border/60">
+                                                <LatexRenderer content={pair.right} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {qData.type === 'ordering' && qData.items && (
+                                <div className="space-y-3">
+                                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-2">Thứ tự đúng:</div>
+                                    {qData.items.map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
+                                            <span className="w-6 h-6 flex items-center justify-center rounded-full bg-primary/20 text-primary font-bold shrink-0 text-xs">{idx + 1}</span>
+                                            <span className="font-medium flex-1"><LatexRenderer content={item.text} /></span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             
                             <div className="mt-8 flex justify-center">
                                 <Button 

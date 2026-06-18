@@ -156,7 +156,7 @@ export default function LeaguesPage() {
                         <h3 className="text-2xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
                             <Trophy className="w-6 h-6 text-yellow-500" /> Đấu Trường Tuần
                         </h3>
-                        <p className="text-slate-500 dark:text-slate-400">Thi đấu với {LEAGUE_GROUP_SIZE} đối thủ cùng hạng. Reset vào 00:00 Thứ Hai.</p>
+                        <p className="text-slate-500 dark:text-slate-400">Reset vào mỗi 00:00 Thứ Hai.</p>
                     </div>
                     {/* Bỏ chú giải cũ vì giờ đã phân chia thành các Box rõ ràng */}
                 </div>
@@ -167,7 +167,7 @@ export default function LeaguesPage() {
                             <Zap className="w-10 h-10 text-muted-foreground" />
                         </div>
                         <h4 className="text-xl font-semibold text-foreground mb-2">Bạn chưa được phân bảng</h4>
-                        <p className="text-muted-foreground">Hệ thống phân bảng động để chống "Bảng Ma".<br />Hãy kiếm EXP đầu tiên trong tuần này để tham chiến!</p>
+                        <p className="text-muted-foreground">Hãy kiếm EXP đầu tiên trong tuần này để tham chiến!</p>
                     </div>
                 ) : (
                     <div className="space-y-6">
@@ -187,7 +187,7 @@ export default function LeaguesPage() {
                             const renderRow = (rank, member, isMe, borderLeftClass, textStyle, icon, isLast) => {
                                 const borderBottomClass = !isLast ? "border-b border-slate-100 dark:border-slate-700/50" : "";
                                 const rowBgClass = isMe ? 'bg-indigo-50 dark:bg-indigo-500/10' : 'bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50';
-                                
+
                                 return (
                                     <div key={rank} className={`flex items-center px-4 sm:px-6 py-4 transition-all ${borderBottomClass} ${borderLeftClass} ${rowBgClass}`}>
                                         <div className="w-12 text-center flex flex-col items-center">
@@ -213,7 +213,7 @@ export default function LeaguesPage() {
                                                     <div>
                                                         <div className={`font-bold text-base flex items-center gap-2 ${isMe ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-800 dark:text-slate-200'}`}>
                                                             {member.displayName} {isMe && <span className="text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 px-2 py-0.5 rounded-md uppercase">Bạn</span>}
-                                                            
+
                                                             {/* Hiển thị huy hiệu (Showcase) */}
                                                             {member.showcasedBadges && member.showcasedBadges.length > 0 && (
                                                                 <div className="flex items-center gap-1 ml-1">

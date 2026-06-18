@@ -121,6 +121,34 @@ export function QuestionCard({ q, toggleCollapse, handleDelete }) {
                         </div>
                     )}
 
+                    {q.type?.includes("matching") && q.pairs && (
+                        <div className="space-y-2 mt-2">
+                            {q.pairs.map((pair, i) => (
+                                <div key={i} className="flex justify-between items-center p-2.5 rounded-xl border border-border bg-background text-xs gap-4">
+                                    <div className="flex-1 font-medium bg-cyan-50/50 dark:bg-cyan-950/20 p-2 rounded-lg border border-cyan-100 dark:border-cyan-900/50">
+                                        <LatexRenderer text={pair.left} />
+                                    </div>
+                                    <div className="text-cyan-600 dark:text-cyan-400 font-bold shrink-0">⟷</div>
+                                    <div className="flex-1 font-medium bg-cyan-50/50 dark:bg-cyan-950/20 p-2 rounded-lg border border-cyan-100 dark:border-cyan-900/50">
+                                        <LatexRenderer text={pair.right} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {q.type?.includes("ordering") && q.items && (
+                        <div className="space-y-2 mt-2">
+                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Thứ tự đúng:</div>
+                            {q.items.map((item, i) => (
+                                <div key={i} className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-background text-xs">
+                                    <span className="w-5 h-5 flex items-center justify-center rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 font-bold shrink-0">{i + 1}</span>
+                                    <span className="font-medium flex-1"><LatexRenderer text={item.text} /></span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {isGroup && q.subQuestions && (
                         <div className="space-y-4 border-l-2 border-primary/20 pl-4 mt-4">
                             <p className="text-xs font-bold text-primary uppercase tracking-wider select-none">Các câu con của nhóm:</p>
@@ -161,6 +189,34 @@ export function QuestionCard({ q, toggleCollapse, handleDelete }) {
                                                     <span className={`px-1.5 py-0.5 rounded font-bold uppercase tracking-wider text-[8px] ${st.result === "Đ" || st.correct === true ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300"}`}>
                                                         {st.result === "Đ" || st.correct === true ? "Đúng" : "Sai"}
                                                     </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {subQ.type?.includes("matching") && subQ.pairs && (
+                                        <div className="space-y-1.5 mt-1.5">
+                                            {subQ.pairs.map((pair, i) => (
+                                                <div key={i} className="flex justify-between items-center p-2 rounded-lg border border-border bg-background text-[11px] gap-2">
+                                                    <div className="flex-1 font-medium bg-cyan-50/50 dark:bg-cyan-950/20 p-1.5 rounded border border-cyan-100 dark:border-cyan-900/50">
+                                                        <LatexRenderer text={pair.left} />
+                                                    </div>
+                                                    <div className="text-cyan-600 dark:text-cyan-400 font-bold shrink-0 text-[10px]">⟷</div>
+                                                    <div className="flex-1 font-medium bg-cyan-50/50 dark:bg-cyan-950/20 p-1.5 rounded border border-cyan-100 dark:border-cyan-900/50">
+                                                        <LatexRenderer text={pair.right} />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {subQ.type?.includes("ordering") && subQ.items && (
+                                        <div className="space-y-1.5 mt-1.5">
+                                            <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest block mb-0.5">Thứ tự đúng:</div>
+                                            {subQ.items.map((item, i) => (
+                                                <div key={i} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-background text-[11px]">
+                                                    <span className="w-4 h-4 flex items-center justify-center rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 font-bold shrink-0 text-[9px]">{i + 1}</span>
+                                                    <span className="font-medium flex-1"><LatexRenderer text={item.text} /></span>
                                                 </div>
                                             ))}
                                         </div>

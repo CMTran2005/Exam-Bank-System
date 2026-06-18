@@ -86,6 +86,9 @@ export function AiAssistantCard() {
                                     <SelectItem value="multiple_choice">Trắc nghiệm Đơn</SelectItem>
                                     <SelectItem value="true_false">Đúng / Sai Đơn</SelectItem>
                                     <SelectItem value="essay">Tự luận Đơn</SelectItem>
+                                    <SelectItem value="fill_blank">Điền khuyết Đơn</SelectItem>
+                                    <SelectItem value="matching">Nối từ Đơn</SelectItem>
+                                    <SelectItem value="ordering">Sắp xếp Đơn</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

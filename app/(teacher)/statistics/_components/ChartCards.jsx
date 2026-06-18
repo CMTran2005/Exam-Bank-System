@@ -106,7 +106,7 @@ export function DifficultyChartCard({ totalQuestions, difficultyStats, donutSegm
 
             {/* Central Donut Chart Section */}
             <div className="flex-1 flex items-center justify-center py-6 min-h-[220px]">
-                <div className="relative w-44 h-44 shrink-0 flex items-center justify-center z-10 bg-background/80 dark:bg-background/90 rounded-full p-2 border border-border/60 shadow-md">
+                <div className="relative w-64 h-64 shrink-0 flex items-center justify-center z-10 bg-background/80 dark:bg-background/90 rounded-full p-2 border border-border/60 shadow-md">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                         {totalQuestions === 0 && (
                             <circle cx="50" cy="50" r="40" fill="transparent" stroke="currentColor" className="text-muted-foreground/20" strokeWidth="10" />

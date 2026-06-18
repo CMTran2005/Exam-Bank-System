@@ -266,6 +266,36 @@ export default function ExamResultPage({ params }) {
                         wrong++;
                     }
                 }
+            } else if (type === 'matching') {
+                if (!sAns || !Array.isArray(sAns)) {
+                    skipped++;
+                } else {
+                    let matchCorrectCount = 0;
+                    subQ.pairs?.forEach((pair, idx) => {
+                        if (sAns[idx] === pair.id) matchCorrectCount++;
+                    });
+                    if (matchCorrectCount === subQ.pairs?.length && subQ.pairs?.length > 0) {
+                        correct++;
+                    } else {
+                        wrong++;
+                    }
+                    pEarned = subQ.pairs?.length > 0 ? (matchCorrectCount / subQ.pairs.length) * pPossible : 0;
+                }
+            } else if (type === 'ordering') {
+                if (!sAns || !Array.isArray(sAns)) {
+                    skipped++;
+                } else {
+                    let orderCorrectCount = 0;
+                    subQ.items?.forEach((item, idx) => {
+                        if (sAns[idx] === item.id) orderCorrectCount++;
+                    });
+                    if (orderCorrectCount === subQ.items?.length && subQ.items?.length > 0) {
+                        correct++;
+                    } else {
+                        wrong++;
+                    }
+                    pEarned = subQ.items?.length > 0 ? (orderCorrectCount / subQ.items.length) * pPossible : 0;
+                }
             } else {
                 const actualCorrectIndex = alphabet.indexOf(subQ.correct_answer);
                 if (sAns === undefined) {
@@ -452,6 +482,20 @@ export default function ExamResultPage({ params }) {
                                     const finalAns = cleanAndNormalize(subQ.final_answer);
                                     const ansVal = cleanAndNormalize(sAns);
                                     c = !s && finalAns && ansVal === finalAns;
+                                } else if (subQ.type === 'matching') {
+                                    s = !sAns || !Array.isArray(sAns);
+                                    let matchCorrectCount = 0;
+                                    subQ.pairs?.forEach((pair, idx) => {
+                                        if (sAns && sAns[idx] === pair.id) matchCorrectCount++;
+                                    });
+                                    c = !s && matchCorrectCount === subQ.pairs?.length;
+                                } else if (subQ.type === 'ordering') {
+                                    s = !sAns || !Array.isArray(sAns);
+                                    let orderCorrectCount = 0;
+                                    subQ.items?.forEach((item, idx) => {
+                                        if (sAns && sAns[idx] === item.id) orderCorrectCount++;
+                                    });
+                                    c = !s && orderCorrectCount === subQ.items?.length;
                                 } else {
                                     const aIdx = alphabet.indexOf(subQ.correct_answer);
                                     s = sAns === undefined;
@@ -672,6 +716,93 @@ export default function ExamResultPage({ params }) {
                                                     )}
                                                 </div>
                                             )}
+
+                                            {q.type === 'matching' && (
+                                                <div className="space-y-3 mt-4">
+                                                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-2">Ghép nối của bạn:</div>
+                                                    {q.pairs?.map((pair, pIdx) => {
+                                                        const sChoice = studentAns && Array.isArray(studentAns) ? studentAns[pIdx] : null;
+                                                        const isPairSkipped = !sChoice;
+                                                        const isPairCorrect = sChoice === pair.id;
+                                                        const rightSide = isPairSkipped ? null : q.pairs.find(p => p.id === sChoice);
+                                                        
+                                                        let borderStyle = "border-border bg-muted/30";
+                                                        if (!isPairSkipped) {
+                                                            borderStyle = isPairCorrect ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-red-500 bg-red-50/50 dark:bg-red-950/20";
+                                                        }
+
+                                                        return (
+                                                            <div key={pIdx} className={`p-4 rounded-xl border-2 flex flex-col sm:flex-row justify-between items-center gap-4 ${borderStyle}`}>
+                                                                <div className="flex-1 font-medium bg-background p-3 rounded-lg border border-border/60 shadow-sm w-full">
+                                                                    <LatexRenderer content={pair.left} />
+                                                                </div>
+                                                                <div className="text-muted-foreground font-bold shrink-0">⟷</div>
+                                                                <div className="flex-1 font-medium bg-background p-3 rounded-lg border border-border/60 shadow-sm w-full">
+                                                                    {isPairSkipped ? (
+                                                                        <span className="italic text-muted-foreground">Chưa nối</span>
+                                                                    ) : (
+                                                                        <LatexRenderer content={rightSide?.right} />
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {!isCorrect && (
+                                                        <div className="mt-4 p-4 rounded-xl border-2 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/20">
+                                                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block mb-2">Đáp án chuẩn:</span>
+                                                            <div className="space-y-2">
+                                                                {q.pairs?.map((pair, pIdx) => (
+                                                                    <div key={pIdx} className="flex justify-between items-center gap-4 p-2 bg-background rounded-lg border border-emerald-100 dark:border-emerald-900/50">
+                                                                        <div className="flex-1 text-sm"><LatexRenderer content={pair.left} /></div>
+                                                                        <div className="text-emerald-500 font-bold text-xs shrink-0">⟷</div>
+                                                                        <div className="flex-1 text-sm text-emerald-700 dark:text-emerald-300 font-medium"><LatexRenderer content={pair.right} /></div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {q.type === 'ordering' && (
+                                                <div className="space-y-3 mt-4">
+                                                    <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-2">Thứ tự của bạn:</div>
+                                                    <div className="space-y-2">
+                                                        {studentAns && Array.isArray(studentAns) && studentAns.length > 0 ? (
+                                                            studentAns.map((itemId, oIdx) => {
+                                                                const item = q.items?.find(i => i.id === itemId);
+                                                                const isItemCorrect = q.items?.[oIdx]?.id === itemId;
+                                                                let style = isItemCorrect ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-red-500 bg-red-50/50 dark:bg-red-950/20";
+                                                                return (
+                                                                    <div key={oIdx} className={`p-3 rounded-xl border-2 flex items-center gap-3 ${style}`}>
+                                                                        <span className={`w-6 h-6 flex items-center justify-center rounded-full font-bold shrink-0 text-xs text-white ${isItemCorrect ? "bg-emerald-500" : "bg-red-500"}`}>
+                                                                            {oIdx + 1}
+                                                                        </span>
+                                                                        <span className="font-medium flex-1 bg-background p-2 rounded-md border border-border/50 shadow-sm"><LatexRenderer content={item?.text} /></span>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        ) : (
+                                                            <div className="p-4 rounded-xl border-2 border-border bg-muted/30 italic text-muted-foreground text-center">Chưa sắp xếp</div>
+                                                        )}
+                                                    </div>
+                                                    {!isCorrect && (
+                                                        <div className="mt-4 p-4 rounded-xl border-2 border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/20">
+                                                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block mb-2">Thứ tự đúng:</span>
+                                                            <div className="space-y-2">
+                                                                {q.items?.map((item, oIdx) => (
+                                                                    <div key={oIdx} className="flex items-center gap-3 p-2 bg-background rounded-lg border border-emerald-100 dark:border-emerald-900/50">
+                                                                        <span className="w-5 h-5 flex items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 font-bold shrink-0 text-xs">
+                                                                            {oIdx + 1}
+                                                                        </span>
+                                                                        <span className="font-medium flex-1 text-sm text-emerald-800 dark:text-emerald-200"><LatexRenderer content={item.text} /></span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                             
                                             {q.type?.startsWith('group_') && (
                                                 <div className="mt-6 space-y-6">
@@ -809,6 +940,83 @@ export default function ExamResultPage({ params }) {
                                                                             <div className="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/20">
                                                                                 <span className="font-bold text-emerald-600 dark:text-emerald-400 mb-1 block text-xs uppercase">Đáp án:</span>
                                                                                 <div className="text-emerald-800 dark:text-emerald-200"><LatexRenderer content={subQ.final_answer} inline={true} /></div>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
+                                                                {subQ.type === 'matching' && (
+                                                                    <div className="space-y-2 mt-3">
+                                                                        {subQ.pairs?.map((pair, pIdx) => {
+                                                                            const sChoice = sAns && Array.isArray(sAns) ? sAns[pIdx] : null;
+                                                                            const isPairSkipped = !sChoice;
+                                                                            const isPairCorrect = sChoice === pair.id;
+                                                                            const rightSide = isPairSkipped ? null : subQ.pairs.find(p => p.id === sChoice);
+                                                                            
+                                                                            let borderStyle = "border-border/50";
+                                                                            if (!isPairSkipped) {
+                                                                                borderStyle = isPairCorrect ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-red-500 bg-red-50/50 dark:bg-red-950/20";
+                                                                            }
+
+                                                                            return (
+                                                                                <div key={pIdx} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2 rounded-lg border text-sm ${borderStyle}`}>
+                                                                                    <div className="flex-1 font-medium"><LatexRenderer content={pair.left} /></div>
+                                                                                    <div className="text-muted-foreground font-bold shrink-0 text-xs">⟷</div>
+                                                                                    <div className="flex-1">
+                                                                                        {isPairSkipped ? (
+                                                                                            <span className="italic text-muted-foreground text-xs">Chưa nối</span>
+                                                                                        ) : (
+                                                                                            <LatexRenderer content={rightSide?.right} />
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                        {!isSubCorrect && (
+                                                                            <div className="mt-2 p-2 rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/20 text-xs">
+                                                                                <span className="font-bold text-emerald-600 dark:text-emerald-400 block mb-1">Đáp án:</span>
+                                                                                {subQ.pairs?.map((pair, pIdx) => (
+                                                                                    <div key={pIdx} className="flex items-center gap-2 text-emerald-800 dark:text-emerald-200 mb-1 last:mb-0">
+                                                                                        <div className="flex-1"><LatexRenderer content={pair.left} /></div>
+                                                                                        <div className="shrink-0">⟷</div>
+                                                                                        <div className="flex-1 font-medium"><LatexRenderer content={pair.right} /></div>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
+                                                                {subQ.type === 'ordering' && (
+                                                                    <div className="space-y-2 mt-3">
+                                                                        {sAns && Array.isArray(sAns) && sAns.length > 0 ? (
+                                                                            sAns.map((itemId, oIdx) => {
+                                                                                const item = subQ.items?.find(i => i.id === itemId);
+                                                                                const isItemCorrect = subQ.items?.[oIdx]?.id === itemId;
+                                                                                let style = isItemCorrect ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20" : "border-red-500 bg-red-50/50 dark:bg-red-950/20";
+                                                                                return (
+                                                                                    <div key={oIdx} className={`p-2 rounded-lg border flex items-center gap-2 text-sm ${style}`}>
+                                                                                        <span className={`w-5 h-5 flex items-center justify-center rounded font-bold shrink-0 text-[10px] text-white ${isItemCorrect ? "bg-emerald-500" : "bg-red-500"}`}>
+                                                                                            {oIdx + 1}
+                                                                                        </span>
+                                                                                        <span className="font-medium flex-1"><LatexRenderer content={item?.text} /></span>
+                                                                                    </div>
+                                                                                );
+                                                                            })
+                                                                        ) : (
+                                                                            <div className="p-2 rounded-lg border border-border/50 italic text-muted-foreground text-xs text-center">Chưa sắp xếp</div>
+                                                                        )}
+                                                                        {!isSubCorrect && (
+                                                                            <div className="mt-2 p-2 rounded-lg border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/20 text-xs">
+                                                                                <span className="font-bold text-emerald-600 dark:text-emerald-400 block mb-1">Thứ tự đúng:</span>
+                                                                                {subQ.items?.map((item, oIdx) => (
+                                                                                    <div key={oIdx} className="flex items-center gap-2 text-emerald-800 dark:text-emerald-200 mb-1 last:mb-0">
+                                                                                        <span className="w-4 h-4 flex items-center justify-center rounded bg-emerald-200 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100 font-bold shrink-0 text-[10px]">
+                                                                                            {oIdx + 1}
+                                                                                        </span>
+                                                                                        <span className="font-medium flex-1"><LatexRenderer content={item.text} /></span>
+                                                                                    </div>
+                                                                                ))}
                                                                             </div>
                                                                         )}
                                                                     </div>

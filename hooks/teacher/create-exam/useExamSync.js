@@ -161,7 +161,8 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
         const initRealtimeSession = async () => {
             if (examId && currentUser) {
                 setEditId(examId);
-                isCodeManuallyEdited.current = true;
+                // CHỈ set isCodeManuallyEdited = true khi load data của đề thi CŨ
+                // isCodeManuallyEdited.current = true;
                 
                 examCollaborationService.joinSession(examId, currentUser);
                 
@@ -248,7 +249,11 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
             
             // Đánh dấu là đã chỉnh sửa mã thủ công
             if (field === 'code') {
-                isCodeManuallyEdited.current = true;
+                if (value.trim() === "") {
+                    isCodeManuallyEdited.current = false;
+                } else {
+                    isCodeManuallyEdited.current = true;
+                }
                 updated.code = value.toLowerCase().replace(/[^a-z0-9-]/g, "");
             }
             
@@ -276,6 +281,9 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
             const docSnap = await getDoc(doc(db, "exams", finalId));
             if (docSnap.exists()) {
                 existingExam = docSnap.data();
+                if (existingExam.uid && currentUser?.uid && existingExam.uid !== currentUser.uid) {
+                    return toast.error("Mã đề thi (Slug ID) này đã được giáo viên khác sử dụng. Vui lòng sửa lại mã đề thi cho không bị trùng lặp!");
+                }
             }
         } catch (e) {}
 

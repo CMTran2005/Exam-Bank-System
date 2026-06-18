@@ -48,6 +48,33 @@ export function useQuestions() {
                 };
             });
 
+            const getTypeName = (type) => {
+                switch (type) {
+                    case "multiple_choice": return "Trắc nghiệm Đơn";
+                    case "group_multiple_choice": return "Trắc nghiệm Nhóm";
+                    case "true_false": return "Đúng / Sai Đơn";
+                    case "group_true_false": return "Đúng / Sai Nhóm";
+                    case "essay": return "Tự luận Đơn";
+                    case "group_essay": return "Tự luận Nhóm";
+                    case "fill_blank": return "Điền khuyết Đơn";
+                    case "group_fill_blank": return "Điền khuyết Nhóm";
+                    case "matching": return "Nối từ Đơn";
+                    case "group_matching": return "Nối từ Nhóm";
+                    case "ordering": return "Sắp xếp Đơn";
+                    case "group_ordering": return "Sắp xếp Nhóm";
+                    default: return "Chưa phân loại";
+                }
+            };
+
+            const getTypeClass = (type) => {
+                if (type?.includes("multiple_choice")) return "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700";
+                if (type?.includes("true_false")) return "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
+                if (type?.includes("fill_blank")) return "bg-pink-100 dark:bg-pink-900/40 text-pink-700 dark:text-pink-300 border-pink-300 dark:border-pink-700";
+                if (type?.includes("matching")) return "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700";
+                if (type?.includes("ordering")) return "bg-rose-100 dark:bg-rose-900/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700";
+                return "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700";
+            };
+
             // Thu thập dữ liệu từ bộ sưu tập câu hỏi độc lập (kiến trúc mới)
             const qQuery = query(collection(db, "questions"), where("uid", "==", currentUser.uid));
             const qSnap = await getDocs(qQuery);
@@ -63,16 +90,8 @@ export function useQuestions() {
                     grade: meta.grade || "",
                     subject: meta.subject || "",
                     isCollapsed: true,
-                    typeName: qData.type === "multiple_choice" ? "Trắc nghiệm Đơn"
-                        : qData.type === "group_multiple_choice" ? "Trắc nghiệm Nhóm"
-                            : qData.type === "true_false" ? "Đúng / Sai Đơn"
-                                : qData.type === "group_true_false" ? "Đúng / Sai Nhóm"
-                                    : qData.type === "essay" ? "Tự luận Đơn" : "Tự luận Nhóm",
-                    typeClass: qData.type?.includes("multiple_choice")
-                        ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700"
-                        : qData.type?.includes("true_false")
-                            ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700"
-                            : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700"
+                    typeName: getTypeName(qData.type),
+                    typeClass: getTypeClass(qData.type)
                 });
             });
 
@@ -91,16 +110,8 @@ export function useQuestions() {
                             grade: data.grade || "",
                             subject: data.subject || "",
                             isCollapsed: true,
-                            typeName: q.type === "multiple_choice" ? "Trắc nghiệm Đơn"
-                                : q.type === "group_multiple_choice" ? "Trắc nghiệm Nhóm"
-                                    : q.type === "true_false" ? "Đúng / Sai Đơn"
-                                        : q.type === "group_true_false" ? "Đúng / Sai Nhóm"
-                                            : q.type === "essay" ? "Tự luận Đơn" : "Tự luận Nhóm",
-                            typeClass: q.type?.includes("multiple_choice")
-                                ? "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700"
-                                : q.type?.includes("true_false")
-                                    ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700"
-                                    : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700"
+                            typeName: getTypeName(q.type),
+                            typeClass: getTypeClass(q.type)
                         });
                     });
                 }
