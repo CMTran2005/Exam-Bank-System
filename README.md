@@ -29,40 +29,46 @@
 
 ### Tính Năng Nổi Bật
 
-#### 1. Cổng Giáo Viên (Teacher Portal) & Trình Soạn Thảo Đề Thi
-- **Soạn thảo Thời gian thực (Real-time Collaboration)**: Hỗ trợ nhiều giáo viên cùng lúc tham gia biên soạn chung một đề thi, hiển thị trạng thái trực tuyến của thành viên.
-- **Quản lý Câu hỏi Đa Dạng**: Hỗ trợ Trắc nghiệm (Multiple Choice A/B/C/D), Đúng/Sai (True/False với mệnh đề động), Điền khuyết (Fill in the blanks), và Tự luận (Essay). Gồm các câu hỏi đơn lẻ và Grouped Questions.
-- **AI Tự Động Hóa (AI Builder & OCR)**: 
+#### 1. Cổng Giáo Viên & Trình Soạn Thảo Đề Thi
+- **Soạn thảo Thời gian thực**: Hỗ trợ nhiều giáo viên cùng lúc tham gia biên soạn chung một đề thi, hiển thị trạng thái trực tuyến của thành viên.
+- **Quản lý Câu hỏi Đa Dạng**: Hỗ trợ Trắc nghiệm, Đúng/Sai, Điền khuyết, Tự luận, Ghép đôi và Sắp xếp. Gồm các câu hỏi đơn lẻ và Câu hỏi nhóm.
+- **AI Tự Động Hóa**: 
   - *AI Prompt*: Khởi tạo câu hỏi tự động từ yêu cầu văn bản của giáo viên.
-  - *AI OCR*: Dán hình ảnh trực tiếp -> Gemini 2.5 Flash phân tích cấu trúc -> Tự động bóc tách thành nhiều câu hỏi và điền vào form.
-- **Toán Học Trực Quan**: Tích hợp MathLive để gõ công thức như Word và KaTeX để hiển thị chuẩn xác (Rendering).
-- **Thư Viện & Thùng Rác**: Phân loại theo thư mục, lưu trữ an toàn với cơ chế Soft Delete (Xóa mềm có thể khôi phục) hoặc Hard Delete (Xóa vĩnh viễn).
-- **Cộng Đồng Chia Sẻ (Community)**: Chia sẻ đề thi công khai lên thư viện chung. Giáo viên khác có thể tìm kiếm, lọc theo khối lớp/môn học và Nhân bản (Clone) vào tài khoản của mình chỉ với một lần nhấp.
-- **Live Quiz (Đấu Trường Trực Tiếp)**: Tổ chức thi trực tiếp theo thời gian thực (Real-time). Hỗ trợ Lobby (Phòng chờ), Leaderboard, Podium vinh danh và hiệu ứng âm thanh sống động. Được thiết kế theo kiến trúc Component chuyên biệt cho hiệu năng cao.
+  - *AI OCR*: Dán hình ảnh -> Gemini 2.5 Flash phân tích -> Tự động bóc tách thành nhiều câu hỏi và điền vào form.
+- **Toán Học Trực Quan**: Tích hợp MathLive để gõ công thức như Word và KaTeX để hiển thị chuẩn xác.
+- **Quản lý Lớp học & Thống kê**: Theo dõi tiến độ của học sinh, xem xét dấu hiệu gian lận, và phân tích chi tiết hiệu suất từng lớp.
+- **Thư Viện & Thùng Rác**: Phân loại theo thư mục và môn học, lưu trữ an toàn với cơ chế Xóa mềm có thể khôi phục hoặc Xóa vĩnh viễn.
+- **Cộng Đồng Chia Sẻ**: Chia sẻ đề thi công khai lên thư viện chung. Giáo viên khác có thể tìm kiếm, lọc theo khối lớp/môn học và Nhân bản (Clone) vào tài khoản của mình chỉ với một lần nhấp.
+- **Live Quiz**: Tổ chức thi trực tiếp theo thời gian thực. Hỗ trợ Sảnh chờ, Bảng xếp hạng, Vinh danh và hiệu ứng âm thanh sống động.
 
-#### 2. Cổng Học Sinh (Student Portal) & Thi Trực Tuyến
-- **Giao diện làm bài chuyên nghiệp (Modular UI)**: Thiết kế phân tách rõ ràng Header (Bộ đếm giờ), Sidebar (Menu điều hướng câu hỏi), và Question Renderer. Tích hợp đọc câu hỏi (Text-to-Speech) mượt mà.
-- **Hệ Thống Anti-Cheat Tiên Tiến (Chống Gian Lận)**: 
-  - Phát hiện hành vi chuyển Tab (Visibility API) hoặc mất Focus cửa sổ.
+#### 2. Cổng Học Sinh & Thi Trực Tuyến
+- **Giao diện làm bài chuyên nghiệp**: Thiết kế phân tách rõ ràng Header (Bộ đếm giờ), Sidebar (Menu điều hướng câu hỏi), và Question Renderer. Tích hợp đọc câu hỏi (Text-to-Speech).
+- **Hệ Thống Anti-Cheat Tiên Tiến**: 
+  - Phát hiện hành vi chuyển Tab hoặc mất Focus cửa sổ.
   - Vô hiệu hóa phím tắt hệ thống: F12, Sao chép (Ctrl+C), Dán (Ctrl+V), In ấn (Ctrl+P), Xem mã nguồn (Ctrl+U).
   - Sử dụng MutationObserver để tự động phát hiện và ẩn/vô hiệu hóa các tiện ích mở rộng (Extensions) cố tình can thiệp vào DOM (như Sider, Grammarly, v.v.).
-- **Luyện Tập Tự Do (Practice Mode)**: Cho phép học sinh làm lại các đề thi không giới hạn số lần để rèn luyện kỹ năng, có lưu lại số lần đã thử (Attempts).
-- **Gamification (Trò chơi hóa)**: Học sinh kiếm điểm kinh nghiệm, nhận huy hiệu thành tích (Đồng, Bạc, Vàng, Kim Cương...) và đua top trên Bảng xếp hạng (Leaderboard). Bao gồm các hiệu ứng Confetti khi đạt được huy hiệu.
+- **Luyện Tập Tự Do**: Cho phép học sinh làm lại các đề thi không giới hạn số lần để rèn luyện kỹ năng, có lưu lại số lần đã thử (Attempts).
+- **Sổ Tay Lỗi Sai**: Tự động tổng hợp và phân tích những câu hỏi học sinh làm sai, giúp dễ dàng ôn tập và khắc phục điểm yếu.
+- **Tham gia Live Quiz**: Học sinh nhập mã PIN để gia nhập đấu trường trực tiếp do giáo viên tổ chức, đua top điểm số realtime.
+- **Gamification & Giải đấu**: Học sinh kiếm điểm kinh nghiệm (XP), nhận huy hiệu thành tích (Đồng, Bạc, Vàng, Kim Cương...) và cạnh tranh vị trí trên Bảng xếp hạng Hệ thống Giải đấu (Leagues). Bao gồm các hiệu ứng Confetti động.
 
-#### 3. Hệ Thống Học Tập Flashcards (Spaced Repetition)
-- Tự động trích xuất các câu hỏi học sinh làm sai trong quá trình thi để chuyển thành Flashcards.
-- Tích hợp **Thuật toán SM-2 (SuperMemo-2)**: Điều chỉnh thời gian ôn tập lại (Interval) dựa trên đánh giá độ khó của người học, giúp tối ưu hóa trí nhớ dài hạn.
+#### 3. Hệ Thống Học Tập Flashcards
+- Tự động trích xuất các câu hỏi từ sổ tay lỗi sai để chuyển thành Flashcards.
+- Tích hợp **Thuật toán SM-2**: Điều chỉnh thời gian ôn tập lại (Interval) dựa trên đánh giá độ khó của người học, giúp tối ưu hóa trí nhớ dài hạn.
 
-#### 4. Cổng Phụ Huynh (Parent Portal)
+#### 4. Cổng Phụ Huynh
 - **Theo Dõi Con Em**: Phụ huynh có thể nhập Mã học sinh hoặc Email để liên kết tài khoản con em vào bảng điều khiển.
-- **Báo Cáo Học Tập (Analytics)**: Cấu trúc lưới (Grid) kết hợp Biểu đồ Năng lực học tập (Thi thật & Luyện tập) và Tần suất làm bài giúp phụ huynh dễ dàng đánh giá đa chiều tiến độ của con em một cách trực quan.
+- **Báo Cáo Học Tập**: Cấu trúc lưới (Grid) kết hợp Biểu đồ Năng lực học tập (Thi thật & Luyện tập) và Tần suất làm bài giúp phụ huynh dễ dàng đánh giá đa chiều tiến độ của con em một cách trực quan.
 
-#### 5. Bảng Điều Khiển (Dashboard) & Thống Kê
+#### 5. Cổng Quản Trị
+- Quản lý toàn bộ hệ thống Người dùng (Users). Kiểm soát truy cập, thống kê và phân quyền.
+
+#### 6. Bảng Điều Khiển & Thống Kê
 - **Thống kê chi tiết câu hỏi nâng cao**: Bảng phân tích với khả năng đóng/mở hàng (Collapsible Rows), tích hợp biểu đồ tỷ lệ lựa chọn cho mỗi đáp án trực quan. Hệ thống tự động ẩn cột thông minh dựa trên cấu trúc đề thi.
 - Theo dõi sự tăng trưởng số lượng câu hỏi và đề thi theo từng tháng bằng đồ thị hiện đại.
 - Đo lường hiệu suất của hệ thống AI (Tỷ lệ chính xác OCR Confidence Rate, Độ trễ Latency).
 
-#### 6. Kiến Trúc Bảo Mật & Hệ Thống
+#### 7. Kiến Trúc Bảo Mật & Hệ Thống
 - **Server-Side Grading**: Toàn bộ logic chấm điểm, đối chiếu đáp án được chuyển từ trình duyệt của học sinh lên Server API (`/api/exams/submit`). Sử dụng **Firebase Admin SDK** để ghi kết quả chấm điểm an toàn.
 - **Firestore Security Rules**: Áp dụng các quy tắc bảo mật nghiêm ngặt (`firestore.rules`), chỉ cho phép User đọc dữ liệu thuộc quyền sở hữu của mình, chặn ghi dữ liệu từ phía client.
 - **Đồng Bộ Dữ Liệu & Xác Thực**: Tự động đồng bộ hóa thông tin hồ sơ chuyên sâu. Giải quyết triệt để lỗi treo UI khi xử lý xác thực Google OAuth.
@@ -159,6 +165,13 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 # Firebase Admin SDK (For Server-Side Actions)
 FIREBASE_CLIENT_EMAIL=your_firebase_client_email
 FIREBASE_PRIVATE_KEY="your_firebase_private_key"
+
+# Cấu Hình Lưu Trữ Ảnh Cloudinary
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET=your_cloudinary_upload_preset
+
+# Cấu Hình Google Cloud Vision API (Cho Hybrid OCR)
+GOOGLE_CLOUD_API_KEY=[GCP_API_KEY]
 ```
 
 #### 4. Chạy Development Server
@@ -196,13 +209,13 @@ npm start                # Chạy production server
 npm run lint             # Kiểm tra code quality
 ```
 
-### Best Practices (Tiêu Chuẩn Dự Án)
+### Tiêu Chuẩn Dự Án
 
-- **Tách biệt Logic (Separation of Concerns)**: Custom Hooks được chia nhỏ và đóng gói business logic riêng biệt cho từng loại người dùng (Teacher, Student, Parent).
-- **Bảo mật (Security)**: Xử lý điểm số thông qua Server Actions / API Route kết hợp với Firebase Admin SDK và Firestore Security Rules.
-- **Tài liệu hóa (Documentation)**: Áp dụng chuẩn ghi chú JSDoc (`/** */`) trên toàn bộ tầng `services/` và `hooks/` để tạo Intellisense cho IDE. Inline comments (`//`) đi kèm để giải thích các luồng logic phức tạp.
-- **Hiệu suất (Performance)**: Tận dụng cơ chế Caching của `SWR`, xử lý hình ảnh tối ưu, loại bỏ re-render thừa trong React.
-- **Khả năng tiếp cận (Accessibility)**: Tuân thủ tiêu chuẩn ARIA của Radix UI cho các modals, dropdowns, forms.
+- **Tách biệt Logic**: Custom Hooks được chia nhỏ và đóng gói business logic riêng biệt cho từng loại người dùng (Teacher, Student, Parent).
+- **Bảo mật**: Xử lý điểm số thông qua Server Actions / API Route kết hợp với Firebase Admin SDK và Firestore Security Rules.
+- **Tài liệu hóa**: Áp dụng chuẩn ghi chú JSDoc (`/** */`) trên toàn bộ tầng `services/` và `hooks/` để tạo Intellisense cho IDE. Inline comments (`//`) đi kèm để giải thích các luồng logic phức tạp.
+- **Hiệu suất**: Tận dụng cơ chế Caching của `SWR`, xử lý hình ảnh tối ưu, loại bỏ re-render thừa trong React.
+- **Khả năng tiếp cận**: Tuân thủ tiêu chuẩn ARIA của Radix UI cho các modals, dropdowns, forms.
 
 ### Hỗ Trợ & Liên Hệ
 
@@ -228,12 +241,13 @@ The application goes beyond simple question storage by integrating cutting-edge 
 
 #### 1. Teacher Portal & Advanced Exam Editor
 - **Real-time Collaboration**: Allows multiple educators to co-edit an exam simultaneously with live online presence tracking.
-- **Diverse Question Management**: Supports Multiple Choice (A/B/C/D), True/False (with dynamic statements), Fill in the blanks (Short answer), and Essay questions. Includes both standalone and Grouped Questions.
+- **Diverse Question Management**: Supports Multiple Choice (A/B/C/D), True/False (with dynamic statements), Fill in the blanks (Short answer), and Essay questions. Includes both standalone and Grouped Questions (questions sharing common reading contexts).
 - **AI Automation (AI Builder & OCR)**: 
   - *AI Prompt*: Automatically generate questions from text prompts.
   - *AI OCR*: Paste images directly -> Gemini 2.5 Flash analyzes structure -> Automatically extracts and fills multiple questions into the form.
 - **Visual Mathematics**: Integrates MathLive for Word-like formula typing and KaTeX for precise rendering.
-- **Library & Recycle Bin**: Categorization via folders, secure storage with Soft Delete (restorable) or Hard Delete capabilities.
+- **Class Management & Statistics**: Monitor student progress, review cheat logs, and thoroughly analyze individual class performance.
+- **Library & Recycle Bin**: Categorization via folders and subjects, secure storage with Soft Delete (restorable) or Hard Delete capabilities.
 - **Exam Community**: Share exams publicly to a shared library. Other educators can search, filter by grade/subject, and Clone/Fork exams into their own accounts with a single click.
 - **Live Quiz Arena**: Host real-time synchronous exams. Features an interactive Lobby, Live Leaderboards, Winner Podium, and dynamic sound effects. Built with a highly modular component architecture for ultra-low latency.
 
@@ -244,22 +258,27 @@ The application goes beyond simple question storage by integrating cutting-edge 
   - Disables system shortcuts: F12, Copy (Ctrl+C), Paste (Ctrl+V), Print (Ctrl+P), View Source (Ctrl+U).
   - Employs MutationObserver to automatically detect and hide/disable DOM-manipulating extensions (e.g., Sider, Grammarly).
 - **Practice Mode**: Allows students to retake exams infinitely to hone their skills, logging the number of attempts.
-- **Gamification**: Students earn experience points, unlock achievement badges (Bronze, Silver, Gold, Diamond), and compete on real-time class Leaderboards. Includes Confetti effects upon unlocking badges.
+- **Error Notebook**: Automatically aggregates incorrectly answered questions, aiding in targeted review and weakness mitigation.
+- **Live Quiz Participation**: Students can join synchronous teacher-hosted arenas using a PIN code to compete in real-time.
+- **Gamification & Leagues**: Students earn experience points (XP), unlock achievement badges (Bronze, Silver, Gold, Diamond), and compete for ranks in competitive Leagues. Includes dynamic Confetti effects.
 
 #### 3. Flashcards Learning System (Spaced Repetition)
-- Automatically extracts incorrectly answered questions from exams to generate Flashcards.
+- Automatically extracts questions from the Error Notebook to generate Flashcards.
 - Integrates the **SM-2 (SuperMemo-2) Algorithm**: Dynamically adjusts the review interval based on the learner's difficulty rating, optimizing long-term memory retention.
 
 #### 4. Parent Portal
 - **Child Monitoring**: Parents can input a Student ID or Email to link their child's account to the dashboard.
 - **Learning Analytics**: Uses a 2-column grid layout to merge Academic Competency Radar Charts (Official vs. Practice) and Practice Frequency Area Charts, providing an intuitive, multi-dimensional view of student progress.
 
-#### 5. Dashboard & Statistics
+#### 5. Admin Portal
+- Comprehensive system-wide User Management, access control, and statistical oversight.
+
+#### 6. Dashboard & Statistics
 - **Advanced Question Analytics**: Interactive tables with collapsible rows and integrated option-selection progress bars. Features smart column hiding based on the underlying exam structure.
 - Track monthly growth of questions and exams using modern charts.
 - AI System performance metrics (OCR Confidence Rate, Latency).
 
-#### 6. Security Architecture & System
+#### 7. Security Architecture & System
 - **Server-Side Grading**: All grading and answer verification logic is moved from the student's browser to a Server API (`/api/exams/submit`). Uses **Firebase Admin SDK** to securely write scores.
 - **Firestore Security Rules**: Strict security rules (`firestore.rules`) implemented to restrict data reads to owners only and block sensitive writes from the client.
 - **Data Synchronization & Authentication**: Automatic syncing of in-depth profile information. Thoroughly resolved infinite UI hangs during Google OAuth authentication flows.
