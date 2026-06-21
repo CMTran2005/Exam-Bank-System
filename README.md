@@ -6,9 +6,9 @@
 
 [![Vercel Deployment](https://img.shields.io/badge/Live_Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://exam-bank-system.vercel.app/)
 
-![Version](https://img.shields.io/badge/version-1.9.0-gray)
-![Language](https://img.shields.io/badge/JavaScript-96.6%25-fff2b2)
-![TypeScript](https://img.shields.io/badge/TypeScript-3.0%25-bbf7d0)
+![Version](https://img.shields.io/badge/version-1.9.1-gray)
+![Language](https://img.shields.io/badge/JavaScript-96.5%25-fff2b2)
+![TypeScript](https://img.shields.io/badge/TypeScript-3.1%25-bbf7d0)
 ![CSS](https://img.shields.io/badge/CSS-0.4%25-e9d5ff)
 
 **[Tiếng Việt](#vietnamese) | [English](#english)**
@@ -38,6 +38,7 @@
 - **Toán Học Trực Quan**: Tích hợp MathLive để gõ công thức như Word và KaTeX để hiển thị chuẩn xác (Rendering).
 - **Thư Viện & Thùng Rác**: Phân loại theo thư mục, lưu trữ an toàn với cơ chế Soft Delete (Xóa mềm có thể khôi phục) hoặc Hard Delete (Xóa vĩnh viễn).
 - **Cộng Đồng Chia Sẻ (Community)**: Chia sẻ đề thi công khai lên thư viện chung. Giáo viên khác có thể tìm kiếm, lọc theo khối lớp/môn học và Nhân bản (Clone) vào tài khoản của mình chỉ với một lần nhấp.
+- **Live Quiz (Đấu Trường Trực Tiếp)**: Tổ chức thi trực tiếp theo thời gian thực (Real-time). Hỗ trợ Lobby (Phòng chờ), Leaderboard, Podium vinh danh và hiệu ứng âm thanh sống động. Được thiết kế theo kiến trúc Component chuyên biệt cho hiệu năng cao.
 
 #### 2. Cổng Học Sinh (Student Portal) & Thi Trực Tuyến
 - **Giao diện làm bài chuyên nghiệp (Modular UI)**: Thiết kế phân tách rõ ràng Header (Bộ đếm giờ), Sidebar (Menu điều hướng câu hỏi), và Question Renderer. Tích hợp đọc câu hỏi (Text-to-Speech) mượt mà.
@@ -99,7 +100,9 @@ exam-bank-system/
 │
 ├── components/                   # React Components
 │   ├── layout/                   # Header, Sidebar (Teacher/Student/Parent), Footer
-│   ├── question/                 # Form câu hỏi, Math editor
+│   ├── question/                 # Core: forms/ (QuestionForm...), inputs/ (RichText...)
+│   ├── teacher/                  # Teacher components: class/ (Stats), live/ (Live Quiz)
+│   ├── student/                  # Student components: exam/, practice/
 │   ├── shared/                   # Custom UI, Providers
 │   └── ui/                       # shadcn/ui components
 │
@@ -232,6 +235,7 @@ The application goes beyond simple question storage by integrating cutting-edge 
 - **Visual Mathematics**: Integrates MathLive for Word-like formula typing and KaTeX for precise rendering.
 - **Library & Recycle Bin**: Categorization via folders, secure storage with Soft Delete (restorable) or Hard Delete capabilities.
 - **Exam Community**: Share exams publicly to a shared library. Other educators can search, filter by grade/subject, and Clone/Fork exams into their own accounts with a single click.
+- **Live Quiz Arena**: Host real-time synchronous exams. Features an interactive Lobby, Live Leaderboards, Winner Podium, and dynamic sound effects. Built with a highly modular component architecture for ultra-low latency.
 
 #### 2. Student Portal & Online Exams
 - **Professional Exam Interface (Modular UI)**: Clearly separated components for the Timer Header, Question Navigation Sidebar, and Question Renderer. Features smooth Text-to-Speech integration.
@@ -293,7 +297,9 @@ exam-bank-system/
 │
 ├── components/                   # React Components
 │   ├── layout/                   # Header, Sidebar (Teacher/Student/Parent), Footer
-│   ├── question/                 # Form components, Math editor
+│   ├── question/                 # Core: forms/ (QuestionForm...), inputs/ (RichText...)
+│   ├── teacher/                  # Teacher components: class/ (Stats), live/ (Live Quiz)
+│   ├── student/                  # Student components: exam/, practice/
 │   ├── shared/                   # Custom UI, Providers
 │   └── ui/                       # shadcn/ui components
 │
