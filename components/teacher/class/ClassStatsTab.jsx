@@ -1,6 +1,7 @@
 import React from "react";
 import { BarChart2, Loader2, ChevronDown } from "lucide-react";
 import dynamic from "next/dynamic";
+import { cleanAndNormalize } from "@/lib/textUtils";
 
 const LatexRenderer = dynamic(() => import("@/components/shared/LatexRenderer"), {
     ssr: false,
@@ -47,30 +48,6 @@ export function ClassStatsTab({ isLoadingExamDetails, selectedExamDetails, attem
                 // Helper function to check if a student's answer is correct
                 const checkIsCorrect = (item, studentAns) => {
                     if (studentAns === undefined || studentAns === null) return false;
-
-                    const cleanAndNormalize = (text) => {
-                        if (text === undefined || text === null) return "";
-                        let cleaned = text
-                            .toString()
-                            .replace(/<[^>]*>/g, "")
-                            .replace(/&nbsp;/g, " ")
-                            .replace(/&lt;/g, "<")
-                            .replace(/&gt;/g, ">")
-                            .replace(/&amp;/g, "&")
-                            .replace(/&quot;/g, '"')
-                            .replace(/&#39;/g, "'")
-                            .replace(/\$/g, "")
-                            .trim()
-                            .toLowerCase()
-                            .replace(/,/g, ".");
-
-                        if (/[\d\+\-\*\/=]/.test(cleaned)) {
-                            cleaned = cleaned.replace(/\s+/g, "");
-                        } else {
-                            cleaned = cleaned.replace(/\s+/g, " ");
-                        }
-                        return cleaned;
-                    };
 
                     if (item.type === 'true_false') {
                         const stmts = item.statements || [];

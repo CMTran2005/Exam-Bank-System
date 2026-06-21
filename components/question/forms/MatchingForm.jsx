@@ -6,7 +6,7 @@
 
 "use client";
 
-import RichInput from "./RichInput";
+import RichInput from "../inputs/RichInput";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, ArrowRight } from "lucide-react";
 import LatexRenderer from "@/components/shared/LatexRenderer";

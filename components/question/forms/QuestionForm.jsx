@@ -10,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import RichTextarea from "./RichTextarea";
-import RichInput from "./RichInput";
+import RichTextarea from "../inputs/RichTextarea";
+import RichInput from "../inputs/RichInput";
 import { Loader2, Wand2 } from "lucide-react";
 
 import MultipleChoiceForm from "./MultipleChoiceForm";
@@ -22,9 +22,9 @@ import MatchingForm from "./MatchingForm";
 import OrderingForm from "./OrderingForm";
 import GroupQuestionForm from "./GroupQuestionForm";
 import LatexRenderer from "@/components/shared/LatexRenderer";
-import QuestionTags from "./QuestionTags";
-import QuestionMedia from "./QuestionMedia";
-import QuestionAudio from "./QuestionAudio";
+import QuestionTags from "../inputs/QuestionTags";
+import QuestionMedia from "../inputs/QuestionMedia";
+import QuestionAudio from "../inputs/QuestionAudio";
 import { useQuestionForm } from "@/hooks/shared/useQuestionForm";
 
 const TYPE_CONFIG = {

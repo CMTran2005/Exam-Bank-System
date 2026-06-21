@@ -7,7 +7,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
-import RichInput from "./RichInput";
+import RichInput from "../inputs/RichInput";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ImagePlus, X } from "lucide-react";
 import LatexRenderer from "@/components/shared/LatexRenderer";

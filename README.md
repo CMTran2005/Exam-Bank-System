@@ -6,9 +6,9 @@
 
 [![Vercel Deployment](https://img.shields.io/badge/Live_Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://exam-bank-system.vercel.app/)
 
-![Version](https://img.shields.io/badge/version-1.6.0-gray)
-![Language](https://img.shields.io/badge/JavaScript-96.2%25-fff2b2)
-![TypeScript](https://img.shields.io/badge/TypeScript-3.4%25-bbf7d0)
+![Version](https://img.shields.io/badge/version-1.9.0-gray)
+![Language](https://img.shields.io/badge/JavaScript-96.6%25-fff2b2)
+![TypeScript](https://img.shields.io/badge/TypeScript-3.0%25-bbf7d0)
 ![CSS](https://img.shields.io/badge/CSS-0.4%25-e9d5ff)
 
 **[Tiếng Việt](#vietnamese) | [English](#english)**

@@ -6,7 +6,7 @@
 
 "use client";
 
-import RichTextarea from "./RichTextarea";
+import RichTextarea from "../inputs/RichTextarea";
 import LatexRenderer from "@/components/shared/LatexRenderer";
 import { ImagePlus, X } from "lucide-react";
 

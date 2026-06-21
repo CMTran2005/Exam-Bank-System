@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Trash2, Copy, Plus } from "lucide-react";
 
-const QuestionForm = dynamic(() => import("@/components/question/QuestionForm"), {
+const QuestionForm = dynamic(() => import("@/components/question/forms/QuestionForm"), {
     ssr: false,
     loading: () => (
         <div className="p-12 border-x border-b border-border bg-card rounded-b-lg flex flex-col items-center justify-center space-y-3">
@@ -12,7 +12,7 @@ const QuestionForm = dynamic(() => import("@/components/question/QuestionForm"),
         </div>
     )
 });
-import QuestionTypePicker from "@/components/question/QuestionTypePicker";
+import QuestionTypePicker from "@/components/question/inputs/QuestionTypePicker";
 import { TYPE_CONFIG } from "@/hooks/teacher/useCreateExam";
 import { Lock } from "lucide-react";
 import { useExamUIStore } from "@/store/useExamUIStore";

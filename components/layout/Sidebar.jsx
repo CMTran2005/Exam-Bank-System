@@ -193,7 +193,7 @@ export default function Sidebar({ isOpen, isMobile = false }) {
                     <div className="rounded-lg bg-sidebar-accent/50 p-3 text-center whitespace-nowrap">
                         <p className="text-[10px] text-sidebar-foreground/50 leading-relaxed">
                             Ngân Hàng Câu Hỏi<br />
-                            <span className="font-semibold">v1.9.0</span>
+                            <span className="font-semibold">v1.9.1</span>
                         </p>
                     </div>
                 </div>

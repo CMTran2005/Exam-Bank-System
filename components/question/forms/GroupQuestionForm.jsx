@@ -18,8 +18,8 @@ import FillBlankForm from "./FillBlankForm";
 import MatchingForm from "./MatchingForm";
 import OrderingForm from "./OrderingForm";
 import LatexRenderer from "@/components/shared/LatexRenderer";
-import RichTextarea from "./RichTextarea";
-import RichInput from "./RichInput";
+import RichTextarea from "../inputs/RichTextarea";
+import RichInput from "../inputs/RichInput";
 import { DIFFICULTY_CONFIG } from "./QuestionForm";
 
 const BASE_TYPE_LABELS = {

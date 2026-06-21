@@ -1,5 +1,5 @@
 import { examCollaborationService } from "@/services/examCollaborationService";
-import { createDefaultSubQuestion } from "@/components/question/GroupQuestionForm";
+import { createDefaultSubQuestion } from "@/components/question/forms/GroupQuestionForm";
 
 export const TYPE_CONFIG = {
     multiple_choice: { label: "Trắc nghiệm Đơn", bg: "bg-blue-100 dark:bg-blue-900/40", text: "text-blue-700 dark:text-blue-300", border: "border-blue-300 dark:border-blue-700" },
