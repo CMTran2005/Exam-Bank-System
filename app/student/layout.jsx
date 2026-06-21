@@ -8,7 +8,7 @@ import { GraduationCap, LogOut, LayoutDashboard, Settings, BookOpen, Medal, User
 import ThemeToggle from "@/components/shared/ThemeToggle";
 import Footer from "@/components/layout/Footer";
 import BlockedAccountScreen from "@/components/shared/BlockedAccountScreen";
-import EncouragementPopup from "@/components/student/EncouragementPopup";
+import EncouragementPopup from "@/components/student/class/EncouragementPopup";
 
 /**
  * Component StudentLayout

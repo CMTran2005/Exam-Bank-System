@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useClasses } from "@/hooks/student/useClasses";
-import JoinClassForm from "@/components/student/JoinClassForm";
-import ClassGrid from "@/components/student/ClassGrid";
+import JoinClassForm from "@/components/student/dashboard/JoinClassForm";
+import ClassGrid from "@/components/student/dashboard/ClassGrid";
 
 /**
  * Component StudentDashboard

@@ -10,7 +10,7 @@ import { examService } from "@/services/examService";
 import { examAttemptService } from "@/services/examAttemptService";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
-import ClassLeaderboard from "@/components/student/ClassLeaderboard";
+import ClassLeaderboard from "@/components/student/class/ClassLeaderboard";
 
 /**
  * Component StudentClassPage

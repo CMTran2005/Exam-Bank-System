@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
-import StudentStatistics from "@/components/student/StudentStatistics";
+import StudentStatistics from "@/components/student/dashboard/StudentStatistics";
 import { studentService } from "@/services/studentService";
 import { UserCircle, Copy } from "lucide-react";
 import { toast } from "sonner";
