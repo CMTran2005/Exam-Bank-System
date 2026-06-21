@@ -1,3 +1,4 @@
+import React, { memo } from "react";
 import { Volume2, VolumeX, Flag, ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MultipleChoiceRenderer } from "./renderers/MultipleChoiceRenderer";
@@ -9,7 +10,7 @@ import { PracticeModeRenderer } from "./renderers/PracticeModeRenderer";
 import MatchingRenderer from "./renderers/MatchingRenderer";
 import OrderingRenderer from "./renderers/OrderingRenderer";
 
-export function QuestionRenderer({
+export const QuestionRenderer = memo(({
     exam,
     currentQuestion,
     currentQuestionIdx,
@@ -31,7 +32,7 @@ export function QuestionRenderer({
     handleGroupAnswer,
     handleCheckAnswer,
     setShowQuestionMap
-}) {
+}) => {
     if (!currentQuestion) return null;
 
     const isAnswered = answers[currentQuestion.id] !== undefined;
@@ -211,4 +212,5 @@ export function QuestionRenderer({
             })()}
         </div>
     );
-}
+});
+QuestionRenderer.displayName = "QuestionRenderer";

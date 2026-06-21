@@ -1,19 +1,19 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 export function useExamAnswers(exam, saveAnswers) {
     const [answers, setAnswers] = useState({});
     const [reviewMarks, setReviewMarks] = useState({});
     const [practiceResults, setPracticeResults] = useState({});
 
-    const handleSelectAnswer = (questionId, optionIndex) => {
+    const handleSelectAnswer = useCallback((questionId, optionIndex) => {
         setAnswers(prev => {
             const updated = { ...prev, [questionId]: optionIndex };
             saveAnswers(updated);
             return updated;
         });
-    };
+    }, [saveAnswers]);
 
-    const handleSelectTrueFalse = (questionId, statementIdx, value) => {
+    const handleSelectTrueFalse = useCallback((questionId, statementIdx, value) => {
         setAnswers(prev => {
             const currentAns = prev[questionId] || {};
             const updatedAns = { ...currentAns, [statementIdx]: value };
@@ -21,17 +21,17 @@ export function useExamAnswers(exam, saveAnswers) {
             saveAnswers(updated);
             return updated;
         });
-    };
+    }, [saveAnswers]);
 
-    const handleTextAnswer = (questionId, text) => {
+    const handleTextAnswer = useCallback((questionId, text) => {
         setAnswers(prev => {
             const updated = { ...prev, [questionId]: text };
             saveAnswers(updated);
             return updated;
         });
-    };
+    }, [saveAnswers]);
 
-    const handleFillBlankAnswer = (questionId, blankIdx, value) => {
+    const handleFillBlankAnswer = useCallback((questionId, blankIdx, value) => {
         setAnswers(prev => {
             const currentAns = prev[questionId] || {};
             const updatedAns = { ...currentAns, [blankIdx]: value };
@@ -39,9 +39,9 @@ export function useExamAnswers(exam, saveAnswers) {
             saveAnswers(updated);
             return updated;
         });
-    };
+    }, [saveAnswers]);
 
-    const handleGroupAnswer = (questionId, subQId, subType, value, extraIdx = null) => {
+    const handleGroupAnswer = useCallback((questionId, subQId, subType, value, extraIdx = null) => {
         setAnswers(prev => {
             const currentQAns = prev[questionId] || {};
             let subAns = currentQAns[subQId];
@@ -57,16 +57,16 @@ export function useExamAnswers(exam, saveAnswers) {
             saveAnswers(updated);
             return updated;
         });
-    };
+    }, [saveAnswers]);
 
-    const handleToggleReview = (questionId) => {
+    const handleToggleReview = useCallback((questionId) => {
         setReviewMarks(prev => ({
             ...prev,
             [questionId]: !prev[questionId]
         }));
-    };
+    }, []);
 
-    const handleCheckAnswer = (qId, subQId = null) => {
+    const handleCheckAnswer = useCallback((qId, subQId = null) => {
         if (!exam || !exam.questions) return;
         const q = exam.questions.find(x => x.id === qId);
         if (!q) return;
@@ -173,7 +173,7 @@ export function useExamAnswers(exam, saveAnswers) {
             ...prev,
             [qId]: { checked: true, isCorrect }
         }));
-    };
+    }, [exam, answers]);
 
     return {
         answers, setAnswers,

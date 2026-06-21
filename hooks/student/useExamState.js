@@ -93,7 +93,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
     useExamSync(attempt, exam, answers, isSubmitting, currentQuestionIdx, autoSaveTimerRef);
 
     // 5. Additional Actions
-    const handleSubmit = async () => {
+    const handleSubmit = useCallback(async () => {
         const totalQ = exam?.questions?.length || 0;
         let answeredQ = 0;
         exam?.questions?.forEach(q => {
@@ -129,9 +129,9 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
         if (await confirmDialog(msg, "Xác nhận nộp bài", "Nộp bài", "Xem lại")) {
             await executeSubmit(attempt.id, answers, exam);
         }
-    };
+    }, [exam, answers, confirmDialog, attempt]);
 
-    const handleExitPractice = async () => {
+    const handleExitPractice = useCallback(async () => {
         if (await confirmDialog("Bạn có chắc chắn muốn thoát? Quá trình làm bài hiện tại sẽ bị xóa.", "Thoát luyện tập")) {
             if (attempt?.id) {
                 try {
@@ -142,9 +142,9 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
             }
             router.push("/student");
         }
-    };
+    }, [attempt, confirmDialog, router]);
 
-    const handleReadAloud = (question) => {
+    const handleReadAloud = useCallback((question) => {
         if (!("speechSynthesis" in window)) {
             toast.error("Trình duyệt của bạn không hỗ trợ tính năng đọc văn bản.");
             return;
@@ -176,7 +176,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
 
         setIsSpeaking(true);
         window.speechSynthesis.speak(utterance);
-    };
+    }, [isSpeaking, exam]);
 
     // Export interface matches the old monolithic hook perfectly
     return {
