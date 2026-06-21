@@ -21,6 +21,14 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "Exam Bank",
   description: "Hệ thống tạo và quản lý ngân hàng câu hỏi thi",
+  manifest: "/manifest.json",
+};
+
+export const viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 /**

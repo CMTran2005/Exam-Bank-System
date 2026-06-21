@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import localforage from "localforage";
 import { examService } from "@/services/examService";
 import { examAttemptService } from "@/services/examAttemptService";
 import { flashcardService } from "@/services/flashcardService";
@@ -90,6 +91,23 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
                 currentAttempt = await examAttemptService.startExam(currentUser.uid, currentUser.name, examId, classId || "practice", examData.title);
             }
 
+            try {
+                const cachedAnswers = await localforage.getItem(`exam_draft_${currentAttempt.id}`);
+                if (cachedAnswers) {
+                    const currentAnsCount = Object.keys(currentAttempt.answers || {}).length;
+                    const cachedAnsCount = Object.keys(cachedAnswers).length;
+                    if (cachedAnsCount > currentAnsCount) {
+                        currentAttempt.answers = cachedAnswers;
+                        toast.info("Đã khôi phục đáp án chưa đồng bộ từ lần mất mạng trước.");
+                        if (navigator.onLine) {
+                            examAttemptService.saveAnswersDraft(currentAttempt.id, cachedAnswers).catch(()=>{});
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Lỗi đọc IndexedDB:", e);
+            }
+
             setAttempt(currentAttempt);
             if (currentAttempt.answers) setAnswers(currentAttempt.answers);
 
@@ -152,7 +170,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
                 const lastSavedStr = JSON.stringify(lastSavedAnswersRef.current);
 
                 if (currentAnswersStr !== lastSavedStr) {
-                    examAttemptService.saveAnswersDraft(attempt.id, answers).then(() => {
+                    saveAnswers(answers).then(() => {
                         lastSavedAnswersRef.current = answers;
                     }).catch(err => console.error("Auto-save failed", err));
                 }
@@ -176,8 +194,23 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
         // Report on question change
         reportStatus();
 
-        const handleOnline = () => reportStatus();
-        const handleOffline = () => reportStatus();
+        const handleOnline = async () => {
+            reportStatus();
+            try {
+                const cachedAnswers = await localforage.getItem(`exam_draft_${attempt.id}`);
+                if (cachedAnswers) {
+                    await examAttemptService.saveAnswersDraft(attempt.id, cachedAnswers);
+                    toast.success("Đã kết nối lại! Đồng bộ dữ liệu Offline thành công.");
+                }
+            } catch (e) {
+                console.error("Lỗi đồng bộ IndexedDB:", e);
+            }
+        };
+
+        const handleOffline = () => {
+            reportStatus();
+            toast.warning("Mất kết nối mạng! Tiến độ đang được lưu Offline. Vui lòng KHÔNG đóng trình duyệt.");
+        };
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
@@ -214,10 +247,24 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
         await executeSubmit(attemptId, currentAnswers, currentExam);
     };
 
+    const saveAnswers = async (updated) => {
+        if (!attempt) return;
+        
+        try {
+            await localforage.setItem(`exam_draft_${attempt.id}`, updated);
+        } catch (e) {
+            console.error("Lỗi lưu IndexedDB:", e);
+        }
+
+        if (navigator.onLine) {
+            examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => {});
+        }
+    };
+
     const handleSelectAnswer = (questionId, optionIndex) => {
         setAnswers(prev => {
             const updated = { ...prev, [questionId]: optionIndex };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
+            saveAnswers(updated);
             return updated;
         });
     };
@@ -227,7 +274,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
             const currentAns = prev[questionId] || {};
             const updatedAns = { ...currentAns, [statementIdx]: value };
             const updated = { ...prev, [questionId]: updatedAns };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
+            saveAnswers(updated);
             return updated;
         });
     };
@@ -235,7 +282,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
     const handleTextAnswer = (questionId, text) => {
         setAnswers(prev => {
             const updated = { ...prev, [questionId]: text };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
+            saveAnswers(updated);
             return updated;
         });
     };
@@ -245,7 +292,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
             const currentAns = prev[questionId] || {};
             const updatedAns = { ...currentAns, [blankIdx]: value };
             const updated = { ...prev, [questionId]: updatedAns };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
+            saveAnswers(updated);
             return updated;
         });
     };
@@ -263,7 +310,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
             }
             
             const updated = { ...prev, [questionId]: { ...currentQAns, [subQId]: subAns } };
-            if (attempt) examAttemptService.saveAnswersDraft(attempt.id, updated).catch(() => { });
+            saveAnswers(updated);
             return updated;
         });
     };
