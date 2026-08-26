@@ -67,8 +67,9 @@ export function useExamAnswers(exam, saveAnswers) {
     }, []);
 
     const handleCheckAnswer = useCallback((qId, subQId = null) => {
-        if (!exam || !exam.questions) return;
-        const q = exam.questions.find(x => x.id === qId);
+        const resolvedExam = exam && (exam.current !== undefined) ? exam.current : exam;
+        if (!resolvedExam || !resolvedExam.questions) return;
+        const q = resolvedExam.questions.find(x => x.id === qId);
         if (!q) return;
 
         const cleanAndNormalize = (text) => {

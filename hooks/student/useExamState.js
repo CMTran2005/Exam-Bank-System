@@ -12,6 +12,10 @@ import { useExamSync } from "./exam/useExamSync";
 export function useExamState(examId, classId, isPracticeMode, currentUser, confirmDialog) {
     const router = useRouter();
 
+    // We need refs to pass into our hook callbacks to avoid stale closures
+    const attemptRef = useRef(null);
+    const examRef = useRef(null);
+
     // Local UI States
     const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
     const [currentSubQuestionIdx, setCurrentSubQuestionIdx] = useState(0);
@@ -53,7 +57,7 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
         answers, setAnswers, reviewMarks, practiceResults, 
         handleSelectAnswer, handleSelectTrueFalse, handleTextAnswer, handleFillBlankAnswer, handleGroupAnswer, 
         handleToggleReview, handleCheckAnswer
-    } = useExamAnswers(null, async (updatedAnswers) => {
+    } = useExamAnswers(examRef, async (updatedAnswers) => {
         // inline saveAnswers to break circular dependency
         if (!attemptRef.current) return;
         try {
@@ -64,10 +68,6 @@ export function useExamState(examId, classId, isPracticeMode, currentUser, confi
             examAttemptService.saveAnswersDraft(attemptRef.current.id, updatedAnswers).catch(() => {});
         }
     });
-
-    // We need refs to pass into our hook callbacks to avoid stale closures
-    const attemptRef = useRef(null);
-    const examRef = useRef(null);
 
     // 3. Timer State
     const { 
