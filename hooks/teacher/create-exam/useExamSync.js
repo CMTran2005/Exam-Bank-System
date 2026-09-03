@@ -289,8 +289,8 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
 
         const finalExamPayload = {
             id: finalId, 
-            uid: existingExam?.uid || currentUser?.uid || "anonymous", 
-            author: existingExam?.author || currentUser?.name || "Giáo viên",
+            uid: currentUser?.uid || existingExam?.uid || "anonymous", 
+            author: currentUser?.name || existingExam?.author || "Giáo viên",
             title: examInfo.title, year: examInfo.year, grade: examInfo.grade,
             subject: examInfo.subject, province: examInfo.province, 
             duration: Number(examInfo.duration) || 90,
@@ -303,6 +303,7 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
         if (existingExam?.createdAt) finalExamPayload.createdAt = existingExam.createdAt;
         if (existingExam?.forkedFrom) finalExamPayload.forkedFrom = existingExam.forkedFrom;
 
+        let cloudSuccess = false;
         try {
             const batch = writeBatch(db);
 
@@ -340,9 +341,14 @@ export function useExamSync({ currentUser, examId, confirmDialog }) {
             batch.set(examDocRef, cleanPayload, { merge: true });
 
             await runWithTimeout(batch.commit(), 15000);
+            cloudSuccess = true;
         } catch (err) {
             console.error("Lỗi Firestore khi lưu đề thi:", err.message);
-            return toast.error("Có lỗi khi lưu lên Cloud: " + err.message);
+            if (err.message?.includes("permissions") || err.message?.includes("permission-denied")) {
+                toast.error("Không có quyền lưu trên Cloud (Role phải là Giáo viên/Admin). Đề thi đã được lưu vào bộ nhớ máy!");
+            } else {
+                toast.error("Có lỗi khi lưu lên Cloud: " + err.message + ". Đã tự động lưu vào bộ nhớ máy!");
+            }
         }
 
         if (editId) {
