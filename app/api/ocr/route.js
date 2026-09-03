@@ -54,7 +54,7 @@ export async function POST(request) {
             return NextResponse.json({ error: "Không tìm thấy dữ liệu ảnh." }, { status: 400 });
         }
 
-        const base64Data = image.split(",")[1] || image;
+        const base64Data = (image.split(",")[1] || image).replace(/\s/g, "");
 
         // ========================================================
         // GIAI ĐOẠN 1: GOOGLE CLOUD VISION API (LẤY VĂN BẢN THÔ)
@@ -81,11 +81,18 @@ export async function POST(request) {
 
                 if (gcvResponse.ok) {
                     const gcvData = await gcvResponse.json();
-                    rawText = gcvData.responses?.[0]?.fullTextAnnotation?.text || "";
-                    gcvSuccess = true;
-                    console.log("Google Cloud Vision trích xuất thành công văn bản thô!");
+                    const firstResponse = gcvData.responses?.[0];
+                    if (firstResponse?.error) {
+                        console.error(`Lỗi phản hồi Google Cloud Vision (${firstResponse.error.code || "ERR"}):`, firstResponse.error.message);
+                    } else {
+                        rawText = firstResponse?.fullTextAnnotation?.text || "";
+                        gcvSuccess = true;
+                        console.log("Google Cloud Vision trích xuất thành công văn bản thô!");
+                    }
                 } else {
-                    console.error("Lỗi phản hồi Google Cloud Vision:", await gcvResponse.text());
+                    const errJson = await gcvResponse.json().catch(() => null);
+                    const errMsg = errJson?.error?.message || await gcvResponse.text().catch(() => "Lỗi không xác định");
+                    console.error(`Lỗi phản hồi Google Cloud Vision (Status ${gcvResponse.status}):`, errMsg);
                 }
             } catch (gcvErr) {
                 console.error("Lỗi khi kết nối Google Cloud Vision API:", gcvErr.message);
