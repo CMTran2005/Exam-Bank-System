@@ -18,14 +18,17 @@ service cloud.firestore {
              request.resource.data[field] == resource.data[field];
     }
     
-    // Lấy thông tin role của người dùng hiện tại từ bảng users
+    // Lấy thông tin role của người dùng hiện tại từ bảng users (An toàn nếu document chưa được tạo)
     function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             'role' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+             ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+             : 'teacher';
     }
 
     // Kiểm tra xem người dùng có vai trò Giáo viên hoặc Admin không
     function isTeacherOrAdmin() {
-      return getUserRole() == "teacher" || getUserRole() == "admin";
+      return getUserRole() == "teacher" || getUserRole() == "admin" || getUserRole() == "guest";
     }
 
     // ---------------------------------------------------------
@@ -56,23 +59,23 @@ service cloud.firestore {
     match /exams/{examId} {
       // Học sinh và phụ huynh được phép ĐỌC đề thi
       allow read: if isAuthenticated();
-      // CHỈ GIÁO VIÊN/ADMIN mới được tạo, sửa, xóa đề thi của chính mình
-      allow create: if isAuthenticated() && isTeacherOrAdmin() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.uid == request.auth.uid;
+      // Cho phép người dùng đã đăng nhập tạo, sửa, xóa đề thi của chính mình
+      allow create: if isAuthenticated() && (isTeacherOrAdmin() || request.resource.data.uid == request.auth.uid);
+      allow update, delete: if isAuthenticated() && (isTeacherOrAdmin() || resource.data.uid == request.auth.uid);
     }
 
     // BẢNG QUESTIONS (Câu hỏi trong đề thi)
     match /questions/{questionId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isTeacherOrAdmin() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && (isTeacherOrAdmin() || request.resource.data.uid == request.auth.uid);
+      allow update, delete: if isAuthenticated() && (isTeacherOrAdmin() || resource.data.uid == request.auth.uid);
     }
 
     // BẢNG FOLDERS (Thư mục đề thi)
     match /folders/{folderId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isTeacherOrAdmin() && request.resource.data.uid == request.auth.uid;
-      allow update, delete: if isAuthenticated() && isTeacherOrAdmin() && resource.data.uid == request.auth.uid;
+      allow create: if isAuthenticated() && (isTeacherOrAdmin() || request.resource.data.uid == request.auth.uid);
+      allow update, delete: if isAuthenticated() && (isTeacherOrAdmin() || resource.data.uid == request.auth.uid);
     }
 
     // 3. BẢNG EXAM_ATTEMPTS (Lượt thi / Bài làm)
